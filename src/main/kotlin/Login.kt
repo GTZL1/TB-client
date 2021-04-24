@@ -49,12 +49,16 @@ class Login {
 
     private fun sendLoginForm(client: HttpClient, username: String, password: String){
         val response = runBlocking {
-            client.request<LogoutResponse> {
-                url("localhost:9000/login")
+            client.request<LoginResponse> {
+                url("http://localhost:9000/login")
+                headers  {
+                    append("Content-Type", "application/json")
+                }
                 body = LoginRequest(username, password)
                 method = HttpMethod.Get
             }
         }
+        System.out.println(response)
     }
 
     data class LoginRequest(
@@ -62,7 +66,8 @@ class Login {
         val password: String
     )
 
-    data class LogoutResponse(
+    data class LoginResponse(
+        val granted: Boolean,
         val idSession: Int
     )
 }
