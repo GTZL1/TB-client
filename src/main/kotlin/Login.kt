@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.ktor.client.*
+import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
@@ -62,20 +63,22 @@ private fun sendLoginForm(
     client: HttpClient, username: String, password: String, onRightLogin: (() -> Unit),
     idSession: MutableState<Int>
 ) {
-    val response = runBlocking {
-        client.request<LoginResponse> {
-            url("http://localhost:9000/login")
-            headers {
-                append("Content-Type", "application/json")
+    try {
+        val response = runBlocking {
+            client.request<LoginResponse> {
+                url("http://localhost:9000/login")
+                headers {
+                    append("Content-Type", "application/json")
+                }
+                body = LoginRequest(username, password)
+                method = HttpMethod.Get
             }
-            body = LoginRequest(username, password)
-            method = HttpMethod.Get
         }
-    }
-    if (response.granted) {
-        idSession.value = response.idSession
-        onRightLogin()
-    }
+        if (response.granted) {
+            idSession.value = response.idSession
+            onRightLogin()
+        }
+    } catch (exception: ClientRequestException) {}
 }
 
 data class LoginRequest(
