@@ -1,4 +1,6 @@
 import androidx.compose.desktop.Window
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.unit.IntSize
 import io.ktor.client.*
@@ -24,7 +26,21 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
         }
     }
 
-    Login().Login(client = httpClient)
+    var idSession = remember { mutableStateOf((0)) }
+
+    var screenState = remember { mutableStateOf(Screen.LOGIN) }
+
+    when (val screen = screenState.value) {
+        Screen.LOGIN ->
+            Login(
+                client=httpClient,
+                onRightLogin = { screenState.value = Screen.BOARD },
+                idSession = idSession
+            )
+
+        Screen.BOARD ->
+           Board(emptyList())
+    }
 }
 
 suspend fun httpRequest() = coroutineScope<Unit> {
@@ -48,6 +64,10 @@ suspend fun httpRequest() = coroutineScope<Unit> {
         }
         httpClient.close()
     }
+}
+
+enum class Screen{
+    LOGIN, BOARD
 }
 
 suspend fun DefaultClientWebSocketSession.outputMessages() {
