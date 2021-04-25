@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<resources>
+    <string name="username">Player pseudo</string>
+    <string name="password">Your password</string>
+</resources>
