@@ -1,31 +1,32 @@
 package game
 
-import androidx.compose.runtime.MutableState
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import java.util.*
 
 class Game(val date: Date, val httpClient: HttpClient) {
 
-    private fun generateCardTypes(){
+    fun generateCardTypes(){
             try {
                 val response = runBlocking {
-                    client.request<LoginResponse> {
-                        url("http://localhost:9000/login")
+                    httpClient.request<String> {
+                        url("http://localhost:9000/cards")
                         headers {
                             append("Content-Type", "application/json")
                         }
-                        body = LoginRequest(username, password)
+                        body = GameObjectsRequest(13)
                         method = HttpMethod.Get
                     }
                 }
-                if (response.granted) {
-                    idSession.value = response.idSession
-                    onRightLogin()
-                }
+               System.out.println(JSONObject(response))
             } catch (exception: ClientRequestException) {}
     }
 }
+
+data class GameObjectsRequest(
+    val idSession: Int
+)
