@@ -41,7 +41,7 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
             )
 
         Screen.BOARD -> {
-            Game(Date.from(Instant.now()), httpClient).generateCardTypes()
+            Game(Date.from(Instant.now()), httpClient).cardsRequest()
         }
     }
 }
