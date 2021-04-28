@@ -4,6 +4,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.unit.IntSize
 import game.Game
+import game.cards.types.CardType
+import game.cards.types.HeroCardType
+import game.cards.types.UnitCardType
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
@@ -16,6 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.util.*
+import kotlin.reflect.KClass
 
 val channel = Channel<String>(1)
 
@@ -29,8 +33,8 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
     }
 
     var idSession = remember { mutableStateOf((0)) }
-
     var screenState = remember { mutableStateOf(Screen.BOARD) }
+    val cardsTypes= listOf<Pair<String, KClass<out CardType>>>(Pair("hero", HeroCardType::class), Pair("unit", UnitCardType::class))
 
     when (val screen = screenState.value) {
         Screen.LOGIN ->
@@ -41,7 +45,7 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
             )
 
         Screen.BOARD -> {
-            Game(Date.from(Instant.now()), httpClient).cardsRequest()
+            Game(Date.from(Instant.now()), httpClient).generateCardTypes(cardsTypes)
         }
     }
 }
