@@ -74,27 +74,26 @@ class Game(val date: Date, val httpClient: HttpClient) {
                 cardTypes.add(
                     if (tc.first.equals("hero")) {
                         tc.second.constructors.first().call(
-                        card.getString("name"),
-                        card.getInt("lifePoints"),
-                        card.getInt("attackPoints"),
-                        card.getInt("maxNumberInDeck"),
-                        Power(
-                            powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.id,
-                            powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.name
-                        ))
+                            card.getString("name"),
+                            card.getInt("lifePoints"),
+                            card.getInt("attackPoints"),
+                            card.getInt("maxNumberInDeck"),
+                            Power(
+                                powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.id,
+                                powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.name
+                            )
+                        )
                     } else {
                         tc.second.constructors.first().call(
                             card.getString("name"),
                             card.getInt("lifePoints"),
                             card.getInt("attackPoints"),
-                            card.getInt("maxNumberInDeck"))
+                            card.getInt("maxNumberInDeck")
+                        )
                     }
-
-                    )
+                )
             }
         }
-
-        System.out.println(cardTypes)
         return cardTypes
     }
 }
