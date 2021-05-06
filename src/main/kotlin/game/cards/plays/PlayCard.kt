@@ -1,3 +1,5 @@
+package game.cards.plays
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,25 +15,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import game.cards.types.CardType
 
-data class Card(val name: String, val life: Int, val attack:Int){
-    var health=this.life
+open class PlayCard(val cardType: CardType) {
+    private var health=cardType.life
+
+    fun getHealth(): Int{
+        return health
+    }
 
     fun takeDamage(damage:Int){
         health-=damage
     }
 
-    fun get():Card{
-        return this
+    fun move(){
+
+    }
+
+    fun attack(target: PlayCard){
+        target.takeDamage(cardType.attack)
+        takeDamage(target.cardType.attack)
     }
 
     @ExperimentalPointerInput
     @Composable
-    fun displayCard(modifier: Modifier=Modifier,
-    onDragEnd: ()->Unit) {
+    fun displayCard(modifier: Modifier = Modifier,
+                    onDragEnd: ()->Unit) {
         var offsetX by remember { mutableStateOf(0f) }
         var offsetY by remember { mutableStateOf(0f) }
         Box(modifier = modifier
@@ -49,11 +58,11 @@ data class Card(val name: String, val life: Int, val attack:Int){
                         offsetY += dragAmount.y
                     },
                     onDragEnd = {
-                         onDragEnd()
-                            //handCards.remove(card)
-                        })
-                    },
-                ) {
+                        onDragEnd()
+                        //handCards.remove(card)
+                    })
+            },
+        ) {
             Column(modifier = Modifier.fillMaxSize(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ){
@@ -72,5 +81,4 @@ data class Card(val name: String, val life: Int, val attack:Int){
             }
         }
     }
-
 }

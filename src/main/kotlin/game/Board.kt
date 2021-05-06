@@ -6,12 +6,13 @@ import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import game.cards.plays.PlayCard
 
 @ExperimentalPointerInput
 @Composable
-fun Board(startCards: List<Card>) {
-    val handCards = remember { mutableStateListOf<Card>().apply { addAll(startCards) } }
-    val playerRowCards = remember { mutableStateListOf<Card>() }
+fun Board(startCards: List<PlayCard>) {
+    val handCards = remember { mutableStateListOf<PlayCard>().apply { addAll(startCards) } }
+    val playerRowCards = remember { mutableStateListOf<PlayCard>() }
     //handCards.addAll(startCards)
     Column(
         modifier = Modifier.fillMaxSize(1f),
@@ -29,14 +30,14 @@ fun Board(startCards: List<Card>) {
             modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
                 .background(Color.Gray)
         ) {playerRowCards.forEach{
-                card: Card -> card.displayCard(onDragEnd={playerRowCards.add(card)})
+                card: PlayCard -> card.displayCard(onDragEnd={playerRowCards.add(card)})
         }}
         Row(
             modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
                 .background(Color.Gray)
         ) {
             handCards.forEach{
-                    card: Card -> card.displayCard(modifier= Modifier.zIndex(1f),
+                    card: PlayCard -> card.displayCard(modifier= Modifier.zIndex(1f),
                 onDragEnd={playerRowCards.add(card)})
             }
         }

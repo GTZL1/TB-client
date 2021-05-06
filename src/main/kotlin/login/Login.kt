@@ -53,7 +53,7 @@ fun Login(
                         idSession = idSession
                     )
                 }) {
-                Text(text = "Login")
+                Text(text = "login")
             }
         }
     }

@@ -24,6 +24,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("io.ktor:ktor-serialization:1.5.2")
     implementation("io.ktor:ktor-client-gson:1.5.2")
+    implementation("org.json:json:20210307")
 }
 
 tasks.withType<KotlinCompile>() {
