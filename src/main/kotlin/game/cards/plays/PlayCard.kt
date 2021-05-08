@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,7 +77,13 @@ open class PlayCard(val cardType: CardType) {
                     .fillMaxSize()
                     //.clip(shape = RoundedCornerShape(topLeft = 5.dp, topRight = 5.dp, bottomLeft = 0.dp, bottomRight = 0.dp))
                     .background(Color.Green))
-                {}
+                {
+                    Column(modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center) {
+                        Text(text = cardType.name)
+                    }
+                }
             }
         }
     }

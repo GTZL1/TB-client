@@ -31,8 +31,8 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
         }
     }
 
-    val idSession = remember { mutableStateOf((1)) }
-    val username = remember { mutableStateOf("Ciri") }
+    val idSession = remember { mutableStateOf((3)) }
+    val username = remember { mutableStateOf("aloy") }
     val screenState = remember { mutableStateOf(Screen.BOARD) }
     val login = Login(
         httpClient = httpClient,

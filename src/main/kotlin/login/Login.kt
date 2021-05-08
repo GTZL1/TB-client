@@ -2,6 +2,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import game.cards.plays.*
 import game.cards.types.*
@@ -33,33 +34,34 @@ class Login(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            var username = remember { mutableStateOf(("player")) }
-            var password = remember { mutableStateOf(("1234")) }
+            //var username = remember { mutableStateOf(("")) }
+            val password = remember { mutableStateOf(("")) }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TextField(
-                    value = username.value,
+                    value = playerPseudo.value,
                     modifier = modifier,
-                    onValueChange = { username.value = it },
+                    onValueChange = { playerPseudo.value = it },
                     label = { Text("Pseudo") }
                 )
                 TextField(
                     value = password.value,
                     modifier = modifier,
                     onValueChange = { password.value = it },
-                    label = { Text("Password") }
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation()
                 )
                 Button(modifier = modifier.padding(top = 20.dp),
                     onClick = {
                         sendLoginForm(
-                            username = username.value,
+                            username = playerPseudo.value,
                             password = password.value,
                             onRightLogin = onRightLogin,
                             idSession = idSession,
                             playerPseudo = playerPseudo
                         )
                     }) {
-                    Text(text = "login")
+                    Text(text = "Login")
                 }
             }
         }
