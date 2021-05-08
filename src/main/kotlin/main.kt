@@ -30,25 +30,28 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
         }
     }
 
-    var idSession = remember { mutableStateOf((0)) }
+    var idSession = remember { mutableStateOf((1)) }
+    var username = remember { mutableStateOf("Ciri") }
     var screenState = remember { mutableStateOf(Screen.BOARD) }
-    val cardsTypes= listOf<Pair<String, KClass<out CardType>>>(Pair("hero", HeroCardType::class),
+    val login = Login(
+        httpClient = httpClient,
+        onRightLogin = { screenState.value = Screen.BOARD },
+        idSession = idSession,
+        playerPseudo = username)
+    val cardsTypes = listOf<Pair<String, KClass<out CardType>>>(
+        Pair("hero", HeroCardType::class),
         Pair("unit", UnitCardType::class),
         Pair("vehicle", VehicleCardType::class),
         Pair("spy", SpyCardType::class),
-        Pair("base", BaseCardType::class)
-    )
+        Pair("base", BaseCardType::class))
 
     when (val screen = screenState.value) {
         Screen.LOGIN ->
-            Login(
-                client=httpClient,
-                onRightLogin = { screenState.value = Screen.BOARD },
-                idSession = idSession
-            )
+            login.LoginScreen()
 
         Screen.BOARD -> {
-            System.out.println(Game(Date.from(Instant.now()), httpClient).generateCardTypes(cardsTypes).size)
+            val game = Game(Date.from(Instant.now()), httpClient, 1)
+            System.out.println(login.generateDeck(login.generateCardTypes(cardsTypes)).size())
         }
     }
 }
@@ -76,7 +79,7 @@ suspend fun httpRequest() = coroutineScope<Unit> {
     }
 }
 
-enum class Screen{
+enum class Screen {
     LOGIN, BOARD
 }
 
