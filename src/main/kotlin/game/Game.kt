@@ -68,6 +68,7 @@ class Game(val date: Date, val httpClient: HttpClient) {
         val cardTypes = mutableListOf<CardType>()
         val cards = cardsRequest()
         val powers = generatePowerTypes()
+
         for (tc: Pair<String, KClass<out CardType>> in typesConstructs) {
             for (x in 0 until cards.getJSONArray(tc.first).length()) {
                 val card: JSONObject = cards.getJSONArray(tc.first).getJSONObject(x)
