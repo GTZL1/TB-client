@@ -59,7 +59,6 @@ open class PlayCard(val cardType: CardType) {
                     },
                     onDragEnd = {
                         onDragEnd()
-                        //handCards.remove(card)
                     })
             },
         ) {

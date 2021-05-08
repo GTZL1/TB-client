@@ -10,7 +10,7 @@ class Deck( val name: String, private val cards: ArrayList<PlayCard>) {
 
     fun drawMultipleCards(nbCards: Int): List<PlayCard>{
         var cardsDrawed: ArrayList<PlayCard> =  ArrayList()
-        for (x in 0..nbCards){
+        for (x in 0 until nbCards){
             val i= Random.nextInt(cards.size)
             cardsDrawed.add(cards.removeAt(i))
         }

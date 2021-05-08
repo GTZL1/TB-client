@@ -5,6 +5,7 @@ import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.unit.IntSize
 import game.Game
 import game.cards.types.*
+import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
@@ -30,9 +31,9 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
         }
     }
 
-    var idSession = remember { mutableStateOf((1)) }
-    var username = remember { mutableStateOf("Ciri") }
-    var screenState = remember { mutableStateOf(Screen.BOARD) }
+    val idSession = remember { mutableStateOf((1)) }
+    val username = remember { mutableStateOf("Ciri") }
+    val screenState = remember { mutableStateOf(Screen.BOARD) }
     val login = Login(
         httpClient = httpClient,
         onRightLogin = { screenState.value = Screen.BOARD },
@@ -50,8 +51,10 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
             login.LoginScreen()
 
         Screen.BOARD -> {
-            val game = Game(Date.from(Instant.now()), httpClient, 1)
-            System.out.println(login.generateDeck(login.generateCardTypes(cardsTypes)).size())
+            val game = Game(Date.from(Instant.now()), httpClient, idSession = idSession.value,
+            Player(pseudo = username.value,
+            deck = login.generateDeck(login.generateCardTypes(cardsTypes))))
+            game.Board()
         }
     }
 }
