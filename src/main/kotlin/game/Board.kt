@@ -30,14 +30,14 @@ fun Board(startCards: List<PlayCard>) {
             modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
                 .background(Color.Gray)
         ) {playerRowCards.forEach{
-                card: PlayCard -> card.displayCard(onDragEnd={playerRowCards.add(card)})
+                card: PlayCard -> card.DisplayCard(onDragEnd={playerRowCards.add(card)})
         }}
         Row(
             modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
                 .background(Color.Gray)
         ) {
             handCards.forEach{
-                    card: PlayCard -> card.displayCard(modifier= Modifier.zIndex(1f),
+                    card: PlayCard -> card.DisplayCard(modifier= Modifier.zIndex(1f),
                 onDragEnd={playerRowCards.add(card)})
             }
         }
