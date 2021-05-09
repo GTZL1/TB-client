@@ -15,9 +15,11 @@ import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
+import theme.cardColors
+import theme.cardFont
 
 open class PlayCard(val cardType: CardType) {
     private var health = cardType.life
@@ -92,7 +94,7 @@ open class PlayCard(val cardType: CardType) {
                             .width(30.dp).height(45.dp)
                             .clip(shape = statsBoxShape)
                             .border(width = 2.dp, color = Color.Red, shape = statsBoxShape)
-                            .background(Color.Yellow)
+                            .background(color = cardColors[cardType::class]!!)
                     )
                     {
                         Column(
@@ -100,8 +102,8 @@ open class PlayCard(val cardType: CardType) {
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            Text(text = health.toString())
-                            Text(text = cardType.attack.toString())
+                            Text(text = health.toString(), style = cardFont)
+                            Text(text = cardType.attack.toString(), style = cardFont)
                         }
                     }
                 }
@@ -110,15 +112,20 @@ open class PlayCard(val cardType: CardType) {
                         .weight(1f)
                         .fillMaxSize()
                         .clip(shape = CutCornerShape(bottomLeft = 5.dp, bottomRight = 5.dp))
-                        .background(Color.Yellow)
+                        .background(color = cardColors[cardType::class]!!)
                 )
                 {
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize()
+                            .padding(horizontal = 5.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(text = cardType.name,)
+                        Text(
+                            text = cardType.name,
+                            style = cardFont,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
