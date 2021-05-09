@@ -1,103 +1,55 @@
 package game
 
-import game.cards.types.CardType
-import game.powers.Power
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.gesture.ExperimentalPointerInput
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import game.cards.plays.PlayCard
+import game.player.Player
 import io.ktor.client.*
-import io.ktor.client.features.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import kotlinx.coroutines.runBlocking
-import org.json.JSONArray
-import org.json.JSONObject
 import java.util.*
-import kotlin.reflect.KClass
 
-class Game(val date: Date, val httpClient: HttpClient) {
+class Game(val date: Date, val httpClient: HttpClient, private val idSession: Int,
+val player: Player) {
 
-    private fun cardsRequest(): JSONObject {
-        try {
-            val response = JSONObject(runBlocking {
-                httpClient.request<String> {
-                    url("http://localhost:9000/cards")
-                    headers {
-                        append("Content-Type", "application/json")
-                    }
-                    body = GameObjectsRequest(1)
-                    method = HttpMethod.Get
+    @ExperimentalPointerInput
+    @Composable
+    fun Board() {
+        //val handCards = remember { mutableStateListOf<PlayCard>().apply { addAll(player.hand) } }
+        val playerRowCards = remember { mutableStateListOf<PlayCard>() }
+        Column(
+            modifier = Modifier.fillMaxSize(1f),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
+                    .background(Color.Gray)
+            ) {}
+            Row(
+                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
+                    .background(Color.Gray)
+            ) {}
+            Row(
+                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
+                    .background(Color.Gray)
+            ) {playerRowCards.forEach{
+                    card: PlayCard -> card.DisplayCard(onDragEnd={playerRowCards.add(card)})
+            }}
+            Row(
+                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
+                    .background(Color.Gray)
+            ) {
+                player.hand.getAllCards().forEach{
+                        card: PlayCard -> card.DisplayCard(modifier= Modifier.zIndex(1f),
+                    onDragEnd={})
                 }
-            })
-            return response
-        } catch (exception: ClientRequestException) {
-        }
-        return JSONObject()
-    }
-
-    private fun powersRequest(): JSONArray {
-        try {
-            val response = JSONArray(runBlocking {
-                httpClient.request<String> {
-                    url("http://localhost:9000/powers")
-                    headers {
-                        append("Content-Type", "application/json")
-                    }
-                    body = GameObjectsRequest(1)
-                    method = HttpMethod.Get
-                }
-            })
-            return response
-        } catch (exception: ClientRequestException) {
-        }
-        return JSONArray()
-    }
-
-    fun generatePowerTypes(): ArrayList<Power> {
-        var powersList: ArrayList<Power> = ArrayList()
-        val powers = powersRequest()
-        for (x in 0 until powers.length()) {
-            powersList.add(
-                Power(
-                    powers.getJSONObject(x).getInt("idPower"),
-                    powers.getJSONObject(x).getString("name")
-                )
-            )
-        }
-        return powersList
-    }
-
-    fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
-        val cardTypes = mutableListOf<CardType>()
-        val cards = cardsRequest()
-        val powers = generatePowerTypes()
-        for (tc: Pair<String, KClass<out CardType>> in typesConstructs) {
-            for (x in 0 until cards.getJSONArray(tc.first).length()) {
-                val card: JSONObject = cards.getJSONArray(tc.first).getJSONObject(x)
-                cardTypes.add(
-                    if (tc.first.equals("hero")) {
-                        tc.second.constructors.first().call(
-                            card.getString("name"),
-                            card.getInt("lifePoints"),
-                            card.getInt("attackPoints"),
-                            card.getInt("maxNumberInDeck"),
-                            Power(
-                                powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.id,
-                                powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.name
-                            )
-                        )
-                    } else {
-                        tc.second.constructors.first().call(
-                            card.getString("name"),
-                            card.getInt("lifePoints"),
-                            card.getInt("attackPoints"),
-                            card.getInt("maxNumberInDeck")
-                        )
-                    }
-                )
             }
         }
-        return cardTypes
     }
 }
-
-data class GameObjectsRequest(
-    val idSession: Int
-)

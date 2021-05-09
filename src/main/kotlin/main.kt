@@ -4,9 +4,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.unit.IntSize
 import game.Game
-import game.cards.types.CardType
-import game.cards.types.HeroCardType
-import game.cards.types.UnitCardType
+import game.cards.types.*
+import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
@@ -32,20 +31,30 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
         }
     }
 
-    var idSession = remember { mutableStateOf((0)) }
-    var screenState = remember { mutableStateOf(Screen.BOARD) }
-    val cardsTypes= listOf<Pair<String, KClass<out CardType>>>(Pair("hero", HeroCardType::class), Pair("unit", UnitCardType::class))
+    val idSession = remember { mutableStateOf((3)) }
+    val username = remember { mutableStateOf("aloy") }
+    val screenState = remember { mutableStateOf(Screen.BOARD) }
+    val login = Login(
+        httpClient = httpClient,
+        onRightLogin = { screenState.value = Screen.BOARD },
+        idSession = idSession,
+        playerPseudo = username)
+    val cardsTypes = listOf<Pair<String, KClass<out CardType>>>(
+        Pair("hero", HeroCardType::class),
+        Pair("unit", UnitCardType::class),
+        Pair("vehicle", VehicleCardType::class),
+        Pair("spy", SpyCardType::class),
+        Pair("base", BaseCardType::class))
 
     when (val screen = screenState.value) {
         Screen.LOGIN ->
-            Login(
-                client=httpClient,
-                onRightLogin = { screenState.value = Screen.BOARD },
-                idSession = idSession
-            )
+            login.LoginScreen()
 
         Screen.BOARD -> {
-            Game(Date.from(Instant.now()), httpClient).generateCardTypes(cardsTypes)
+            val game = Game(Date.from(Instant.now()), httpClient, idSession = idSession.value,
+            Player(pseudo = username.value,
+            deck = login.generateDeck(login.generateCardTypes(cardsTypes))))
+            game.Board()
         }
     }
 }
@@ -73,7 +82,7 @@ suspend fun httpRequest() = coroutineScope<Unit> {
     }
 }
 
-enum class Screen{
+enum class Screen {
     LOGIN, BOARD
 }
 
