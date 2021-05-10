@@ -193,19 +193,15 @@ class Login(
         return cardTypes
     }
 
-    fun generateDeck(cardTypes: List<CardType>): Deck {
-        var deck= ArrayList<PlayCard>()
-        val playerDeck: JSONObject =decksRequest().getJSONObject(0)
+    fun generateDeck(cardTypes: List<CardType>, playerDeck: JSONObject = decksRequest().getJSONObject(0)): DeckType {
+        val deckType= mutableMapOf<CardType,Short>()
         for(x in 0 until playerDeck.getJSONArray("cards").length()){
             val currentJsonCard= playerDeck.getJSONArray("cards").getJSONObject(x)
             val cardType=cardTypes.filter { ct -> ct.name.equals(
                 currentJsonCard.getString("name")) }.first()
-
-            for(y in 0 until currentJsonCard.getInt("quantity")){
-                deck.add(cardType.playType.constructors.first().call(cardType))
-            }
+            deckType[cardType] = currentJsonCard.getInt("quantity").toShort()
         }
-        return Deck(playerDeck.getString("name"), deck)
+        return DeckType(playerDeck.getString("name"), deckType.toMap())
     }
 }
 

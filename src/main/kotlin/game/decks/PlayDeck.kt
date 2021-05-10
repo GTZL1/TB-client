@@ -3,7 +3,7 @@ package game.decks
 import game.cards.plays.*
 import kotlin.random.Random
 
-class Deck( val name: String, private val cards: ArrayList<PlayCard>) {
+class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>) {
     fun drawCard():PlayCard{
         return drawMultipleCards(1).first()
     }
