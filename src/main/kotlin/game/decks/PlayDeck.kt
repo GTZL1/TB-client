@@ -1,6 +1,7 @@
 package game.decks
 
 import game.cards.plays.*
+import java.lang.IndexOutOfBoundsException
 import kotlin.random.Random
 
 class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>) {
@@ -9,10 +10,9 @@ class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>) {
     }
 
     fun drawMultipleCards(nbCards: Int): List<PlayCard>{
-        var cardsDrawed: ArrayList<PlayCard> =  ArrayList()
+        val cardsDrawed: ArrayList<PlayCard> =  ArrayList()
         for (x in 0 until nbCards){
-            val i= Random.nextInt(cards.size)
-            cardsDrawed.add(cards.removeAt(i))
+            cardsDrawed.add(cards.removeAt(Random.nextInt(cards.size)))
         }
         return cardsDrawed
     }

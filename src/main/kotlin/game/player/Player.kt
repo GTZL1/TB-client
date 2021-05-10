@@ -5,5 +5,5 @@ import game.decks.*
 
 class Player(val pseudo: String, val deckType: DeckType) {
     val playDeck =deckType.generatePlayDeck()
-    val hand=Hand(playDeck.drawMultipleCards(Constants().NB_CARDS_HAND))
+    val hand=Hand(playDeck.drawMultipleCards(Constants.NB_CARDS_HAND))
 }
