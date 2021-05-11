@@ -10,20 +10,21 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import java.util.*
 
 object WebSocketHandler {
-    val httpClient = HttpClient {
+    val websocketHttpClient = HttpClient {
         install(WebSockets)
         install(JsonFeature) {
             serializer = GsonSerializer()
         }
     }
-    val msgToSend = LinkedList<String>()
-    val msgReceived = Channel<String>()
+    val msgToSend = LinkedList<JSONObject>()
+    val msgReceived = Channel<JSONObject>()
 
     suspend fun initialize(onConnectionEstablished: () -> Unit) = coroutineScope<Unit> {
-        httpClient.webSocket(
+        websocketHttpClient.webSocket(
             method = HttpMethod.Get,
             host = "localhost",
             port = 9000,
@@ -33,7 +34,7 @@ object WebSocketHandler {
             val userInputRoutine = launch { inputMessages() }
 
             val firstMsg=runBlocking { msgReceived.receive()}
-            if(firstMsg.equals(Constants.CONNECTION_INIT_MESSAGE)){
+            if(firstMsg.getString("type").equals(Constants.CONNECTION_INIT_MESSAGE)){
                 onConnectionEstablished()
             }
             userInputRoutine.join() // Wait for completion; either "exit" or error
@@ -41,11 +42,11 @@ object WebSocketHandler {
         }
     }
 
-    fun sendMessage(msg: String) {
+    fun sendMessage(msg: JSONObject) {
         msgToSend.addFirst(msg)
     }
 
-    suspend fun lastReceived(): String {
+    suspend fun lastReceived(): JSONObject {
         return msgReceived.receive()
     }
 
@@ -54,7 +55,7 @@ object WebSocketHandler {
             try {
                 for (message in incoming) {
                     message as? Frame.Text ?: continue
-                    msgReceived.send(message.readText())
+                    msgReceived.send(JSONObject(SimpleMessage(message.readText())))
                 }
             } catch (e: Exception) {
                 println("Error while receiving: " + e.localizedMessage)
@@ -66,9 +67,9 @@ object WebSocketHandler {
         while (true) {
             if (msgToSend.isNotEmpty()) {
                 val msg = msgToSend.removeLast()
-                if (msg.equals("exit", true)) break
+                if (msg.equals(SimpleMessage("exit"))) break
                 try {
-                    send(msg)
+                    send(msg.toString())
                 } catch (e: Exception) {
                     println("Error while sending: " + e.localizedMessage)
                     return
@@ -77,3 +78,13 @@ object WebSocketHandler {
         }
     }
 }
+
+data class SimpleMessage(
+    val type: String= Constants.CONNECTION_INIT_MESSAGE
+)
+
+data class PlayerInitialization(
+    val type: String="player",
+    val username:String,
+    val deckType:String
+)

@@ -1,13 +1,20 @@
+package network
+
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import game.cards.plays.*
-import game.cards.types.*
-import game.decks.*
-import game.powers.*
+import game.cards.types.CardType
+import game.decks.DeckType
+import game.powers.Power
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
@@ -15,7 +22,6 @@ import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.ArrayList
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findParameterByName
 
@@ -61,7 +67,7 @@ class Login(
                             playerPseudo = playerPseudo
                         )
                     }) {
-                    Text(text = "Login")
+                    Text(text = "network.Login")
                 }
             }
         }
