@@ -40,7 +40,6 @@ class Login(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            //var username = remember { mutableStateOf(("")) }
             val password = remember { mutableStateOf(("")) }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
