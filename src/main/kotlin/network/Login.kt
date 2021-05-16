@@ -66,7 +66,7 @@ class Login(
                             playerPseudo = playerPseudo
                         )
                     }) {
-                    Text(text = "network.Login")
+                    Text(text = "Login")
                 }
             }
         }
@@ -179,6 +179,7 @@ class Login(
                             card.getInt("lifePoints"),
                             card.getInt("attackPoints"),
                             card.getInt("maxNumberInDeck"),
+                            card.getString("image"),
                             Power(
                                 powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.id,
                                 powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.name
@@ -189,7 +190,8 @@ class Login(
                         val args=mapOf((constructor.findParameterByName("name")!! to card.getString("name")),
                             (constructor.findParameterByName("life")!! to card.getInt("lifePoints")),
                             (constructor.findParameterByName("attack")!! to card.getInt("attackPoints")),
-                            (constructor.findParameterByName("maxNumberInDeck")!! to card.getInt("maxNumberInDeck")))
+                            (constructor.findParameterByName("maxNumberInDeck")!! to card.getInt("maxNumberInDeck")),
+                            (constructor.findParameterByName("image")!! to card.getString("image")),)
                         constructor.callBy(args)
                     }
                 )

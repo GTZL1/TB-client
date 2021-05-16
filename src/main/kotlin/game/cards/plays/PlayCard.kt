@@ -1,5 +1,6 @@
 package game.cards.plays
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,11 +16,12 @@ import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
-import theme.cardColors
-import theme.cardFont
+import loadNetworkImage
+import theme.*
 
 open class PlayCard(val cardType: CardType) {
     private var health = cardType.life
@@ -85,9 +87,12 @@ open class PlayCard(val cardType: CardType) {
                                 bottomRight = 0.dp
                             )
                         )
-                        .background(Color.White)
+                        .background(Color.White),
                 )
                 {
+
+                    Image(bitmap = loadNetworkImage(cardType.image),
+                            contentScale = ContentScale.Crop)
                     val statsBoxShape = CutCornerShape(bottomLeft = 5.dp, topRight = 5.dp)
                     Box(
                         modifier = Modifier.align(Alignment.TopEnd)

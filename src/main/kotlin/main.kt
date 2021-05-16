@@ -40,7 +40,7 @@ fun main(args: Array<String>): Unit {
     )
 
     Window(title = "HEIG game", size = IntSize(700, 1010)) {
-        val idSession = remember { mutableStateOf((6)) }
+        val idSession = remember { mutableStateOf((3)) }
         val username = remember { mutableStateOf("aloy") }
         val screenState = remember { mutableStateOf(Screen.BOARD) }
         val login = Login(
@@ -57,8 +57,6 @@ fun main(args: Array<String>): Unit {
             }
             Screen.MATCHMAKING ->{
 
-
-                //println(runBlocking { websocket.lastReceived() })
             }
             Screen.BOARD -> {
                 GlobalScope.launch {  websocket.initialize { run{}} }
