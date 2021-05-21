@@ -40,7 +40,7 @@ fun main(args: Array<String>): Unit {
     )
 
     Window(title = "HEIG game", size = IntSize(700, 1010)) {
-        val idSession = remember { mutableStateOf((3)) }
+        val idSession = remember { mutableStateOf((15)) }
         val username = remember { mutableStateOf("aloy") }
         val screenState = remember { mutableStateOf(Screen.BOARD) }
         val login = Login(

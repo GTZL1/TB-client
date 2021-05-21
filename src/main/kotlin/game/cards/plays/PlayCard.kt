@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.imageFromResource
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -43,6 +44,7 @@ open class PlayCard(val cardType: CardType) {
         takeDamage(target.cardType.attack)
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
     @ExperimentalPointerInput
     @Composable
     fun DisplayCard(
@@ -90,8 +92,7 @@ open class PlayCard(val cardType: CardType) {
                         .background(Color.White),
                 )
                 {
-
-                    Image(bitmap = loadNetworkImage(cardType.image),
+                    Image(bitmap = imageFromResource("card_images/"+ cardType.name.lowercase() +".jpg"),
                             contentScale = ContentScale.Crop)
                     val statsBoxShape = CutCornerShape(bottomLeft = 5.dp, topRight = 5.dp)
                     Box(
