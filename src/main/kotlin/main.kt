@@ -9,21 +9,20 @@ import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
-import io.ktor.http.*
-import io.ktor.http.cio.websocket.*
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import network.SimpleMessage
+import network.Login
+import network.PlayerInitialization
+import network.WebSocketHandler
+import org.json.JSONObject
 import java.time.Instant
 import java.util.*
 import kotlin.reflect.KClass
 
-val channel = Channel<String>(1)
-
 @ExperimentalPointerInput
-fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
+fun main(args: Array<String>): Unit {
     val httpClient = HttpClient {
         install(WebSockets)
         install(JsonFeature) {
@@ -31,78 +30,60 @@ fun main() = Window(title = "HEIG game", size = IntSize(700, 1010)) {
         }
     }
 
-    val idSession = remember { mutableStateOf((3)) }
-    val username = remember { mutableStateOf("aloy") }
-    val screenState = remember { mutableStateOf(Screen.BOARD) }
-    val login = Login(
-        httpClient = httpClient,
-        onRightLogin = { screenState.value = Screen.BOARD },
-        idSession = idSession,
-        playerPseudo = username)
-    val cardsTypes = listOf<Pair<String, KClass<out CardType>>>(
+
+    val cardClasses = listOf<Pair<String, KClass<out CardType>>>(
         Pair("hero", HeroCardType::class),
         Pair("unit", UnitCardType::class),
         Pair("vehicle", VehicleCardType::class),
         Pair("spy", SpyCardType::class),
-        Pair("base", BaseCardType::class))
+        Pair("base", BaseCardType::class)
+    )
 
-    when (val screen = screenState.value) {
-        Screen.LOGIN ->
-            login.LoginScreen()
+    Window(title = "HEIG game", size = IntSize(700, 1010)) {
+        val idSession = remember { mutableStateOf((1)) }
+        val username = remember { mutableStateOf("aloy") }
+        val screenState = remember { mutableStateOf(Screen.BOARD) }
+        val login = Login(
+            httpClient = httpClient,
+            onRightLogin = { screenState.value = Screen.BOARD },
+            idSession = idSession,
+            playerPseudo = username
+        )
+        val websocket=WebSocketHandler()
+        when (val screen = screenState.value) {
+            Screen.LOGIN -> {
+                login.LoginScreen()
 
-        Screen.BOARD -> {
-            val game = Game(Date.from(Instant.now()), httpClient, idSession = idSession.value,
-            Player(pseudo = username.value,
-            deck = login.generateDeck(login.generateCardTypes(cardsTypes))))
-            game.Board()
-        }
-    }
-}
+            }
+            Screen.MATCHMAKING ->{
 
-suspend fun httpRequest() = coroutineScope<Unit> {
-    val httpClient = HttpClient {
-        install(WebSockets)
-    }
-    runBlocking {
-        while (true) {
-            httpClient.webSocket(
-                method = HttpMethod.Get,
-                host = "localhost",
-                port = 9000,
-                path = "/plop"
-            ) {
-                val messageOutputRoutine = launch { outputMessages() }
-                val userInputRoutine = launch { inputMessages(channel.receive()) }
+            }
+            Screen.BOARD -> {
+                GlobalScope.launch {  websocket.initialize { run{}} }
+                websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
+                runBlocking { websocket.lastReceived() }
+                val cardTypes=login.generateCardTypes(cardClasses)
+                val player=Player(
+                pseudo = username.value,
+                deckType = login.generateDeck(cardTypes)
+                )
+                websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
+                val opponent= runBlocking { websocket.lastReceived() }
 
-                userInputRoutine.join() // Wait for completion; either "exit" or error
-                messageOutputRoutine.cancelAndJoin()
+                val game = Game(
+                    Date.from(Instant.now()), httpClient, idSession = idSession.value,
+                    player,
+                    Player(pseudo = opponent.getString("username"),
+                    deckType =  login.generateDeck(cardTypes,opponent.getJSONObject("deckType")))
+                )
+                game.Board()
             }
         }
-        httpClient.close()
     }
 }
 
 enum class Screen {
-    LOGIN, BOARD
+    LOGIN, BOARD, MATCHMAKING
 }
 
-suspend fun DefaultClientWebSocketSession.outputMessages() {
-    try {
-        for (message in incoming) {
-            message as? Frame.Text ?: continue
-            println(message.readText())
-        }
-    } catch (e: Exception) {
-        println("Error while receiving: " + e.localizedMessage)
-    }
-}
 
-suspend fun DefaultClientWebSocketSession.inputMessages(msg: String) {
-    if (msg.equals("exit", true)) return
-    try {
-        send(msg)
-    } catch (e: Exception) {
-        println("Error while sending: " + e.localizedMessage)
-        return
-    }
-}

@@ -1,5 +1,6 @@
 package game.cards.plays
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,15 +14,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.imageFromResource
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
-import theme.cardColors
-import theme.cardFont
+import loadNetworkImage
+import theme.*
 
-open class PlayCard(val cardType: CardType) {
+open class PlayCard(val cardType: CardType, var player: String) {
     private var health = cardType.life
 
     fun getHealth(): Int {
@@ -32,15 +35,7 @@ open class PlayCard(val cardType: CardType) {
         health -= damage
     }
 
-    fun move() {
-
-    }
-
-    fun attack(target: PlayCard) {
-        target.takeDamage(cardType.attack)
-        takeDamage(target.cardType.attack)
-    }
-
+    @OptIn(ExperimentalStdlibApi::class)
     @ExperimentalPointerInput
     @Composable
     fun DisplayCard(
@@ -85,9 +80,12 @@ open class PlayCard(val cardType: CardType) {
                                 bottomRight = 0.dp
                             )
                         )
-                        .background(Color.White)
+                        .background(Color.White),
                 )
                 {
+                    Image(bitmap = imageFromResource("card_images/"+ cardType.name.lowercase() +".jpg"),
+                        contentScale = ContentScale.Crop)
+
                     val statsBoxShape = CutCornerShape(bottomLeft = 5.dp, topRight = 5.dp)
                     Box(
                         modifier = Modifier.align(Alignment.TopEnd)

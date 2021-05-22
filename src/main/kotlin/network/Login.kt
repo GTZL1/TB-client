@@ -1,13 +1,20 @@
+package network
+
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import game.cards.plays.*
-import game.cards.types.*
-import game.decks.*
-import game.powers.*
+import game.cards.types.CardType
+import game.decks.DeckType
+import game.powers.Power
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
@@ -15,7 +22,6 @@ import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.ArrayList
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findParameterByName
 
@@ -34,7 +40,6 @@ class Login(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            //var username = remember { mutableStateOf(("")) }
             val password = remember { mutableStateOf(("")) }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -174,6 +179,7 @@ class Login(
                             card.getInt("lifePoints"),
                             card.getInt("attackPoints"),
                             card.getInt("maxNumberInDeck"),
+                            card.getString("image"),
                             Power(
                                 powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.id,
                                 powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.name
@@ -184,7 +190,8 @@ class Login(
                         val args=mapOf((constructor.findParameterByName("name")!! to card.getString("name")),
                             (constructor.findParameterByName("life")!! to card.getInt("lifePoints")),
                             (constructor.findParameterByName("attack")!! to card.getInt("attackPoints")),
-                            (constructor.findParameterByName("maxNumberInDeck")!! to card.getInt("maxNumberInDeck")))
+                            (constructor.findParameterByName("maxNumberInDeck")!! to card.getInt("maxNumberInDeck")),
+                            (constructor.findParameterByName("image")!! to card.getString("image")),)
                         constructor.callBy(args)
                     }
                 )
@@ -193,19 +200,15 @@ class Login(
         return cardTypes
     }
 
-    fun generateDeck(cardTypes: List<CardType>): Deck {
-        var deck= ArrayList<PlayCard>()
-        val playerDeck: JSONObject =decksRequest().getJSONObject(0)
+    fun generateDeck(cardTypes: List<CardType>, playerDeck: JSONObject = decksRequest().getJSONObject(0)): DeckType {
+        val deckType= mutableMapOf<CardType,Short>()
         for(x in 0 until playerDeck.getJSONArray("cards").length()){
             val currentJsonCard= playerDeck.getJSONArray("cards").getJSONObject(x)
             val cardType=cardTypes.filter { ct -> ct.name.equals(
                 currentJsonCard.getString("name")) }.first()
-
-            for(y in 0 until currentJsonCard.getInt("quantity")){
-                deck.add(cardType.playType.constructors.first().call(cardType))
-            }
+            deckType[cardType] = currentJsonCard.getInt("quantity").toShort()
         }
-        return Deck(playerDeck.getString("name"), deck)
+        return DeckType(playerDeck.getString("name"), deckType.toMap())
     }
 }
 

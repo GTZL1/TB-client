@@ -15,9 +15,10 @@ import game.player.Player
 import io.ktor.client.*
 import java.util.*
 
-class Game(val date: Date, val httpClient: HttpClient, private val idSession: Int,
-val player: Player) {
-
+class Game(
+    val date: Date, val httpClient: HttpClient, private val idSession: Int,
+    val player: Player, val opponent: Player
+) {
     @ExperimentalPointerInput
     @Composable
     fun Board() {
@@ -30,24 +31,29 @@ val player: Player) {
             Row(
                 modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
                     .background(Color.Gray)
-            ) {}
-            Row(
-                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
-                    .background(Color.Gray)
-            ) {}
-            Row(
-                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
-                    .background(Color.Gray)
-            ) {playerRowCards.forEach{
-                    card: PlayCard -> card.DisplayCard(onDragEnd={playerRowCards.add(card)})
+            ) { opponent.hand.getAllCards().forEach { card: PlayCard ->
+                card.DisplayCard(
+                    onDragEnd = {})
             }}
             Row(
                 modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
                     .background(Color.Gray)
+            ) {}
+            Row(
+                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
+                    .background(Color.Gray)
             ) {
-                player.hand.getAllCards().forEach{
-                        card: PlayCard -> card.DisplayCard(modifier= Modifier.zIndex(1f),
-                    onDragEnd={})
+                playerRowCards.forEach { card: PlayCard ->
+                    card.DisplayCard(onDragEnd = { playerRowCards.add(card) })
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
+                    .background(Color.Gray)
+            ) {
+                player.hand.getAllCards().forEach { card: PlayCard ->
+                    card.DisplayCard(modifier = Modifier.zIndex(1f),
+                        onDragEnd = {})
                 }
             }
         }
