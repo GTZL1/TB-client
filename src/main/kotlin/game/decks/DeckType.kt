@@ -8,11 +8,11 @@ import org.json.JSONObject
 import java.util.ArrayList
 
 class DeckType(val name: String, val cardTypes: Map<CardType, Short>) {
-    fun generatePlayDeck():PlayDeck{
+    fun generatePlayDeck(playerName:String):PlayDeck{
         val deck= ArrayList<PlayCard>()
         cardTypes.forEach { ct, s ->
             for(x in 0 until s){
-                deck.add(ct.playType.constructors.first().call(ct))
+                deck.add(ct.playType.constructors.first().call(ct, playerName))
             }
         }
         return PlayDeck(name, deck)

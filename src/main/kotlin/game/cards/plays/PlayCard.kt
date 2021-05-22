@@ -24,7 +24,7 @@ import game.cards.types.CardType
 import loadNetworkImage
 import theme.*
 
-open class PlayCard(val cardType: CardType) {
+open class PlayCard(val cardType: CardType, var player: String) {
     private var health = cardType.life
 
     fun getHealth(): Int {
@@ -33,15 +33,6 @@ open class PlayCard(val cardType: CardType) {
 
     fun takeDamage(damage: Int) {
         health -= damage
-    }
-
-    fun move() {
-
-    }
-
-    fun attack(target: PlayCard) {
-        target.takeDamage(cardType.attack)
-        takeDamage(target.cardType.attack)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -93,7 +84,8 @@ open class PlayCard(val cardType: CardType) {
                 )
                 {
                     Image(bitmap = imageFromResource("card_images/"+ cardType.name.lowercase() +".jpg"),
-                            contentScale = ContentScale.Crop)
+                        contentScale = ContentScale.Crop)
+
                     val statsBoxShape = CutCornerShape(bottomLeft = 5.dp, topRight = 5.dp)
                     Box(
                         modifier = Modifier.align(Alignment.TopEnd)
