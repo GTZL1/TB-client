@@ -18,12 +18,12 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("io.ktor:ktor-server-core:1.5.2")
-    implementation("io.ktor:ktor-client-core:1.5.2")
-    implementation("io.ktor:ktor-client-cio:1.5.2")
+    implementation("io.ktor:ktor-server-core:1.6.0")
+    implementation("io.ktor:ktor-client-core:1.6.0")
+    implementation("io.ktor:ktor-client-cio:1.6.0")
     implementation(kotlin("stdlib-jdk8"))
-    implementation("io.ktor:ktor-serialization:1.5.2")
-    implementation("io.ktor:ktor-client-gson:1.5.2")
+    implementation("io.ktor:ktor-serialization:1.6.0")
+    implementation("io.ktor:ktor-client-gson:1.6.0")
     implementation("org.json:json:20210307")
 }
 
