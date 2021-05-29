@@ -1,7 +1,7 @@
 import androidx.compose.desktop.Window
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.gesture.ExperimentalPointerInput
+//import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.unit.IntSize
 import game.Game
 import game.cards.types.*
@@ -21,7 +21,7 @@ import java.time.Instant
 import java.util.*
 import kotlin.reflect.KClass
 
-@ExperimentalPointerInput
+//@ExperimentalPointerInput
 fun main(args: Array<String>): Unit {
     val httpClient = HttpClient {
         install(WebSockets)
