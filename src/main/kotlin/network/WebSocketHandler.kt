@@ -20,7 +20,7 @@ class WebSocketHandler {
             serializer = GsonSerializer()
         }
     }
-    val msgToSend = LinkedList<JSONObject>()
+    val msgToSend = Channel<JSONObject>(Channel.UNLIMITED)
     val msgReceived = Channel<JSONObject>()
 
     suspend fun initialize(onConnectionEstablished: () -> Unit) = coroutineScope<Unit> {
@@ -44,8 +44,8 @@ class WebSocketHandler {
     }
 
     fun sendMessage(msg: JSONObject) {
-        msgToSend.addFirst(msg)
-        println(msgToSend.size)
+        msgToSend.trySend(msg)
+        //println(msgToSend.size)
     }
 
     suspend fun lastReceived(): JSONObject {
@@ -64,9 +64,9 @@ class WebSocketHandler {
             }
         }
     }
-    private var useful=-1138
+
     private suspend fun DefaultClientWebSocketSession.inputMessages() {
-        while (true) {
+        /*while (true) {
             runBlocking {  }
             if (msgToSend.isNotEmpty()) {
                 val msg =  msgToSend.removeLast()
@@ -77,6 +77,16 @@ class WebSocketHandler {
                     println("Error while sending: " + e.localizedMessage)
                     return
                 }
+            }
+        }*/
+
+        for (msg in msgToSend) {
+            //val msg =  msgToSend.removeLast()
+            if (msg.equals(SimpleMessage("exit"))) break
+            try {
+                send(msg.toString())
+            } catch (e: Exception) {
+                println("Error while sending: " + e.localizedMessage)
             }
         }
         println("joined")
