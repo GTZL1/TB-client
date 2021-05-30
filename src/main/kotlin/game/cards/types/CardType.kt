@@ -5,9 +5,9 @@ import kotlin.reflect.KClass
 
 abstract class CardType(
     val name: String, val life: Int, val attack: Int, val maxNumberInDeck: Int, val image: String,
-    val playType: KClass<out PlayCard>) {
+    private val playType: KClass<out PlayCard>) {
 
-    fun createPlayCard(){
-        //return PlayCard
+    fun generatePlayCard(owner: String): PlayCard{
+        return playType.constructors.first().call(this, owner)
     }
 }

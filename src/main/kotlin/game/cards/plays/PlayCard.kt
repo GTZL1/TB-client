@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
 import theme.*
 
-open class PlayCard(val cardType: CardType, var player: String) {
+open class PlayCard(val cardType: CardType, var owner: String) {
     private var health = cardType.life
 
     fun getHealth(): Int {
@@ -50,7 +50,7 @@ open class PlayCard(val cardType: CardType, var player: String) {
                 .clickable(enabled = true, onClick = {})
                 .width(100.dp).height(180.dp)
                 .clip(shape = CutCornerShape(5.dp))
-                .background(color = Color.Gray)
+                //.background(color = Color.Gray)
                 .border(width = 2.dp, color = Color.Red, shape = CutCornerShape(5.dp))
                 .pointerInput(key1 = null) {
                     detectDragGestures(
