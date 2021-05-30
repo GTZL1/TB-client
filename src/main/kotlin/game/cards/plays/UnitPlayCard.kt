@@ -2,7 +2,7 @@ package game.cards.plays
 
 import game.cards.types.CardType
 
-open class UnitPlayCard(cardType: CardType, player:String): PlayCard(cardType=cardType, player = player) {
+open class UnitPlayCard(cardType: CardType, player:String): PlayCard(cardType=cardType, owner = player) {
     fun move() {
 
     }

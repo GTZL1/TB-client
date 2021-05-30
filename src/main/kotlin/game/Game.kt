@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.gesture.ExperimentalPointerInput
+//import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -19,7 +19,7 @@ class Game(
     val date: Date, val httpClient: HttpClient, private val idSession: Int,
     val player: Player, val opponent: Player
 ) {
-    @ExperimentalPointerInput
+    //@ExperimentalPointerInput
     @Composable
     fun Board() {
         //val handCards = remember { mutableStateListOf<PlayCard>().apply { addAll(player.hand) } }

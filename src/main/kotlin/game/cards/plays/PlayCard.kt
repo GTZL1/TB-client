@@ -1,5 +1,6 @@
 package game.cards.plays
 
+//import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,19 +13,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.imageFromResource
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
-import loadNetworkImage
 import theme.*
 
-open class PlayCard(val cardType: CardType, var player: String) {
+open class PlayCard(val cardType: CardType, var owner: String) {
     private var health = cardType.life
 
     fun getHealth(): Int {
@@ -36,7 +36,7 @@ open class PlayCard(val cardType: CardType, var player: String) {
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    @ExperimentalPointerInput
+    //@ExperimentalPointerInput
     @Composable
     fun DisplayCard(
         modifier: Modifier = Modifier,
@@ -50,9 +50,9 @@ open class PlayCard(val cardType: CardType, var player: String) {
                 .clickable(enabled = true, onClick = {})
                 .width(100.dp).height(180.dp)
                 .clip(shape = CutCornerShape(5.dp))
-                .background(color = Color.Gray)
+                //.background(color = Color.Gray)
                 .border(width = 2.dp, color = Color.Red, shape = CutCornerShape(5.dp))
-                .pointerInput {
+                .pointerInput(key1 = null) {
                     detectDragGestures(
                         onDrag = { change, dragAmount ->
                             change.consumeAllChanges()
@@ -74,19 +74,20 @@ open class PlayCard(val cardType: CardType, var player: String) {
                         .fillMaxSize()
                         .clip(
                             shape = CutCornerShape(
-                                topLeft = 5.dp,
-                                topRight = 5.dp,
-                                bottomLeft = 0.dp,
-                                bottomRight = 0.dp
+                                topStart = 5.dp,
+                                topEnd = 5.dp,
+                                bottomStart = 0.dp,
+                                bottomEnd = 0.dp
                             )
                         )
                         .background(Color.White),
                 )
                 {
-                    Image(bitmap = imageFromResource("card_images/"+ cardType.name.lowercase() +".jpg"),
+                    Image(bitmap = imageResource("card_images/"+ cardType.name.lowercase() +".jpg"),
+                        contentDescription="Image of the card",
                         contentScale = ContentScale.Crop)
 
-                    val statsBoxShape = CutCornerShape(bottomLeft = 5.dp, topRight = 5.dp)
+                    val statsBoxShape = CutCornerShape(bottomStart = 5.dp, topEnd = 5.dp)
                     Box(
                         modifier = Modifier.align(Alignment.TopEnd)
                             .width(30.dp).height(45.dp)
@@ -109,7 +110,7 @@ open class PlayCard(val cardType: CardType, var player: String) {
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxSize()
-                        .clip(shape = CutCornerShape(bottomLeft = 5.dp, bottomRight = 5.dp))
+                        .clip(shape = CutCornerShape(bottomStart = 5.dp, bottomEnd = 5.dp))
                         .background(color = cardColors[cardType::class]!!)
                 )
                 {

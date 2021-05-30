@@ -1,7 +1,7 @@
 import androidx.compose.desktop.Window
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.gesture.ExperimentalPointerInput
+//import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.unit.IntSize
 import game.Game
 import game.cards.types.*
@@ -21,15 +21,16 @@ import java.time.Instant
 import java.util.*
 import kotlin.reflect.KClass
 
-@ExperimentalPointerInput
+//@ExperimentalPointerInput
+//@OptIn(DelicateCoroutinesApi::class)
 fun main(args: Array<String>): Unit {
+    System.setProperty("skiko.renderApi", "OPENGL")
     val httpClient = HttpClient {
         install(WebSockets)
         install(JsonFeature) {
             serializer = GsonSerializer()
         }
     }
-
 
     val cardClasses = listOf<Pair<String, KClass<out CardType>>>(
         Pair("hero", HeroCardType::class),
@@ -61,14 +62,14 @@ fun main(args: Array<String>): Unit {
             Screen.BOARD -> {
                 GlobalScope.launch {  websocket.initialize { run{}} }
                 websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
-                runBlocking { websocket.lastReceived() }
+                runBlocking { websocket.receiveOne() }
                 val cardTypes=login.generateCardTypes(cardClasses)
                 val player=Player(
                 pseudo = username.value,
                 deckType = login.generateDeck(cardTypes)
                 )
                 websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
-                val opponent= runBlocking { websocket.lastReceived() }
+                val opponent= runBlocking { websocket.receiveOne() }
 
                 val game = Game(
                     Date.from(Instant.now()), httpClient, idSession = idSession.value,
