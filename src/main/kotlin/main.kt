@@ -9,7 +9,6 @@ import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -63,14 +62,14 @@ fun main(args: Array<String>): Unit {
             Screen.BOARD -> {
                 GlobalScope.launch {  websocket.initialize { run{}} }
                 websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
-                runBlocking { websocket.lastReceived() }
+                runBlocking { websocket.receiveOne() }
                 val cardTypes=login.generateCardTypes(cardClasses)
                 val player=Player(
                 pseudo = username.value,
                 deckType = login.generateDeck(cardTypes)
                 )
                 websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
-                val opponent= runBlocking { websocket.lastReceived() }
+                val opponent= runBlocking { websocket.receiveOne() }
 
                 val game = Game(
                     Date.from(Instant.now()), httpClient, idSession = idSession.value,

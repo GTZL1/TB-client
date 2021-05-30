@@ -21,7 +21,7 @@ class WebSocketHandler {
         }
     }
     val msgToSend = Channel<JSONObject>(Channel.UNLIMITED)
-    val msgReceived = Channel<JSONObject>()
+    val msgReceived = Channel<JSONObject>(Channel.UNLIMITED)
 
     suspend fun initialize(onConnectionEstablished: () -> Unit) = coroutineScope<Unit> {
         websocketHttpClient.webSocket(
@@ -48,40 +48,23 @@ class WebSocketHandler {
         //println(msgToSend.size)
     }
 
-    suspend fun lastReceived(): JSONObject {
+    suspend fun receiveOne(): JSONObject {
         return msgReceived.receive()
     }
 
     private suspend fun DefaultClientWebSocketSession.outputMessages() {
-        while (true) {
-            try {
-                for (message in incoming) {
-                    message as? Frame.Text ?: continue
-                    msgReceived.send(JSONObject(message.readText()))
-                }
-            } catch (e: Exception) {
-                println("Error while receiving: " + e.localizedMessage)
+        try {
+            for (message in incoming) {
+                message as? Frame.Text ?: continue
+                msgReceived.send(JSONObject(message.readText()))
             }
+        } catch (e: Exception) {
+            println("Error while receiving: " + e.localizedMessage)
         }
     }
 
     private suspend fun DefaultClientWebSocketSession.inputMessages() {
-        /*while (true) {
-            runBlocking {  }
-            if (msgToSend.isNotEmpty()) {
-                val msg =  msgToSend.removeLast()
-                if (msg.equals(SimpleMessage("exit"))) break
-                try {
-                    send(msg.toString())
-                } catch (e: Exception) {
-                    println("Error while sending: " + e.localizedMessage)
-                    return
-                }
-            }
-        }*/
-
         for (msg in msgToSend) {
-            //val msg =  msgToSend.removeLast()
             if (msg.equals(SimpleMessage("exit"))) break
             try {
                 send(msg.toString())
