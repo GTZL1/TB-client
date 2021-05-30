@@ -9,6 +9,7 @@ import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -22,14 +23,15 @@ import java.util.*
 import kotlin.reflect.KClass
 
 //@ExperimentalPointerInput
+//@OptIn(DelicateCoroutinesApi::class)
 fun main(args: Array<String>): Unit {
+    System.setProperty("skiko.renderApi", "OPENGL")
     val httpClient = HttpClient {
         install(WebSockets)
         install(JsonFeature) {
             serializer = GsonSerializer()
         }
     }
-
 
     val cardClasses = listOf<Pair<String, KClass<out CardType>>>(
         Pair("hero", HeroCardType::class),
