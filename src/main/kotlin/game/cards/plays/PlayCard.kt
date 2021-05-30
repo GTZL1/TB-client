@@ -1,6 +1,5 @@
 package game.cards.plays
 
-//import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
 import theme.*
 
-open class PlayCard(val cardType: CardType, var owner: String) {
+open class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
     private var health = cardType.life
 
     fun getHealth(): Int {
@@ -33,101 +32,5 @@ open class PlayCard(val cardType: CardType, var owner: String) {
 
     fun takeDamage(damage: Int) {
         health -= damage
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
-    //@ExperimentalPointerInput
-    @Composable
-    fun DisplayCard(
-        modifier: Modifier = Modifier,
-        onDragEnd: () -> Unit
-    ) {
-        var offsetX by remember { mutableStateOf(0f) }
-        var offsetY by remember { mutableStateOf(0f) }
-        Box(
-            modifier = modifier
-                .offset(offsetX.dp, offsetY.dp)
-                .clickable(enabled = true, onClick = {})
-                .width(100.dp).height(180.dp)
-                .clip(shape = CutCornerShape(5.dp))
-                //.background(color = Color.Gray)
-                .border(width = 2.dp, color = Color.Red, shape = CutCornerShape(5.dp))
-                .pointerInput(key1 = null) {
-                    detectDragGestures(
-                        onDrag = { change, dragAmount ->
-                            change.consumeAllChanges()
-                            offsetX += dragAmount.x
-                            offsetY += dragAmount.y
-                        },
-                        onDragEnd = {
-                            onDragEnd()
-                        })
-                },
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(2.5f)
-                        .fillMaxSize()
-                        .clip(
-                            shape = CutCornerShape(
-                                topStart = 5.dp,
-                                topEnd = 5.dp,
-                                bottomStart = 0.dp,
-                                bottomEnd = 0.dp
-                            )
-                        )
-                        .background(Color.White),
-                )
-                {
-                    Image(bitmap = imageResource("card_images/"+ cardType.name.lowercase() +".jpg"),
-                        contentDescription="Image of the card",
-                        contentScale = ContentScale.Crop)
-
-                    val statsBoxShape = CutCornerShape(bottomStart = 5.dp, topEnd = 5.dp)
-                    Box(
-                        modifier = Modifier.align(Alignment.TopEnd)
-                            .width(30.dp).height(45.dp)
-                            .clip(shape = statsBoxShape)
-                            .border(width = 2.dp, color = Color.Red, shape = statsBoxShape)
-                            .background(color = cardColors[cardType::class]!!)
-                    )
-                    {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(text = health.toString(), style = cardFont)
-                            Text(text = cardType.attack.toString(), style = cardFont)
-                        }
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                        .clip(shape = CutCornerShape(bottomStart = 5.dp, bottomEnd = 5.dp))
-                        .background(color = cardColors[cardType::class]!!)
-                )
-                {
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                            .padding(horizontal = 5.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = cardType.name,
-                            style = cardFont,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-        }
     }
 }

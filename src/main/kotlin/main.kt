@@ -1,7 +1,6 @@
 import androidx.compose.desktop.Window
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-//import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.unit.IntSize
 import game.Game
 import game.cards.types.*
@@ -12,17 +11,15 @@ import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import network.SimpleMessage
 import network.Login
 import network.PlayerInitialization
+import network.SimpleMessage
 import network.WebSocketHandler
 import org.json.JSONObject
 import java.time.Instant
 import java.util.*
 import kotlin.reflect.KClass
 
-//@ExperimentalPointerInput
-//@OptIn(DelicateCoroutinesApi::class)
 fun main(args: Array<String>): Unit {
     System.setProperty("skiko.renderApi", "OPENGL")
     val httpClient = HttpClient {
@@ -43,7 +40,7 @@ fun main(args: Array<String>): Unit {
     Window(title = "HEIG game", size = IntSize(700, 1010)) {
         val idSession = remember { mutableStateOf((1)) }
         val username = remember { mutableStateOf("aloy") }
-        val screenState = remember { mutableStateOf(Screen.BOARD) }
+        val screenState = remember { mutableStateOf(Screen.LOGIN) }
         val login = Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.BOARD },
@@ -73,9 +70,9 @@ fun main(args: Array<String>): Unit {
 
                 val game = Game(
                     Date.from(Instant.now()), httpClient, idSession = idSession.value,
-                    player,
-                    Player(pseudo = opponent.getString("username"),
-                    deckType =  login.generateDeck(cardTypes,opponent.getJSONObject("deckType")))
+                    player = player,
+                    opponent = Player(pseudo = opponent.getString("username"),
+                                        deckType =  login.generateDeck(cardTypes,opponent.getJSONObject("deckType")))
                 )
                 game.Board()
             }

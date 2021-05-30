@@ -4,7 +4,7 @@ import game.cards.plays.*
 import java.lang.IndexOutOfBoundsException
 import kotlin.random.Random
 
-class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>) {
+class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>, private var currentCardId: Int) {
     fun drawCard():PlayCard{
         return drawMultipleCards(1).first()
     }
@@ -19,5 +19,9 @@ class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>) {
 
     fun size():Int{
         return cards.size
+    }
+
+    fun nextId():Int{
+        return ++currentCardId
     }
 }
