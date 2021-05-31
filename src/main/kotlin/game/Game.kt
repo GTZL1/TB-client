@@ -6,6 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -34,41 +36,59 @@ class Game(
 ) {
     @Composable
     fun Board() {
-        val playerRowCards = remember { mutableStateListOf<PlayCard>() }
+        //val handCards= remember { mutableStateListOf<PlayCard>() }
+        //handCards.addAll(player.hand.getAllCards())
+        val playerRowCards = mutableStateListOf<PlayCard>()
+        val centerRowCards = remember { mutableStateListOf<PlayCard>() }
         Column(
             modifier = Modifier.fillMaxSize(1f),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
-                    .background(Color.Gray)
-            ) {
-                opponent.hand.getAllCards().forEach { card: PlayCard ->
-                    DisplayCard(modifier = Modifier.zIndex(1f),
-                        card = card,
-                        isMovable = (card.owner == player.pseudo),
-                        onDragEnd = {})
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
-                    .background(Color.Gray)
-            ) {}
-            Row(
-                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
+                modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
                     .background(Color.Gray)
             ) {
             }
             Row(
-                modifier = Modifier.fillMaxWidth().height(180.dp).zIndex(0f)
+                modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
                     .background(Color.Gray)
             ) {
-                player.hand.getAllCards().forEach { card: PlayCard ->
-                    DisplayCard(modifier = Modifier.zIndex(1f),
-                        card=card,
-                        isMovable = (card.owner == player.pseudo),
-                        onDragEnd = {})
+                centerRowCards.forEach { pc ->
+                    DisplayCard(card = pc, isMovable = (pc.owner == player.pseudo),
+                        onDragEndUp = {},
+                        onDragEndDown = {playerRowCards.add(pc)
+                            centerRowCards.remove(pc)})
                 }
+            }
+            Row (modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+                .background(Color.Gray)) {
+                playerRowCards.forEach { pc ->
+                    DisplayCard(card = pc, isMovable = (pc.owner == player.pseudo),
+                    onDragEndUp = {playerRowCards.remove(pc)
+                                    centerRowCards.add(pc)
+                        },
+                    onDragEndDown = {})
+                }
+                val a=5
+                playerRowCards.map { pc -> print(pc.cardType.name+" ") }
+                println("player row cards\n")
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+                    .background(Color.Gray)
+            ) {
+                player.hand.getAllCards().forEach { pc: PlayCard ->
+                    DisplayCard(modifier = Modifier.zIndex(1f),
+                        card=pc,
+                        isMovable = (pc.owner == player.pseudo),
+                        onDragEndUp = {playerRowCards.add(pc)
+                            player.hand.putCardOnBoard(pc)
+
+                            },
+                        onDragEndDown = {})
+                }
+                player.hand.getAllCards().map { pc -> print(pc.cardType.name+" ") }
+                println("hand cards\n")
             }
         }
     }
@@ -78,10 +98,12 @@ class Game(
         modifier: Modifier = Modifier,
         card: PlayCard,
         isMovable:Boolean,
-        onDragEnd: () -> Unit
+        onDragEndUp: () -> Unit,
+        onDragEndDown:()-> Unit
     ) {
         var offsetX by remember { mutableStateOf(0f) }
         var offsetY by remember { mutableStateOf(0f) }
+        var start=offsetY
         Box(
             modifier = modifier
                 .offset(offsetX.dp, offsetY.dp)
@@ -92,14 +114,19 @@ class Game(
                 .pointerInput(key1 = null) {
                     detectDragGestures(
                         onDrag = { change, dragAmount ->
+                            change.consumeAllChanges()
                             if(isMovable){
-                                change.consumeAllChanges()
                                 offsetX += dragAmount.x
                                 offsetY += dragAmount.y
                             }
                         },
                         onDragEnd = {
-                            onDragEnd()
+                            if(start > offsetY){
+                                onDragEndUp()
+                            } else if (start < offsetY){
+                                onDragEndDown()
+                            }
+                            start=offsetY
                         })
                 },
         ) {

@@ -37,10 +37,10 @@ fun main(args: Array<String>): Unit {
         Pair("base", BaseCardType::class)
     )
 
-    Window(title = "HEIG game", size = IntSize(700, 1010)) {
+    Window(title = "HEIG game", size = IntSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT)) {
         val idSession = remember { mutableStateOf((1)) }
         val username = remember { mutableStateOf("aloy") }
-        val screenState = remember { mutableStateOf(Screen.LOGIN) }
+        val screenState = remember { mutableStateOf(Screen.BOARD) }
         val login = Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.BOARD },
