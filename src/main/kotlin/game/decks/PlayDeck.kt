@@ -14,7 +14,14 @@ class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>, private
         for (x in 0 until nbCards){
             cardsDrawed.add(cards.removeAt(Random.nextInt(cards.size)))
         }
+        cardsDrawed.forEach{
+            it.changePosition(PlayCard.Position.HAND)
+        }
         return cardsDrawed
+    }
+
+    fun getCards():ArrayList<PlayCard>{
+        return cards
     }
 
     fun size():Int{

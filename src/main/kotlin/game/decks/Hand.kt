@@ -18,9 +18,13 @@ class Hand(cards: List<PlayCard>) {
 
     fun putCardOnBoard(card: PlayCard): PlayCard{
         println("Removing "+card.cardType.name)
-        val index=cards.filterNotNull().indexOf(card)
+        val index=cards.filterNotNull().indexOfFirst {
+            playCard: PlayCard -> playCard.cardType.name == card.cardType.name &&
+                playCard.owner == card.owner &&
+                playCard.id == card.id
+        }
         val cardDrawn=cards.filterNotNull().get(index)
-        cards[cards.filterNotNull().indexOf(card)]=null
+        cards[index]=null
         return cardDrawn
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,9 +37,15 @@ class Game(
 ) {
     @Composable
     fun Board() {
-        //val handCards= remember { mutableStateListOf<PlayCard>() }
+        val handCards= remember { mutableStateListOf<PlayCard>() }
+        DisposableEffect(Unit){
+            player.hand.getAllCards().forEach { pc: PlayCard ->
+                handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            }
+            onDispose { }
+        }
         //handCards.addAll(player.hand.getAllCards())
-        val playerRowCards = mutableStateListOf<PlayCard>()
+        val playerRowCards = remember { mutableStateListOf<PlayCard>()}
         val centerRowCards = remember { mutableStateListOf<PlayCard>() }
         Column(
             modifier = Modifier.fillMaxSize(1f),
@@ -56,7 +63,7 @@ class Game(
                 centerRowCards.forEach { pc ->
                     DisplayCard(card = pc, isMovable = (pc.owner == player.pseudo),
                         onDragEndUp = {},
-                        onDragEndDown = {playerRowCards.add(pc)
+                        onDragEndDown = {playerRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
                             centerRowCards.remove(pc)})
                 }
             }
@@ -65,30 +72,25 @@ class Game(
                 playerRowCards.forEach { pc ->
                     DisplayCard(card = pc, isMovable = (pc.owner == player.pseudo),
                     onDragEndUp = {playerRowCards.remove(pc)
-                                    centerRowCards.add(pc)
+                                    centerRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
                         },
                     onDragEndDown = {})
                 }
-                val a=5
-                playerRowCards.map { pc -> print(pc.cardType.name+" ") }
-                println("player row cards\n")
             }
             Row(
                 modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
                     .background(Color.Gray)
             ) {
-                player.hand.getAllCards().forEach { pc: PlayCard ->
+                handCards.forEach { pc: PlayCard ->
                     DisplayCard(modifier = Modifier.zIndex(1f),
                         card=pc,
                         isMovable = (pc.owner == player.pseudo),
-                        onDragEndUp = {playerRowCards.add(pc)
-                            player.hand.putCardOnBoard(pc)
-
+                        onDragEndUp = {playerRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+                            handCards.remove(pc)
+                            //player.hand.putCardOnBoard(pc)
                             },
                         onDragEndDown = {})
                 }
-                player.hand.getAllCards().map { pc -> print(pc.cardType.name+" ") }
-                println("hand cards\n")
             }
         }
     }
