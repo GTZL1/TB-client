@@ -74,13 +74,9 @@ fun Board(game: Game) {
         modifier = Modifier.fillMaxSize(1f),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Row(modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
-                .background(Color.Gray)
-        ) {
-        }
-        Row(modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
-                .background(Color.Gray)
-        ) {
+        customRow(content =  {
+        })
+        customRow(content= {
             centerRowCards.forEach { pc ->
                 DisplayCard(card = pc,
                     isMovableUp = false,
@@ -90,10 +86,8 @@ fun Board(game: Game) {
                         game.cardQuitCenterRow(pc)
                     })
             }
-        }
-        Row(modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
-                .background(Color.Gray)
-        ) {
+        })
+        customRow(content= {
             playerRowCards.map { pc ->
                 DisplayCard(card = pc,
                     isMovableUp = true,
@@ -103,10 +97,8 @@ fun Board(game: Game) {
                     },
                     onDragEndDown = {})
             }
-        }
-        Row(modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
-                .background(Color.Gray)
-        ) {
+        })
+        customRow(content= {
             handCards.map { pc: PlayCard ->
                 DisplayCard(modifier = Modifier.zIndex(1f),
                     card = pc,
@@ -117,7 +109,7 @@ fun Board(game: Game) {
                     },
                     onDragEndDown = {})
             }
-        }
+        })
     }
 }
 
@@ -139,8 +131,8 @@ fun DisplayCard(
             .offset(offsetX.dp, offsetY.dp)
             .clickable(enabled = true, onClick = {})
             .width(Constants.CARD_WIDTH.dp).height(Constants.CARD_HEIGHT.dp)
-            .clip(shape = CutCornerShape(5.dp))
-            .border(width = 2.dp, color = Color.Red, shape = CutCornerShape(5.dp))
+            .clip(shape = Constants.cardShape)
+            .border(width = 2.dp, color = Color.Red, shape = Constants.cardShape)
             .pointerInput(key1 = null) {
                 detectDragGestures(
                     onDrag = { change, dragAmount ->
@@ -227,5 +219,15 @@ fun DisplayCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun customRow(modifier: Modifier=Modifier,
+              content: @Composable () -> Unit){
+    Row(modifier = modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+        .background(Color.Gray),
+        horizontalArrangement = Arrangement.spacedBy(Constants.SPACE_BETWEEN_CARDS.dp, Alignment.CenterHorizontally)){
+        content()
     }
 }
