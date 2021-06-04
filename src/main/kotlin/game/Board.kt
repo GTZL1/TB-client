@@ -1,21 +1,23 @@
 package game
 
+import Constants
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
-import androidx.compose.ui.draw.*
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import game.cards.plays.PlayCard
+import game.cards.plays.*
 import theme.*
 
 @Composable
@@ -34,7 +36,7 @@ fun Board(game: Game) {
     DisposableEffect(game) {
         val callback =
             object : GameCallback {
-                override fun onNewData(pc: PlayCard) {
+                override fun onNewCard(pc: PlayCard) {
                     playerRowCards.add(pc)
                     handCards.remove(pc)
                     centerRowCards.remove(pc)
@@ -47,7 +49,7 @@ fun Board(game: Game) {
     DisposableEffect(game) {
         val callback =
             object : GameCallback {
-                override fun onNewData(pc: PlayCard) {
+                override fun onNewCard(pc: PlayCard) {
                     centerRowCards.add(pc)
                     playerRowCards.remove(pc)
                 }
@@ -56,48 +58,60 @@ fun Board(game: Game) {
         onDispose { game.unregisterToCenterRow(callback) }
     }
 
+    DisposableEffect(game) {
+        val callback =
+            object : GameCallback {
+                override fun onNewCard(pc: PlayCard) {
+                    centerRowCards.remove(pc)
+                    playerRowCards.add(pc)
+                }
+            }
+        game.registerQuitCenterRow(callback)
+        onDispose { game.unregisterQuitCenterRow(callback) }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(1f),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+        Row(modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
                 .background(Color.Gray)
         ) {
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+        Row(modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
                 .background(Color.Gray)
         ) {
             centerRowCards.forEach { pc ->
-                DisplayCard(card = pc, isMovable = (pc.owner == game.player.pseudo),
+                DisplayCard(card = pc,
+                    isMovableUp = false,
+                    isMovableDown = (pc.owner == game.player.pseudo),
                     onDragEndUp = {},
                     onDragEndDown = {
-                        playerRowCards.add(pc)
-                        centerRowCards.remove(pc)
+                        game.cardQuitCenterRow(pc)
                     })
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+        Row(modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
                 .background(Color.Gray)
         ) {
             playerRowCards.map { pc ->
-                DisplayCard(card = pc, isMovable = (pc.owner == game.player.pseudo),
+                DisplayCard(card = pc,
+                    isMovableUp = true,
+                    isMovableDown = false,
                     onDragEndUp = {
                         game.cardToCenterRow(pc)
                     },
                     onDragEndDown = {})
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+        Row(modifier = Modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
                 .background(Color.Gray)
         ) {
             handCards.map { pc: PlayCard ->
                 DisplayCard(modifier = Modifier.zIndex(1f),
                     card = pc,
-                    isMovable = (pc.owner == game.player.pseudo),
+                    isMovableUp = true,
+                    isMovableDown = false,
                     onDragEndUp = {
                         game.cardToPlayerRow(pc)
                     },
@@ -111,36 +125,40 @@ fun Board(game: Game) {
 fun DisplayCard(
     modifier: Modifier = Modifier,
     card: PlayCard,
-    isMovable: Boolean,
+    isMovableUp: Boolean,
+    isMovableDown: Boolean,
     onDragEndUp: () -> Unit,
     onDragEndDown: () -> Unit
 ) = key(card) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
-    var start = offsetY
+    val startY = offsetY
+    val startX = offsetX
     Box(
         modifier = modifier
             .offset(offsetX.dp, offsetY.dp)
             .clickable(enabled = true, onClick = {})
-            .width(100.dp).height(180.dp)
+            .width(Constants.CARD_WIDTH.dp).height(Constants.CARD_HEIGHT.dp)
             .clip(shape = CutCornerShape(5.dp))
             .border(width = 2.dp, color = Color.Red, shape = CutCornerShape(5.dp))
             .pointerInput(key1 = null) {
                 detectDragGestures(
                     onDrag = { change, dragAmount ->
                         change.consumeAllChanges()
-                        if (isMovable) {
+                        if (isMovableUp || isMovableDown) {
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
                         }
                     },
                     onDragEnd = {
-                        if (start > offsetY) {
+                        if (isMovableUp && ((startY - offsetY) > Constants.CARD_DRAG_MARGIN)) {
                             onDragEndUp()
-                        } else if (start < offsetY) {
+                        } else if (isMovableDown && ((startY - offsetY) < -Constants.CARD_DRAG_MARGIN)) {
                             onDragEndDown()
+                        } else{
+                            offsetY=startY
+                            offsetX=startX
                         }
-                        start = offsetY
                     })
             },
     ) {
@@ -160,7 +178,6 @@ fun DisplayCard(
                             bottomEnd = 0.dp
                         )
                     )
-                    .background(Color.White),
             )
             {
                 Image(
