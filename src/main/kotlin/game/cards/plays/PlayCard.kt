@@ -43,7 +43,7 @@ open class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
         position=newPos
     }
 
-    /*override fun equals(other: Any?): Boolean {
+    override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is PlayCard) return false
 
@@ -59,7 +59,7 @@ open class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
         result = 31 * result + owner.hashCode()
         result = 31 * result + id
         return result
-    }*/
+    }
 
     enum class Position {
         DECK, HAND, PLAYER_ROW, CENTRAL_ROW, DISCARD

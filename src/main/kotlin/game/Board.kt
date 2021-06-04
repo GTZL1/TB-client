@@ -1,82 +1,24 @@
 package game
 
-import Constants
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.consumeAllChanges
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.*
+import androidx.compose.ui.draw.*
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
 import game.cards.plays.PlayCard
-import game.player.Player
-import io.ktor.client.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import theme.cardColors
-import theme.cardFont
-import java.util.*
+import theme.*
 
-interface GameCallback {
-    fun onNewData(pc: PlayCard)
-}
-
-interface GameInterface {
-    fun cardToPlayerRow(card: PlayCard)
-    fun cardToCenterRow(card: PlayCard)
-    fun registerToPlayerRow(callback: GameCallback)
-    fun unregisterToPlayerRow(callback: GameCallback)
-    fun registerToCenterRow(callback: GameCallback)
-    fun unregisterToCenterRow(callback: GameCallback)
-}
-
-class Game(
-    val date: Date, val httpClient: HttpClient, private val idSession: Int,
-    val player: Player, val opponent: Player
-) : GameInterface{
-    private val playerRowCallback = mutableListOf<GameCallback>()
-    private val centerRowCallback = mutableListOf<GameCallback>()
-
-    override fun cardToPlayerRow(card: PlayCard) {
-        playerRowCallback.forEach { it.onNewData(pc = card) }
-    }
-
-    override fun cardToCenterRow(card: PlayCard) {
-        centerRowCallback.forEach { it.onNewData(pc = card) }
-    }
-
-    override fun registerToPlayerRow(callback: GameCallback) {
-       playerRowCallback.add(callback)
-    }
-
-    override fun unregisterToPlayerRow(callback: GameCallback) {
-        playerRowCallback.remove(callback)
-    }
-
-    override fun registerToCenterRow(callback: GameCallback) {
-        centerRowCallback.add(callback)
-    }
-
-    override fun unregisterToCenterRow(callback: GameCallback) {
-        centerRowCallback.add(callback)
-    }
-}
-
-/*@Composable
+@Composable
 fun Board(game: Game) {
     val handCards = remember { mutableStateListOf<PlayCard>() }
     DisposableEffect(Unit) {
@@ -87,26 +29,27 @@ fun Board(game: Game) {
     }
 
     val playerRowCards = remember { mutableStateListOf<PlayCard>() }
+    val centerRowCards = remember { mutableStateListOf<PlayCard>() }
+
     DisposableEffect(game) {
         val callback =
             object : GameCallback {
                 override fun onNewData(pc: PlayCard) {
                     playerRowCards.add(pc)
                     handCards.remove(pc)
+                    centerRowCards.remove(pc)
                 }
             }
         game.registerToPlayerRow(callback)
         onDispose { game.unregisterToPlayerRow(callback) }
     }
 
-    val centerRowCards = remember { mutableStateListOf<PlayCard>() }
     DisposableEffect(game) {
         val callback =
             object : GameCallback {
                 override fun onNewData(pc: PlayCard) {
                     centerRowCards.add(pc)
                     playerRowCards.remove(pc)
-
                 }
             }
         game.registerToCenterRow(callback)
@@ -130,7 +73,7 @@ fun Board(game: Game) {
                 DisplayCard(card = pc, isMovable = (pc.owner == game.player.pseudo),
                     onDragEndUp = {},
                     onDragEndDown = {
-                        playerRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+                        playerRowCards.add(pc)
                         centerRowCards.remove(pc)
                     })
             }
@@ -157,8 +100,6 @@ fun Board(game: Game) {
                     isMovable = (pc.owner == game.player.pseudo),
                     onDragEndUp = {
                         game.cardToPlayerRow(pc)
-                        //handCards.remove(pc)
-                        //player.hand.putCardOnBoard(pc)
                     },
                     onDragEndDown = {})
             }
@@ -173,7 +114,7 @@ fun DisplayCard(
     isMovable: Boolean,
     onDragEndUp: () -> Unit,
     onDragEndDown: () -> Unit
-) {
+) = key(card) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var start = offsetY
@@ -270,4 +211,4 @@ fun DisplayCard(
             }
         }
     }
-}*/
+}

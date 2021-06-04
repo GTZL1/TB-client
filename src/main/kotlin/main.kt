@@ -2,7 +2,7 @@ import androidx.compose.desktop.Window
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.IntSize
-import game.Game
+import game.*
 import game.cards.types.*
 import game.player.Player
 import io.ktor.client.*
@@ -74,7 +74,7 @@ fun main(args: Array<String>): Unit {
                     opponent = Player(pseudo = opponent.getString("username"),
                                         deckType =  login.generateDeck(cardTypes,opponent.getJSONObject("deckType")))
                 )
-                game.Board()
+                Board(game)
             }
         }
     }
