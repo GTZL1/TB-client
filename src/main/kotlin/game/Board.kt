@@ -4,7 +4,6 @@ import Constants
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -74,11 +73,11 @@ fun Board(game: Game) {
         modifier = Modifier.fillMaxSize(1f),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        customRow(content =  {
+        GameRow(content =  {
         })
-        customRow(content= {
+        GameRow(content= {
             centerRowCards.forEach { pc ->
-                DisplayCard(card = pc,
+                DisplayDraggableCard(card = pc,
                     isMovableUp = false,
                     isMovableDown = (pc.owner == game.player.pseudo),
                     onDragEndUp = {},
@@ -87,9 +86,9 @@ fun Board(game: Game) {
                     })
             }
         })
-        customRow(content= {
+        GameRow(content= {
             playerRowCards.map { pc ->
-                DisplayCard(card = pc,
+                DisplayDraggableCard(card = pc,
                     isMovableUp = true,
                     isMovableDown = false,
                     onDragEndUp = {
@@ -98,9 +97,9 @@ fun Board(game: Game) {
                     onDragEndDown = {})
             }
         })
-        customRow(content= {
+        GameRow(content= {
             handCards.map { pc: PlayCard ->
-                DisplayCard(modifier = Modifier.zIndex(1f),
+                DisplayDraggableCard(modifier = Modifier.zIndex(1f),
                     card = pc,
                     isMovableUp = true,
                     isMovableDown = false,
@@ -114,7 +113,7 @@ fun Board(game: Game) {
 }
 
 @Composable
-fun DisplayCard(
+fun DisplayDraggableCard(
     modifier: Modifier = Modifier,
     card: PlayCard,
     isMovableUp: Boolean,
@@ -154,80 +153,90 @@ fun DisplayCard(
                     })
             },
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(1f),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(2.5f)
-                    .fillMaxSize()
-                    .clip(
-                        shape = CutCornerShape(
-                            topStart = 5.dp,
-                            topEnd = 5.dp,
-                            bottomStart = 0.dp,
-                            bottomEnd = 0.dp
-                        )
-                    )
-            )
-            {
-                Image(
-                    bitmap = imageResource("card_images/" + card.cardType.name.lowercase() + ".jpg"),
-                    contentDescription = "Image of the card",
-                    contentScale = ContentScale.Crop
-                )
+        DisplayCard(modifier = modifier,
+                    card = card)
+    }
+}
 
-                val statsBoxShape = CutCornerShape(bottomStart = 5.dp, topEnd = 5.dp)
-                Box(
-                    modifier = Modifier.align(Alignment.TopEnd)
-                        .width(30.dp).height(45.dp)
-                        .clip(shape = statsBoxShape)
-                        .border(width = 2.dp, color = Color.Red, shape = statsBoxShape)
-                        .background(color = cardColors[card.cardType::class]!!)
-                )
-                {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(text = card.getHealth().toString(), style = cardFont)
-                        Text(text = card.cardType.attack.toString(), style = cardFont)
-                    }
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxSize()
-                    .clip(shape = CutCornerShape(bottomStart = 5.dp, bottomEnd = 5.dp))
-                    .background(color = cardColors[card.cardType::class]!!)
+@Composable
+fun GameRow(modifier: Modifier=Modifier,
+            content: @Composable () -> Unit){
+    Row(modifier = modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+        .background(Color.Gray),
+        horizontalArrangement = Arrangement.spacedBy(Constants.SPACE_BETWEEN_CARDS.dp, Alignment.CenterHorizontally)){
+        content()
+    }
+}
+
+@Composable
+fun DisplayCard(modifier: Modifier=Modifier,
+                card: PlayCard){
+    Column(
+        modifier = modifier.fillMaxSize(1f),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(2.5f)
+                .fillMaxSize()
+                .clip(shape = Constants.topCardShape)
+        )
+        {
+            Image(
+                bitmap = imageResource("card_images/" + card.cardType.name.lowercase() + ".jpg"),
+                contentDescription = "Image of the card",
+                contentScale = ContentScale.Crop
             )
-            {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                        .padding(horizontal = 5.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = card.cardType.name,
-                        style = cardFont,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
+
+            StatsBox(modifier = modifier.align(Alignment.TopEnd),
+                card = card)
+        }
+        CardEtiquette(modifier = modifier.weight(1f),
+            card = card)
+    }
+}
+
+@Composable
+fun StatsBox(modifier: Modifier=Modifier,
+             card: PlayCard){
+    Box(
+        modifier = modifier.width(Constants.STATS_BOX_WIDTH.dp).height(Constants.STATS_BOX_HEIGTH.dp)
+            .clip(shape = Constants.statsBoxShape)
+            .border(width = 2.dp, color = Color.Red, shape = Constants.statsBoxShape)
+            .background(color = cardColors[card.cardType::class]!!)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = card.getHealth().toString(), style = cardFont)
+            Text(text = card.cardType.attack.toString(), style = cardFont)
         }
     }
 }
 
 @Composable
-fun customRow(modifier: Modifier=Modifier,
-              content: @Composable () -> Unit){
-    Row(modifier = modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
-        .background(Color.Gray),
-        horizontalArrangement = Arrangement.spacedBy(Constants.SPACE_BETWEEN_CARDS.dp, Alignment.CenterHorizontally)){
-        content()
+fun CardEtiquette(modifier: Modifier=Modifier,
+                  card: PlayCard){
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clip(shape = Constants.bottomCardShape)
+            .background(color = cardColors[card.cardType::class]!!)
+    )
+    {
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(horizontal = 5.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = card.cardType.name,
+                style = cardFont,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }

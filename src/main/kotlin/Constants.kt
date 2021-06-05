@@ -12,9 +12,15 @@ object Constants {
     const val CARD_DRAG_MARGIN = (CARD_HEIGHT * 0.35).toInt()
     private const val MAX_CARDS_ON_ROW = NB_CARDS_HAND
     const val SPACE_BETWEEN_CARDS = 10
+    const val STATS_BOX_HEIGTH=45
+    const val STATS_BOX_WIDTH=30
 
     const val WINDOW_WIDTH = (MAX_CARDS_ON_ROW + 1) * (CARD_WIDTH + SPACE_BETWEEN_CARDS)
     const val WINDOW_HEIGHT = 1010
 
-    val cardShape= CutCornerShape(5.dp)
+    private const val SHAPE_SIZE=5
+    val cardShape= CutCornerShape(SHAPE_SIZE.dp)
+    val topCardShape=CutCornerShape(topStart = SHAPE_SIZE.dp, topEnd = SHAPE_SIZE.dp,)
+    val statsBoxShape = CutCornerShape(bottomStart = SHAPE_SIZE.dp, topEnd = SHAPE_SIZE.dp)
+    val bottomCardShape=CutCornerShape(bottomStart = SHAPE_SIZE.dp, bottomEnd = SHAPE_SIZE.dp)
 }
