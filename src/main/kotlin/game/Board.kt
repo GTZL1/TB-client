@@ -1,7 +1,10 @@
 package game
 
 import Constants
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Text
@@ -10,7 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.input.pointer.consumeAllChanges
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
@@ -22,15 +26,18 @@ import theme.*
 @Composable
 fun Board(game: Game) {
     val handCards = remember { mutableStateListOf<PlayCard>() }
+    val playerRowCards = remember { mutableStateListOf<PlayCard>() }
+    val centerRowCards = remember { mutableStateListOf<PlayCard>() }
+
     DisposableEffect(Unit) {
         game.player.hand.getAllCards().forEach { pc: PlayCard ->
             handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
         }
+        game.player.playDeck.getBaseCards().forEach { pc: PlayCard ->
+            playerRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+        }
         onDispose { }
     }
-
-    val playerRowCards = remember { mutableStateListOf<PlayCard>() }
-    val centerRowCards = remember { mutableStateListOf<PlayCard>() }
 
     DisposableEffect(game) {
         val callback =
@@ -51,62 +58,47 @@ fun Board(game: Game) {
                 override fun onNewCard(pc: PlayCard) {
                     centerRowCards.add(pc)
                     playerRowCards.remove(pc)
+                    handCards.remove(pc)
                 }
             }
         game.registerToCenterRow(callback)
         onDispose { game.unregisterToCenterRow(callback) }
     }
 
-    DisposableEffect(game) {
-        val callback =
-            object : GameCallback {
-                override fun onNewCard(pc: PlayCard) {
-                    centerRowCards.remove(pc)
-                    playerRowCards.add(pc)
-                }
-            }
-        game.registerQuitCenterRow(callback)
-        onDispose { game.unregisterQuitCenterRow(callback) }
-    }
-
     Column(
         modifier = Modifier.fillMaxSize(1f),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        GameRow(content =  {
+        GameRow(content = {
         })
-        GameRow(content= {
+        GameRow(content = {
             centerRowCards.forEach { pc ->
                 DisplayDraggableCard(card = pc,
                     isMovableUp = false,
                     isMovableDown = (pc.owner == game.player.pseudo),
-                    onDragEndUp = {},
-                    onDragEndDown = {
-                        game.cardQuitCenterRow(pc)
-                    })
+                    onDragEndUpOneRank = {},
+                    onDragEndDown = { game.cardToPlayerRow(pc) })
             }
         })
-        GameRow(content= {
+        GameRow(content = {
             playerRowCards.map { pc ->
                 DisplayDraggableCard(card = pc,
                     isMovableUp = true,
                     isMovableDown = false,
-                    onDragEndUp = {
-                        game.cardToCenterRow(pc)
-                    },
+                    onDragEndUpOneRank = { game.cardToCenterRow(pc) },
                     onDragEndDown = {})
             }
         })
-        GameRow(content= {
+        GameRow(content = {
             handCards.map { pc: PlayCard ->
                 DisplayDraggableCard(modifier = Modifier.zIndex(1f),
                     card = pc,
                     isMovableUp = true,
                     isMovableDown = false,
-                    onDragEndUp = {
-                        game.cardToPlayerRow(pc)
-                    },
-                    onDragEndDown = {})
+                    onDragEndUpOneRank = { game.cardToPlayerRow(pc) },
+                    onDragEndUpTwoRank = { game.cardToCenterRow(pc) },
+                    onDragEndDown = {}
+                )
             }
         })
     }
@@ -118,7 +110,8 @@ fun DisplayDraggableCard(
     card: PlayCard,
     isMovableUp: Boolean,
     isMovableDown: Boolean,
-    onDragEndUp: () -> Unit,
+    onDragEndUpOneRank: () -> Unit,
+    onDragEndUpTwoRank: () -> Unit = onDragEndUpOneRank,
     onDragEndDown: () -> Unit
 ) = key(card) {
     var offsetX by remember { mutableStateOf(0f) }
@@ -143,34 +136,67 @@ fun DisplayDraggableCard(
                     },
                     onDragEnd = {
                         if (isMovableUp && ((startY - offsetY) > Constants.CARD_DRAG_MARGIN)) {
-                            onDragEndUp()
+                            try {
+                                moveVehicle(
+                                    card = card as VehiclePlayCard,
+                                    startY = startY,
+                                    offsetY = offsetY,
+                                    onDragEndUpLow = onDragEndUpOneRank,
+                                    onDragEndUpHigh = onDragEndUpTwoRank
+                                )
+                            } catch (t: Throwable) {
+                                onDragEndUpOneRank()
+                            }
                         } else if (isMovableDown && ((startY - offsetY) < -Constants.CARD_DRAG_MARGIN)) {
                             onDragEndDown()
-                        } else{
-                            offsetY=startY
-                            offsetX=startX
+                        } else {
+                            offsetY = startY
+                            offsetX = startX
                         }
                     })
             },
     ) {
-        DisplayCard(modifier = modifier,
-                    card = card)
+        DisplayCard(
+            modifier = modifier,
+            card = card
+        )
+    }
+}
+
+private fun moveVehicle(
+    card: VehiclePlayCard, startY: Float, offsetY: Float,
+    onDragEndUpLow: () -> Unit,
+    onDragEndUpHigh: () -> Unit
+) {
+    if (startY - offsetY < (Constants.CARD_DRAG_MARGIN + Constants.ROW_HEIGHT)) {
+        onDragEndUpLow()
+    } else {
+        onDragEndUpHigh()
     }
 }
 
 @Composable
-fun GameRow(modifier: Modifier=Modifier,
-            content: @Composable () -> Unit){
-    Row(modifier = modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
-        .background(Color.Gray),
-        horizontalArrangement = Arrangement.spacedBy(Constants.SPACE_BETWEEN_CARDS.dp, Alignment.CenterHorizontally)){
+fun GameRow(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+            .background(Color.Gray),
+        horizontalArrangement = Arrangement.spacedBy(
+            Constants.SPACE_BETWEEN_CARDS.dp,
+            Alignment.CenterHorizontally
+        )
+    ) {
         content()
     }
 }
 
 @Composable
-fun DisplayCard(modifier: Modifier=Modifier,
-                card: PlayCard){
+fun DisplayCard(
+    modifier: Modifier = Modifier,
+    card: PlayCard
+) {
     Column(
         modifier = modifier.fillMaxSize(1f),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -188,19 +214,26 @@ fun DisplayCard(modifier: Modifier=Modifier,
                 contentScale = ContentScale.Crop
             )
 
-            StatsBox(modifier = modifier.align(Alignment.TopEnd),
-                card = card)
+            StatsBox(
+                modifier = modifier.align(Alignment.TopEnd),
+                card = card
+            )
         }
-        CardEtiquette(modifier = modifier.weight(1f),
-            card = card)
+        CardEtiquette(
+            modifier = modifier.weight(1f),
+            card = card
+        )
     }
 }
 
 @Composable
-fun StatsBox(modifier: Modifier=Modifier,
-             card: PlayCard){
+fun StatsBox(
+    modifier: Modifier = Modifier,
+    card: PlayCard
+) {
     Box(
-        modifier = modifier.width(Constants.STATS_BOX_WIDTH.dp).height(Constants.STATS_BOX_HEIGTH.dp)
+        modifier = modifier.width(Constants.STATS_BOX_WIDTH.dp)
+            .height(Constants.STATS_BOX_HEIGTH.dp)
             .clip(shape = Constants.statsBoxShape)
             .border(width = 2.dp, color = Color.Red, shape = Constants.statsBoxShape)
             .background(color = cardColors[card.cardType::class]!!)
@@ -217,8 +250,10 @@ fun StatsBox(modifier: Modifier=Modifier,
 }
 
 @Composable
-fun CardEtiquette(modifier: Modifier=Modifier,
-                  card: PlayCard){
+fun CardEtiquette(
+    modifier: Modifier = Modifier,
+    card: PlayCard
+) {
     Box(
         modifier = modifier
             .fillMaxSize()

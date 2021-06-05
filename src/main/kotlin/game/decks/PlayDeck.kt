@@ -1,10 +1,17 @@
 package game.decks
 
 import game.cards.plays.*
+import game.cards.types.BaseCardType
 import java.lang.IndexOutOfBoundsException
 import kotlin.random.Random
 
 class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>, private var currentCardId: Int) {
+    private val baseCards: List<PlayCard> = cards.filter { pc -> pc::class==BasePlayCard::class}
+
+    init {
+        cards.removeAll(baseCards)
+    }
+
     fun drawCard():PlayCard{
         return drawMultipleCards(1).first()
     }
@@ -14,14 +21,15 @@ class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>, private
         for (x in 0 until nbCards){
             cardsDrawed.add(cards.removeAt(Random.nextInt(cards.size)))
         }
-        cardsDrawed.forEach{
-            it.changePosition(PlayCard.Position.HAND)
-        }
         return cardsDrawed
     }
 
     fun getCards():ArrayList<PlayCard>{
         return cards
+    }
+
+    fun getBaseCards():List<PlayCard>{
+        return baseCards
     }
 
     fun size():Int{
