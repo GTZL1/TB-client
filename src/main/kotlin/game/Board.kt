@@ -20,21 +20,32 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import game.cards.plays.*
-import theme.*
+import game.cards.plays.PlayCard
+import game.cards.plays.VehiclePlayCard
+import game.cards.types.VehicleCardType
+import theme.cardColors
+import theme.cardFont
 
 @Composable
 fun Board(game: Game) {
     val handCards = remember { mutableStateListOf<PlayCard>() }
     val playerRowCards = remember { mutableStateListOf<PlayCard>() }
+    val baseCards = remember { mutableStateListOf<PlayCard>() }
     val centerRowCards = remember { mutableStateListOf<PlayCard>() }
+    val opponentRowCards = remember { mutableStateListOf<PlayCard>() }
+    val playerRowCapacity =
+        game.player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
+
 
     DisposableEffect(Unit) {
         game.player.hand.getAllCards().forEach { pc: PlayCard ->
             handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
         }
         game.player.playDeck.getBaseCards().forEach { pc: PlayCard ->
-            playerRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            baseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+        }
+        game.opponent.playDeck.getBaseCards().forEach { pc: PlayCard ->
+            opponentRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
         }
         onDispose { }
     }
@@ -59,6 +70,7 @@ fun Board(game: Game) {
                     centerRowCards.add(pc)
                     playerRowCards.remove(pc)
                     handCards.remove(pc)
+                    opponentRowCards.remove(pc)
                 }
             }
         game.registerToCenterRow(callback)
@@ -70,20 +82,27 @@ fun Board(game: Game) {
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         GameRow(content = {
+            opponentRowCards.forEach { pc ->
+                DisplayCard(card = pc)
+            }
         })
         GameRow(content = {
             centerRowCards.forEach { pc ->
                 DisplayDraggableCard(card = pc,
                     isMovableUp = false,
-                    isMovableDown = (pc.owner == game.player.pseudo),
+                    isMovableDown = (playerRowCards.size < playerRowCapacity)
+                            && (pc.owner == game.player.pseudo),
                     onDragEndUpOneRank = {},
                     onDragEndDown = { game.cardToPlayerRow(pc) })
             }
         })
         GameRow(content = {
+            baseCards.forEach{
+                DisplayCard(card = it)
+            }
             playerRowCards.map { pc ->
                 DisplayDraggableCard(card = pc,
-                    isMovableUp = true,
+                    isMovableUp = centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
                     isMovableDown = false,
                     onDragEndUpOneRank = { game.cardToCenterRow(pc) },
                     onDragEndDown = {})
@@ -91,14 +110,14 @@ fun Board(game: Game) {
         })
         GameRow(content = {
             handCards.map { pc: PlayCard ->
-                DisplayDraggableCard(modifier = Modifier.zIndex(1f),
-                    card = pc,
-                    isMovableUp = true,
+                DisplayDraggableCard(card = pc,
+                    isMovableUp = playerRowCards.size < playerRowCapacity,
+                    isMovableUpTwoRank = (centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
+                            && (pc.cardType::class==VehicleCardType::class),
                     isMovableDown = false,
                     onDragEndUpOneRank = { game.cardToPlayerRow(pc) },
                     onDragEndUpTwoRank = { game.cardToCenterRow(pc) },
-                    onDragEndDown = {}
-                )
+                    onDragEndDown = {})
             }
         })
     }
@@ -109,11 +128,12 @@ fun DisplayDraggableCard(
     modifier: Modifier = Modifier,
     card: PlayCard,
     isMovableUp: Boolean,
+    isMovableUpTwoRank: Boolean=false,
     isMovableDown: Boolean,
     onDragEndUpOneRank: () -> Unit,
     onDragEndUpTwoRank: () -> Unit = onDragEndUpOneRank,
     onDragEndDown: () -> Unit
-) = key(card) {
+) = key(card, isMovableUp, isMovableUpTwoRank, isMovableDown) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     val startY = offsetY
@@ -121,26 +141,23 @@ fun DisplayDraggableCard(
     Box(
         modifier = modifier
             .offset(offsetX.dp, offsetY.dp)
-            .clickable(enabled = true, onClick = {})
-            .width(Constants.CARD_WIDTH.dp).height(Constants.CARD_HEIGHT.dp)
-            .clip(shape = Constants.cardShape)
-            .border(width = 2.dp, color = Color.Red, shape = Constants.cardShape)
             .pointerInput(key1 = null) {
                 detectDragGestures(
                     onDrag = { change, dragAmount ->
                         change.consumeAllChanges()
-                        if (isMovableUp || isMovableDown) {
+                        if (isMovableUp || isMovableDown || isMovableUpTwoRank) {
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
                         }
                     },
                     onDragEnd = {
-                        if (isMovableUp && ((startY - offsetY) > Constants.CARD_DRAG_MARGIN)) {
+                        if ((isMovableUp || isMovableUpTwoRank) && ((startY - offsetY) > Constants.CARD_DRAG_MARGIN)) {
                             try {
                                 moveVehicle(
                                     card = card as VehiclePlayCard,
                                     startY = startY,
                                     offsetY = offsetY,
+                                    isMovableUpLow = isMovableUp,
                                     onDragEndUpLow = onDragEndUpOneRank,
                                     onDragEndUpHigh = onDragEndUpTwoRank
                                 )
@@ -165,10 +182,11 @@ fun DisplayDraggableCard(
 
 private fun moveVehicle(
     card: VehiclePlayCard, startY: Float, offsetY: Float,
+    isMovableUpLow: Boolean,
     onDragEndUpLow: () -> Unit,
     onDragEndUpHigh: () -> Unit
 ) {
-    if (startY - offsetY < (Constants.CARD_DRAG_MARGIN + Constants.ROW_HEIGHT)) {
+    if (isMovableUpLow && (startY - offsetY < (Constants.CARD_DRAG_MARGIN + Constants.ROW_HEIGHT))) {
         onDragEndUpLow()
     } else {
         onDragEndUpHigh()
@@ -178,7 +196,7 @@ private fun moveVehicle(
 @Composable
 fun GameRow(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Row(
         modifier = modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
@@ -197,32 +215,38 @@ fun DisplayCard(
     modifier: Modifier = Modifier,
     card: PlayCard
 ) {
-    Column(
-        modifier = modifier.fillMaxSize(1f),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+        modifier = modifier.clickable(enabled = true, onClick = {})
+            .width(Constants.CARD_WIDTH.dp).height(Constants.CARD_HEIGHT.dp)
+            .clip(shape = Constants.cardShape)
+            .border(width = 2.dp, color = Color.Red, shape = Constants.cardShape)
     ) {
-        Box(
-            modifier = Modifier
-                .weight(2.5f)
-                .fillMaxSize()
-                .clip(shape = Constants.topCardShape)
-        )
-        {
-            Image(
-                bitmap = imageResource("card_images/" + card.cardType.name.lowercase() + ".jpg"),
-                contentDescription = "Image of the card",
-                contentScale = ContentScale.Crop
+        Column(
+            modifier = modifier.fillMaxSize(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(2.5f)
+                    .fillMaxSize()
+                    .clip(shape = Constants.topCardShape)
             )
-
-            StatsBox(
-                modifier = modifier.align(Alignment.TopEnd),
+            {
+                Image(
+                    bitmap = imageResource("card_images/" + card.cardType.name.lowercase() + ".jpg"),
+                    contentDescription = "Image of the card",
+                    contentScale = ContentScale.Crop
+                )
+                StatsBox(
+                    modifier = modifier.align(Alignment.TopEnd),
+                    card = card
+                )
+            }
+            CardEtiquette(
+                modifier = modifier.weight(1f),
                 card = card
             )
         }
-        CardEtiquette(
-            modifier = modifier.weight(1f),
-            card = card
-        )
     }
 }
 

@@ -17,6 +17,8 @@ object Constants {
 
     const val WINDOW_WIDTH = (MAX_CARDS_ON_ROW + 1) * (CARD_WIDTH + SPACE_BETWEEN_CARDS)
     const val WINDOW_HEIGHT = 1010
+    const val CENTER_ROW_CAPACITY=6
+    const val PLAYER_ROW_CAPACITY=2
 
     private const val SHAPE_SIZE=5
     val cardShape= CutCornerShape(SHAPE_SIZE.dp)
