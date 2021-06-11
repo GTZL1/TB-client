@@ -69,7 +69,7 @@ fun main(args: Array<String>): Unit {
                 val opponent= runBlocking { websocket.receiveOne() }
 
                 val game = Game(
-                    Date.from(Instant.now()), httpClient, idSession = idSession.value,
+                    Date.from(Instant.now()), websocket, idSession = idSession.value,
                     player = player,
                     opponent = Player(pseudo = opponent.getString("username"),
                                         deckType =  login.generateDeck(cardTypes,opponent.getJSONObject("deckType")))

@@ -1,6 +1,7 @@
 package network
 
 import Constants
+import game.Position
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
@@ -84,4 +85,10 @@ data class PlayerInitialization(
     val type: String="player",
     val username:String,
     val deckType:JSONObject
+)
+
+data class CardMovement(
+    val owner: String,
+    val id: Int,
+    val position: Position
 )

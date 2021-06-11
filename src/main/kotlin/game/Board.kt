@@ -36,7 +36,6 @@ fun Board(game: Game) {
     val playerRowCapacity =
         game.player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
 
-
     DisposableEffect(Unit) {
         game.player.hand.getAllCards().forEach { pc: PlayCard ->
             handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
@@ -77,6 +76,17 @@ fun Board(game: Game) {
         onDispose { game.unregisterToCenterRow(callback) }
     }
 
+    DisposableEffect(game) {
+        val callback =
+            object : GameCallback {
+                override fun onNewCard(pc: PlayCard) {
+                    opponentRowCards.add(pc)
+                }
+            }
+        game.registerToOpponentRow(callback)
+        onDispose { game.unregisterToOpponentRow(callback) }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(1f),
         verticalArrangement = Arrangement.SpaceBetween,
@@ -93,30 +103,34 @@ fun Board(game: Game) {
                     isMovableDown = (playerRowCards.size < playerRowCapacity)
                             && (pc.owner == game.player.pseudo),
                     onDragEndUpOneRank = {},
-                    onDragEndDown = { game.cardToPlayerRow(pc) })
+                    onDragEndDown = { game.cardToPlayerRow(pc)
+                    game.notifyMovement(pc, Position.PLAYER)})
             }
         })
         GameRow(content = {
             baseCards.forEach{
                 DisplayCard(card = it)
             }
-            playerRowCards.map { pc ->
+            playerRowCards.forEach { pc ->
                 DisplayDraggableCard(card = pc,
                     isMovableUp = centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
                     isMovableDown = false,
-                    onDragEndUpOneRank = { game.cardToCenterRow(pc) },
+                    onDragEndUpOneRank = { game.cardToCenterRow(pc)
+                                         game.notifyMovement(pc, Position.CENTRAL)},
                     onDragEndDown = {})
             }
         })
         GameRow(content = {
-            handCards.map { pc: PlayCard ->
+            handCards.forEach { pc: PlayCard ->
                 DisplayDraggableCard(card = pc,
                     isMovableUp = playerRowCards.size < playerRowCapacity,
                     isMovableUpTwoRank = (centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
                             && (pc.cardType::class==VehicleCardType::class),
                     isMovableDown = false,
-                    onDragEndUpOneRank = { game.cardToPlayerRow(pc) },
-                    onDragEndUpTwoRank = { game.cardToCenterRow(pc) },
+                    onDragEndUpOneRank = { game.cardToPlayerRow(pc)
+                                         game.notifyMovement(pc, Position.PLAYER)},
+                    onDragEndUpTwoRank = { game.cardToCenterRow(pc)
+                                        game.notifyMovement(pc, Position.CENTRAL)},
                     onDragEndDown = {})
             }
         })
@@ -130,6 +144,8 @@ fun DisplayDraggableCard(
     isMovableUp: Boolean,
     isMovableUpTwoRank: Boolean=false,
     isMovableDown: Boolean,
+    //positionUp: Game.Position,
+    //positionDown: Game.Position=Game.Position.PLAYER_ROW,
     onDragEndUpOneRank: () -> Unit,
     onDragEndUpTwoRank: () -> Unit = onDragEndUpOneRank,
     onDragEndDown: () -> Unit

@@ -4,7 +4,6 @@ import game.cards.types.CardType
 
 abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
     private var health = cardType.life
-    private var position= Position.DECK
 
     fun getHealth(): Int {
         return health
@@ -12,14 +11,6 @@ abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) 
 
     fun takeDamage(damage: Int) {
         health -= damage
-    }
-
-    fun getPosition():Position{
-        return position
-    }
-
-    fun changePosition(newPos: Position){
-        position=newPos
     }
 
     override fun equals(other: Any?): Boolean {
@@ -38,9 +29,5 @@ abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) 
         result = 31 * result + owner.hashCode()
         result = 31 * result + id
         return result
-    }
-
-    enum class Position {
-        DECK, HAND, PLAYER_ROW, CENTRAL_ROW, DISCARD
     }
 }
