@@ -24,6 +24,14 @@ class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>, private
         return cardsDrawed
     }
 
+    fun drawHand(): List<PlayCard>{
+        return drawMultipleCards(Constants.NB_CARDS_HAND)
+    }
+
+    fun addCard(card: PlayCard){
+        cards.add(card)
+    }
+
     fun getCards():ArrayList<PlayCard>{
         return cards
     }

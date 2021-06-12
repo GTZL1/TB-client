@@ -2,7 +2,6 @@ package game
 
 import game.cards.plays.PlayCard
 import game.player.Player
-import io.ktor.client.*
 import network.CardMovement
 import network.WebSocketHandler
 import org.json.JSONObject
@@ -34,14 +33,15 @@ class Game(
     private val playerRowCallback = mutableListOf<GameCallback>()
     private val toCenterRowCallback = mutableListOf<GameCallback>()
     private val toDiscardCallback = mutableListOf<GameCallback>()
-    private val opponentRowCallback= mutableListOf<GameCallback>()
+    private val opponentRowCallback = mutableListOf<GameCallback>()
 
     override fun cardToPlayerRow(card: PlayCard) {
         playerRowCallback.forEach { it.onNewCard(pc = card) }
     }
 
     override fun cardToCenterRow(card: PlayCard) {
-        toCenterRowCallback.forEach { it.onNewCard(pc = card) } }
+        toCenterRowCallback.forEach { it.onNewCard(pc = card) }
+    }
 
     override fun cardToDiscard(card: PlayCard) {
         toDiscardCallback.forEach { it.onNewCard(pc = card) }
@@ -83,11 +83,29 @@ class Game(
         opponentRowCallback.remove(callback)
     }
 
-    internal fun notifyMovement(card: PlayCard, position: Position){
-        webSocketHandler.sendMessage(JSONObject(CardMovement(card.owner, card.id, position)))
+    internal fun notifyMovement(card: PlayCard, position: Position) {
+        webSocketHandler.sendMessage(
+            JSONObject(
+                CardMovement(
+                    owner = card.owner,
+                    id = card.id,
+                    position = position
+                )
+            )
+        )
+    }
+
+    internal suspend fun receiveMessages(handleMovement: (Game, String, Int, Position) -> Unit, game: Game) {
+        for(msg in webSocketHandler.msgReceived){
+            if(msg.getString("type").equals(Constants.CARD_MOVEMENT)){
+                handleMovement(game,msg.getString("owner"), msg.getInt("id"),
+                    Position.valueOf(msg.getString("position"))
+                )
+            }
+        }
     }
 }
 
 enum class Position {
-    DECK, HAND, PLAYER, CENTRAL, DISCARD
+    DECK, HAND, PLAYER, CENTRAL, DISCARD, OPPONENT
 }
