@@ -74,6 +74,7 @@ fun main(args: Array<String>): Unit {
                     opponent = Player(pseudo = opponent.getString("username"),
                                         deckType =  login.generateDeck(cardTypes,opponent.getJSONObject("deckType")))
                 )
+                game.determineFirst()
                 Board(game)
             }
         }

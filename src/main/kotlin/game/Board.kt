@@ -108,79 +108,91 @@ fun Board(game: Game) {
         onDispose { game.unregisterToOpponentRow(callback) }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize(1f),
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        // Opponent
-        GameRow(content = {
-            opponentRowCards.forEach { pc ->
-                DisplayCard(card = pc, game = game, toPlayer = (pc.owner == game.player.pseudo))
-            }
-        })
-        // Center row
-        GameRow(content = {
-            centerRowCards.forEach { pc ->
-                DisplayDraggableCard(card = pc, game = game,
-                    toPlayer = (pc.owner == game.player.pseudo),
-                    isMovableUp = false,
-                    isMovableDown = ((playerRowCards.size < playerRowCapacity)
-                            && (pc.owner == game.player.pseudo)),
-                    onDragEndUpOneRank = {},
-                    onDragEndDown = {
-                        game.cardToPlayerRow(pc)
-                        game.notifyMovement(pc, Position.PLAYER)
-                    })
-            }
-        })
-        // Player row
-        GameRow(content = {
-            baseCards.forEach {
-                DisplayCard(card = it, game = game, toPlayer = (it.owner == game.player.pseudo))
-            }
-            playerRowCards.forEach { pc ->
-                DisplayDraggableCard(card = pc, game = game,
-                    toPlayer = (pc.owner == game.player.pseudo),
-                    isMovableUp = centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
-                    isMovableDown = false,
-                    onDragEndUpOneRank = {
-                        game.cardToCenterRow(pc)
-                        game.notifyMovement(pc, Position.CENTER)
-                    },
-                    onDragEndDown = {})
-            }
-        })
-        // Hand
-        GameRow(content = {
-            handCards.forEach { pc: PlayCard ->
-                DisplayDraggableCard(card = pc, game = game,
-                    toPlayer = (pc.owner == game.player.pseudo),
-                    isMovableUp = playerRowCards.size < playerRowCapacity,
-                    isMovableUpTwoRank = (centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
-                            && (pc.cardType::class == VehicleCardType::class),
-                    isMovableDown = false,
-                    onDragEndUpOneRank = {
-                        if (pc.cardType::class != SpyCardType::class) {
+    Row() {
+
+
+        Column(
+            modifier = Modifier.fillMaxHeight()
+                .width(Constants.CARD_WIDTH.dp)
+                .background(color = Color.Red)
+        ) {
+
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize(1f),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            // Opponent
+            GameRow(content = {
+                opponentRowCards.forEach { pc ->
+                    DisplayCard(card = pc, game = game, toPlayer = (pc.owner == game.player.pseudo))
+                }
+            })
+            // Center row
+            GameRow(content = {
+                centerRowCards.forEach { pc ->
+                    DisplayDraggableCard(card = pc, game = game,
+                        toPlayer = (pc.owner == game.player.pseudo),
+                        isMovableUp = false,
+                        isMovableDown = ((playerRowCards.size < playerRowCapacity)
+                                && (pc.owner == game.player.pseudo)),
+                        onDragEndUpOneRank = {},
+                        onDragEndDown = {
                             game.cardToPlayerRow(pc)
                             game.notifyMovement(pc, Position.PLAYER)
-                        } else {
-                            game.cardToOpponentRow(pc)
-                            (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
-                            game.opponent.playDeck.addCard(pc)
-                            game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
-                                .forEach { pc: PlayCard ->
-                                    handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
-                                }
-                            game.notifyMovement(pc, Position.OPPONENT)
-                        }
-                    },
-                    onDragEndUpTwoRank = {
-                        game.cardToCenterRow(pc)
-                        game.notifyMovement(pc, Position.CENTER)
-                    },
-                    onDragEndDown = {})
-            }
-        })
+                        })
+                }
+            })
+            // Player row
+            GameRow(content = {
+                baseCards.forEach {
+                    DisplayCard(card = it, game = game, toPlayer = (it.owner == game.player.pseudo))
+                }
+                playerRowCards.forEach { pc ->
+                    DisplayDraggableCard(card = pc, game = game,
+                        toPlayer = (pc.owner == game.player.pseudo),
+                        isMovableUp = centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
+                        isMovableDown = false,
+                        onDragEndUpOneRank = {
+                            game.cardToCenterRow(pc)
+                            game.notifyMovement(pc, Position.CENTER)
+                        },
+                        onDragEndDown = {})
+                }
+            })
+            // Hand
+            GameRow(content = {
+                handCards.forEach { pc: PlayCard ->
+                    DisplayDraggableCard(card = pc, game = game,
+                        toPlayer = (pc.owner == game.player.pseudo),
+                        isMovableUp = playerRowCards.size < playerRowCapacity,
+                        isMovableUpTwoRank = (centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
+                                && (pc.cardType::class == VehicleCardType::class),
+                        isMovableDown = false,
+                        onDragEndUpOneRank = {
+                            if (pc.cardType::class != SpyCardType::class) {
+                                game.cardToPlayerRow(pc)
+                                game.notifyMovement(pc, Position.PLAYER)
+                            } else {
+                                game.cardToOpponentRow(pc)
+                                (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
+                                game.opponent.playDeck.addCard(pc)
+                                game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
+                                    .forEach { pc: PlayCard ->
+                                        handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+                                    }
+                                game.notifyMovement(pc, Position.OPPONENT)
+                            }
+                        },
+                        onDragEndUpTwoRank = {
+                            game.cardToCenterRow(pc)
+                            game.notifyMovement(pc, Position.CENTER)
+                        },
+                        onDragEndDown = {})
+                }
+            })
+        }
     }
 }
 

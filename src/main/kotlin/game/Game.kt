@@ -5,11 +5,14 @@ import androidx.compose.runtime.MutableState
 import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
 import game.player.Player
+import kotlinx.coroutines.runBlocking
 import network.CardMovement
+import network.SimpleMessage
 import network.WebSocketHandler
 import org.json.JSONObject
 import java.util.*
 import kotlin.math.abs
+import kotlin.random.Random.Default.nextInt
 
 interface GameCallback {
     fun onNewCard(pc: PlayCard)
@@ -41,6 +44,17 @@ class Game(
 
     private lateinit var oldCard: PlayCard
     private lateinit var oldClicked: MutableState<Boolean>
+
+    fun determineFirst() {
+        var num:Int
+        do {
+            num= abs(nextInt()%2)
+            webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
+            val msg =runBlocking { webSocketHandler.receiveOne() }
+        } while (msg.getInt("type") == num)
+        player.beginsGame=((num) > 0)
+        println(player.beginsGame)
+    }
 
     override fun cardToPlayerRow(card: PlayCard) {
         playerRowCallback.forEach { it.onNewCard(pc = card) }
