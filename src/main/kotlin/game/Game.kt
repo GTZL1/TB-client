@@ -1,6 +1,8 @@
 package game
 
+import androidx.compose.runtime.MutableState
 import game.cards.plays.PlayCard
+import game.cards.plays.UnitPlayCard
 import game.player.Player
 import network.CardMovement
 import network.WebSocketHandler
@@ -34,6 +36,9 @@ class Game(
     private val toCenterRowCallback = mutableListOf<GameCallback>()
     private val toDiscardCallback = mutableListOf<GameCallback>()
     private val opponentRowCallback = mutableListOf<GameCallback>()
+
+    private lateinit var oldCard:PlayCard
+    private lateinit var oldClicked: MutableState<Boolean>
 
     override fun cardToPlayerRow(card: PlayCard) {
         playerRowCallback.forEach { it.onNewCard(pc = card) }
@@ -102,6 +107,28 @@ class Game(
                     Position.valueOf(msg.getString("position"))
                 )
             }
+        }
+    }
+
+    internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard){
+        clicked.value=true
+        if(this::oldCard.isInitialized){
+            if (card.owner==oldCard.owner){
+                oldClicked.value=false
+                //clicked.value=false
+                oldCard=card
+                oldClicked=clicked
+            } else if(oldCard.owner==player.pseudo){
+                oldClicked.value=false
+                clicked.value=false
+                try {
+                    (oldCard as UnitPlayCard).attack(card)
+                } catch (t: Throwable){
+                }
+            }
+        } else {
+            oldCard=card
+            oldClicked=clicked
         }
     }
 }

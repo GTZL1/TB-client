@@ -38,8 +38,8 @@ fun main(args: Array<String>): Unit {
     )
 
     Window(title = "HEIG game", size = IntSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT)) {
-        val idSession = remember { mutableStateOf((9)) }
-        val username = remember { mutableStateOf("aloy") }
+        val idSession = remember { mutableStateOf(args[0].toInt()) }
+        val username = remember { mutableStateOf(args[1]) }
         val screenState = remember { mutableStateOf(Screen.BOARD) }
         val login = Login(
             httpClient = httpClient,
