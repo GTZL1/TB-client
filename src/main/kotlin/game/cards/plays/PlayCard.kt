@@ -1,9 +1,11 @@
 package game.cards.plays
 
-import game.cards.types.CardType
+import game.Position
+import game.cards.types.*
 
 abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
     private var health = cardType.life
+    private var position=Position.DECK
 
     fun getHealth(): Int {
         return health
@@ -11,6 +13,14 @@ abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) 
 
     fun takeDamage(damage: Int) {
         health -= damage
+    }
+
+    fun getPosition():Position{
+        return position
+    }
+
+    fun changePosition(position: Position){
+        this.position=position
     }
 
     override fun equals(other: Any?): Boolean {

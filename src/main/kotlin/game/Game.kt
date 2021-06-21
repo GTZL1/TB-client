@@ -1,5 +1,6 @@
 package game
 
+import Constants
 import androidx.compose.runtime.MutableState
 import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
@@ -8,6 +9,7 @@ import network.CardMovement
 import network.WebSocketHandler
 import org.json.JSONObject
 import java.util.*
+import kotlin.math.abs
 
 interface GameCallback {
     fun onNewCard(pc: PlayCard)
@@ -37,7 +39,7 @@ class Game(
     private val toDiscardCallback = mutableListOf<GameCallback>()
     private val opponentRowCallback = mutableListOf<GameCallback>()
 
-    private lateinit var oldCard:PlayCard
+    private lateinit var oldCard: PlayCard
     private lateinit var oldClicked: MutableState<Boolean>
 
     override fun cardToPlayerRow(card: PlayCard) {
@@ -100,39 +102,47 @@ class Game(
         )
     }
 
-    internal suspend fun receiveMessages(handleMovement: (Game, String, Int, Position) -> Unit, game: Game) {
-        for(msg in webSocketHandler.msgReceived){
-            if(msg.getString("type").equals(Constants.CARD_MOVEMENT)){
-                handleMovement(game,msg.getString("owner"), msg.getInt("id"),
+    internal suspend fun receiveMessages(
+        handleMovement: (Game, String, Int, Position) -> Unit,
+        game: Game
+    ) {
+        for (msg in webSocketHandler.msgReceived) {
+            if (msg.getString("type").equals(Constants.CARD_MOVEMENT)) {
+                handleMovement(
+                    game, msg.getString("owner"), msg.getInt("id"),
                     Position.valueOf(msg.getString("position"))
                 )
             }
         }
     }
 
-    internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard){
-        clicked.value=true
-        if(this::oldCard.isInitialized){
-            if (card.owner==oldCard.owner){
-                oldClicked.value=false
-                //clicked.value=false
-                oldCard=card
-                oldClicked=clicked
-            } else if(oldCard.owner==player.pseudo){
-                oldClicked.value=false
-                clicked.value=false
-                try {
-                    (oldCard as UnitPlayCard).attack(card)
-                } catch (t: Throwable){
+    internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard) {
+        clicked.value = true
+        if ((this::oldCard.isInitialized) && (card!=oldCard)) {
+            oldClicked.value=false
+            if (card.owner == oldCard.owner) {
+                oldCard = card
+                oldClicked = clicked
+            } else if ((oldCard.owner == player.pseudo)
+            ) {
+                clicked.value = false
+                if (canAttack(card.getPosition(), oldCard.getPosition())){
+                    try {
+                        (oldCard as UnitPlayCard).attack(card)
+                    } catch (t: Throwable) { }
                 }
             }
         } else {
-            oldCard=card
-            oldClicked=clicked
+            oldCard = card
+            oldClicked = clicked
         }
+    }
+
+    private fun canAttack(posCard1: Position, posCard2: Position): Boolean {
+        return abs(posCard1.ordinal - posCard2.ordinal) <= 1
     }
 }
 
 enum class Position {
-    DECK, HAND, PLAYER, CENTRAL, DISCARD, OPPONENT
+    DECK, HAND, PLAYER, CENTER, OPPONENT, DISCARD
 }

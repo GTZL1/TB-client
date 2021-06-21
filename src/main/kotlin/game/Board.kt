@@ -7,7 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,16 +51,20 @@ fun Board(game: Game) {
     DisposableEffect(Unit) {
         game.player.playDeck.drawHand().forEach { pc: PlayCard ->
             handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            handCards.last().changePosition(Position.HAND)
         }
         game.player.playDeck.getBaseCards().forEach { pc: PlayCard ->
             baseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            baseCards.last().changePosition(Position.PLAYER)
         }
         game.opponent.playDeck.getBaseCards().forEach { pc: PlayCard ->
             opponentRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            opponentRowCards.last().changePosition(Position.OPPONENT)
         }
         onDispose { }
     }
 
+    //to player row
     DisposableEffect(game) {
         val callback =
             object : GameCallback {
@@ -69,12 +72,13 @@ fun Board(game: Game) {
                     playerRowCards.add(pc)
                     handCards.remove(pc)
                     centerRowCards.remove(pc)
+                    pc.changePosition(Position.PLAYER)
                 }
             }
         game.registerToPlayerRow(callback)
         onDispose { game.unregisterToPlayerRow(callback) }
     }
-
+    //to center row
     DisposableEffect(game) {
         val callback =
             object : GameCallback {
@@ -83,12 +87,13 @@ fun Board(game: Game) {
                     playerRowCards.remove(pc)
                     handCards.remove(pc)
                     opponentRowCards.remove(pc)
+                    pc.changePosition(Position.CENTER)
                 }
             }
         game.registerToCenterRow(callback)
         onDispose { game.unregisterToCenterRow(callback) }
     }
-
+    //to opponent row
     DisposableEffect(game) {
         val callback =
             object : GameCallback {
@@ -96,6 +101,7 @@ fun Board(game: Game) {
                     opponentRowCards.add(pc)
                     centerRowCards.remove(pc)
                     handCards.remove(pc)
+                    pc.changePosition(Position.OPPONENT)
                 }
             }
         game.registerToOpponentRow(callback)
@@ -139,7 +145,7 @@ fun Board(game: Game) {
                     isMovableDown = false,
                     onDragEndUpOneRank = {
                         game.cardToCenterRow(pc)
-                        game.notifyMovement(pc, Position.CENTRAL)
+                        game.notifyMovement(pc, Position.CENTER)
                     },
                     onDragEndDown = {})
             }
@@ -170,7 +176,7 @@ fun Board(game: Game) {
                     },
                     onDragEndUpTwoRank = {
                         game.cardToCenterRow(pc)
-                        game.notifyMovement(pc, Position.CENTRAL)
+                        game.notifyMovement(pc, Position.CENTER)
                     },
                     onDragEndDown = {})
             }
@@ -260,7 +266,7 @@ private fun applyMovement(game: Game, owner: String, id: Int, position: Position
                     .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
             )
         }
-        Position.CENTRAL -> {
+        Position.CENTER -> {
             game.cardToCenterRow(
                 (game.opponent.playDeck.getCards()
                     .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
@@ -301,7 +307,6 @@ fun DisplayCard(
     card: PlayCard,
     toPlayer: Boolean
 ) = key(card, game, toPlayer){
-   // val color = remember { mutableStateOf(Color.Red) }
     val clicked = remember { mutableStateOf(false) }
     val hover = remember { mutableStateOf(false) }
     Box(
@@ -313,10 +318,6 @@ fun DisplayCard(
             .clickable(enabled = true, onClick = {
                     game.handleClick(clicked, card)
             })
-            /*.toggleable(
-                value = clicked.value,
-                enabled = true,
-                onValueChange = { game.handleClick(clicked, card) })*/
             .width(Constants.CARD_WIDTH.dp).height(Constants.CARD_HEIGHT.dp)
             .clip(shape = Constants.cardShape)
             .border(
