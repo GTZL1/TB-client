@@ -77,7 +77,7 @@ class WebSocketHandler {
 }
 
 data class SimpleMessage(
-    val type: Any= Constants.CONNECTION_INIT_MESSAGE
+    val type: String= Constants.CONNECTION_INIT_MESSAGE
 )
 
 data class PlayerInitialization(
