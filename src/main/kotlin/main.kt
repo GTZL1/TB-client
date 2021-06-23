@@ -36,6 +36,7 @@ fun main(args: Array<String>): Unit {
         Pair("spy", SpyCardType::class),
         Pair("base", BaseCardType::class)
     )
+    lateinit var game: Game
 
     Window(title = "HEIG game", size = IntSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT)) {
         val idSession = remember { mutableStateOf(args[0].toInt()) }
@@ -68,7 +69,7 @@ fun main(args: Array<String>): Unit {
                 websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
                 val opponent= runBlocking { websocket.receiveOne() }
 
-                val game = Game(
+                game = Game(
                     Date.from(Instant.now()), websocket, idSession = idSession.value,
                     player = player,
                     opponent = Player(pseudo = opponent.getString("username"),

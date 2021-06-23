@@ -97,7 +97,7 @@ fun Board(game: Game) {
                 override fun onNewCard(pc: PlayCard) {
                     opponentRowCards.add(pc)
                     centerRowCards.remove(pc)
-                    handCards.remove(pc)
+                    //handCards.remove(pc)
                     pc.changePosition(Position.OPPONENT)
                 }
             }

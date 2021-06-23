@@ -1,11 +1,8 @@
 package game
 
 import Constants
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
 import game.player.Player
@@ -41,12 +38,13 @@ interface TurnCallback {
 }*/
 
 class Game(
-    private val date: Date, val webSocketHandler: WebSocketHandler, private val idSession: Int,
+    private val date: Date, private val webSocketHandler: WebSocketHandler, private val idSession: Int,
     val player: Player, val opponent: Player
 )  {
+    private val handRowCallback = mutableListOf<GameCallback>()
     private val playerRowCallback = mutableListOf<GameCallback>()
-    private val toCenterRowCallback = mutableListOf<GameCallback>()
-    private val toDiscardCallback = mutableListOf<GameCallback>()
+    private val centerRowCallback = mutableListOf<GameCallback>()
+    private val discardCallback = mutableListOf<GameCallback>()
     private val opponentRowCallback = mutableListOf<GameCallback>()
     private val turnCallback= mutableListOf<TurnCallback>()
 
@@ -55,20 +53,35 @@ class Game(
 
     var playerTurn= false
 
+    val handCards= mutableStateListOf<PlayCard>()
+    val playerRowCards = mutableStateListOf<PlayCard>()
+    val baseCards = mutableListOf<PlayCard>()
+    val centerRowCards = mutableStateListOf<PlayCard>()
+    val opponentRowCards = mutableStateListOf<PlayCard>()
+
     fun cardToPlayerRow(card: PlayCard) {
-        playerRowCallback.forEach { it.onNewCard(pc = card) }
+        playerRowCallback.forEach { it.onNewCard(pc = card)}
+        //handRowCallback.forEach { it.onNewCard(pc = card) }
     }
 
     fun cardToCenterRow(card: PlayCard) {
-        toCenterRowCallback.forEach { it.onNewCard(pc = card) }
+        centerRowCallback.forEach { it.onNewCard(pc = card) }
     }
 
     fun cardToDiscard(card: PlayCard) {
-        toDiscardCallback.forEach { it.onNewCard(pc = card) }
+        discardCallback.forEach { it.onNewCard(pc = card) }
     }
 
     fun cardToOpponentRow(card: PlayCard) {
         opponentRowCallback.forEach { it.onNewCard(pc = card) }
+    }
+
+    fun registerToHandRow(callback: GameCallback) {
+        handRowCallback.add(callback)
+    }
+
+    fun unregisterToHandRow(callback: GameCallback) {
+        handRowCallback.remove(callback)
     }
 
     fun registerToPlayerRow(callback: GameCallback) {
@@ -80,19 +93,19 @@ class Game(
     }
 
     fun registerToCenterRow(callback: GameCallback) {
-        toCenterRowCallback.add(callback)
+        centerRowCallback.add(callback)
     }
 
     fun unregisterToCenterRow(callback: GameCallback) {
-        toCenterRowCallback.remove(callback)
+        centerRowCallback.remove(callback)
     }
 
     fun registerToDiscard(callback: GameCallback) {
-        toDiscardCallback.add(callback)
+        discardCallback.add(callback)
     }
 
     fun unregisterToDiscard(callback: GameCallback) {
-        toDiscardCallback.remove(callback)
+        discardCallback.remove(callback)
     }
 
     fun registerToOpponentRow(callback: GameCallback) {
@@ -224,3 +237,57 @@ fun notifyChangeTurn(game: Game): Boolean {
     }
     return state
 }
+
+/*
+@Composable
+fun getHandCards(game: Game): State<MutableList<PlayCard>> {
+    var cards = remember { mutableStateOf(game.handCards) }
+    DisposableEffect(game) {
+        val callback =
+            object : GameCallback {
+                override fun onNewCard(pc: PlayCard) {
+                    cards.value=game.handCards
+                }
+            }
+        game.registerToHandRow(callback)
+        onDispose { game.unregisterToHandRow(callback) }
+    }
+    return cards
+}
+
+@Composable
+fun getPlayerRowCards(game: Game): State<MutableList<PlayCard>>{
+    var cards = remember { mutableStateOf(game.playerRowCards) }
+    DisposableEffect(game) {
+        val callback =
+            object : GameCallback {
+                override fun onNewCard(pc: PlayCard) {
+                    cards.value=game.playerRowCards
+                    println("player row callback ")
+                }
+            }
+        game.registerToPlayerRow(callback)
+        onDispose { game.unregisterToPlayerRow(callback) }
+    }
+    return cards
+}
+
+//fun baseCards(): List<PlayCard>{}
+
+@Composable
+fun getCenterRowCards(game: Game): List<PlayCard>{
+    val cards = remember { mutableStateOf(game.centerRowCards) }
+    DisposableEffect(game) {
+        val callback =
+            object : GameCallback {
+                override fun onNewCard(pc: PlayCard) {
+                    cards.value=game.centerRowCards
+                }
+            }
+        game.registerToCenterRow(callback)
+        onDispose { game.registerToCenterRow(callback) }
+    }
+    return cards.value
+}
+//fun opponentRowCards(): List<PlayCard>{}
+*/
