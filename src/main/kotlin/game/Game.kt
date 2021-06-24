@@ -56,8 +56,11 @@ class Game(
     val baseCards = mutableStateListOf<PlayCard>()
     val centerRowCards = mutableStateListOf<PlayCard>()
     val opponentRowCards = mutableStateListOf<PlayCard>()
+    val discardCards = mutableStateListOf<PlayCard>()
 
     private val cardsAlreadyActed= mutableListOf<Int>()
+
+    internal var cardsMovedFromHand= mutableStateOf(0)
 
     init {
         player.playDeck.drawHand().forEach { pc: PlayCard ->
@@ -76,7 +79,9 @@ class Game(
 
     fun cardToPlayerRow(card: PlayCard) {
         playerRowCards.add(card)
-        handCards.remove(card)
+        if(handCards.remove(card)){
+            cardsMovedFromHand.value += 1
+        }
         centerRowCards.remove(card)
         card.changePosition(Position.PLAYER)
         cardsAlreadyActed.add(card.id)
@@ -85,7 +90,9 @@ class Game(
     fun cardToCenterRow(card: PlayCard) {
         centerRowCards.add(card)
         playerRowCards.remove(card)
-        handCards.remove(card)
+        if(handCards.remove(card)){
+            cardsMovedFromHand.value += 1
+        }
         opponentRowCards.remove(card)
         card.changePosition(Position.CENTER)
         cardsAlreadyActed.add(card.id)
@@ -98,7 +105,9 @@ class Game(
     fun cardToOpponentRow(card: PlayCard) {
         opponentRowCards.add(card)
         centerRowCards.remove(card)
-        handCards.remove(card)
+        if(handCards.remove(card)){
+            cardsMovedFromHand.value += 1
+        }
         card.changePosition(Position.OPPONENT)
     }
 
@@ -174,6 +183,7 @@ class Game(
             )
             playerTurn=!playerTurn
             cardsAlreadyActed.clear()
+            cardsMovedFromHand.value=0
             turnCallback.forEach { it.onChangeTurn() }
         }
     }
@@ -195,6 +205,7 @@ class Game(
                 Constants.CHANGE_TURN -> {
                     playerTurn=!playerTurn
                     cardsAlreadyActed.clear()
+                    cardsMovedFromHand.value=0
                     turnCallback.forEach { it.onChangeTurn() }
                 }
             }

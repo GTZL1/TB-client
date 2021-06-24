@@ -171,11 +171,14 @@ fun Board(game: Game) {
             })
             // Hand
             GameRow(content = {
+                println(game.cardsMovedFromHand.value)
                 game.handCards.forEach { pc: PlayCard ->
                     DisplayDraggableCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
-                        isMovableUp = game.playerRowCards.size < playerRowCapacity,
-                        isMovableUpTwoRank = (game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
+                        isMovableUp = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
+                                && (game.playerRowCards.size < playerRowCapacity),
+                        isMovableUpTwoRank = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
+                                && (game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
                                 && (pc.cardType::class == VehicleCardType::class),
                         isMovableDown = false,
                         onDragEndUpOneRank = {
