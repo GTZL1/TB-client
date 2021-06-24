@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.IntSize
 import game.Game
 import game.cards.types.*
+import game.decks.DeckScreen
 import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.json.*
@@ -43,10 +44,10 @@ fun main(args: Array<String>): Unit {
     Window(title = "HEIG game", size = IntSize(700, 1010)) {
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
-        val screenState = remember { mutableStateOf(Screen.BOARD) }
+        val screenState = remember { mutableStateOf(Screen.DECK) }
         val login = Login(
             httpClient = httpClient,
-            onRightLogin = { screenState.value = Screen.BOARD },
+            onRightLogin = { screenState.value = Screen.DECK },
             idSession = idSession,
             playerPseudo = username
         )
@@ -56,8 +57,8 @@ fun main(args: Array<String>): Unit {
                 login.LoginScreen()
 
             }
-            Screen.MATCHMAKING ->{
-
+            Screen.DECK ->{
+                DeckScreen(listOf(login.generateDeck(login.generateCardTypes(cardClasses))))
             }
             Screen.BOARD -> {
                 GlobalScope.launch {  websocket.initialize { run{}} }
@@ -84,7 +85,7 @@ fun main(args: Array<String>): Unit {
 }
 
 enum class Screen {
-    LOGIN, BOARD, MATCHMAKING
+    LOGIN, BOARD, DECK
 }
 
 
