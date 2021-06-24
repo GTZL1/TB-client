@@ -9,12 +9,13 @@ import java.util.ArrayList
 class DeckType(val name: String, val cardTypes: Map<CardType, Short>) {
     fun generatePlayDeck(playerName:String):PlayDeck{
         val deck= ArrayList<PlayCard>()
+        var id=-1
         cardTypes.forEach { ct, s ->
             for(x in 0 until s){
-                deck.add(ct.generatePlayCard(playerName))
+                deck.add(ct.generatePlayCard(playerName, ++id))
             }
         }
-        return PlayDeck(name, deck)
+        return PlayDeck(name, deck, id)
     }
 
     fun serialize():JSONObject{

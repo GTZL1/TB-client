@@ -16,7 +16,13 @@ class Hand(cards: List<PlayCard>) {
         return cards.filterNotNull()
     }
 
-    fun putCardOnBoard(index: Int): PlayCard{
+    fun putCardOnBoard(card: PlayCard): PlayCard{
+        println("Removing "+card.cardType.name)
+        val index=cards.filterNotNull().indexOfFirst {
+            playCard: PlayCard -> playCard.cardType.name == card.cardType.name &&
+                playCard.owner == card.owner &&
+                playCard.id == card.id
+        }
         val cardDrawn=cards.filterNotNull().get(index)
         cards[index]=null
         return cardDrawn

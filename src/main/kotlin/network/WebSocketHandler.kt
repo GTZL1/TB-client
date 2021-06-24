@@ -1,17 +1,17 @@
 package network
 
 import Constants
+import game.Position
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.lang.invoke.MethodHandles.loop
-import java.util.*
-import java.util.logging.Logger
 
 class WebSocketHandler {
     val websocketHttpClient = HttpClient {
@@ -45,7 +45,6 @@ class WebSocketHandler {
 
     fun sendMessage(msg: JSONObject) {
         msgToSend.trySend(msg)
-        //println(msgToSend.size)
     }
 
     suspend fun receiveOne(): JSONObject {
@@ -84,4 +83,11 @@ data class PlayerInitialization(
     val type: String="player",
     val username:String,
     val deckType:JSONObject
+)
+
+data class CardMovement(
+    val type: String=Constants.CARD_MOVEMENT,
+    val owner: String,
+    val id: Int,
+    val position: Position
 )
