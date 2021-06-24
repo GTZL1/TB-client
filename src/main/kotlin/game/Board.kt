@@ -38,9 +38,9 @@ import theme.cardFont
 fun Board(game: Game) {
     //val handCards = remember { game.handCards }
     //val playerRowCards = remember { mutableStateListOf<PlayCard>() }
-    val baseCards = remember { mutableStateListOf<PlayCard>() }
-    val centerRowCards = remember { mutableStateListOf<PlayCard>() }
-    val opponentRowCards = remember { mutableStateListOf<PlayCard>() }
+    //val baseCards = remember { mutableStateListOf<PlayCard>() }
+    //val centerRowCards = remember { mutableStateListOf<PlayCard>() }
+    //val opponentRowCards = remember { mutableStateListOf<PlayCard>() }
     val playerRowCapacity =
         game.player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
 
@@ -48,7 +48,7 @@ fun Board(game: Game) {
         /*game.player.playDeck.drawHand().forEach { pc: PlayCard ->
             handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
             handCards.last().changePosition(Position.HAND)
-        }*/
+        }
         game.player.playDeck.getBaseCards().forEach { pc: PlayCard ->
             baseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
             baseCards.last().changePosition(Position.PLAYER)
@@ -56,7 +56,7 @@ fun Board(game: Game) {
         game.opponent.playDeck.getBaseCards().forEach { pc: PlayCard ->
             opponentRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
             opponentRowCards.last().changePosition(Position.OPPONENT)
-        }
+        }*/
        GlobalScope.launch { game.receiveMessages() }
         onDispose { }
     }
@@ -74,7 +74,7 @@ fun Board(game: Game) {
             }
         game.registerToPlayerRow(callback)
         onDispose { game.unregisterToPlayerRow(callback) }
-    }*/
+    }
     //to center row
     DisposableEffect(game) {
         val callback =
@@ -96,14 +96,14 @@ fun Board(game: Game) {
             object : GameCallback {
                 override fun onNewCard(pc: PlayCard) {
                     opponentRowCards.add(pc)
-                    centerRowCards.remove(pc)
+                    //centerRowCards.remove(pc)
                     //handCards.remove(pc)
                     pc.changePosition(Position.OPPONENT)
                 }
             }
         game.registerToOpponentRow(callback)
         onDispose { game.unregisterToOpponentRow(callback) }
-    }
+    }*/
 
     Row() {
         Column(
@@ -129,7 +129,7 @@ fun Board(game: Game) {
         ) {
             // Opponent row
             GameRow(content = {
-                opponentRowCards.forEach { pc ->
+                game.opponentRowCards.forEach { pc ->
                     DisplayCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
                         isPlayerTurn = notifyChangeTurn(game))
@@ -137,13 +137,12 @@ fun Board(game: Game) {
             })
             // Center row
             GameRow(content = {
-                centerRowCards.forEach { pc ->
+                game.centerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
-                        //isPlayerTurn = notifyChangeTurn(game),
                         isMovableUp = false,
-                        isMovableDown = true, //((playerRowCards.size < playerRowCapacity)
-                                //&& (pc.owner == game.player.pseudo)),
+                        isMovableDown = ((game.playerRowCards.size < playerRowCapacity)
+                                && (pc.owner == game.player.pseudo)),
                         onDragEndUpOneRank = {},
                         onDragEndDown = {
                             game.cardToPlayerRow(pc)
@@ -153,7 +152,7 @@ fun Board(game: Game) {
             })
             // Player row
             GameRow(content = {
-                baseCards.forEach {
+                game.baseCards.forEach {
                     DisplayCard(card = it, game = game,
                         toPlayer = (it.owner == game.player.pseudo),
                     isPlayerTurn = false) //base is never clickable
@@ -161,8 +160,7 @@ fun Board(game: Game) {
                 game.playerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
-                        //isPlayerTurn = notifyChangeTurn(game),
-                        isMovableUp = centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
+                        isMovableUp = game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
                         isMovableDown = false,
                         onDragEndUpOneRank = {
                             game.cardToCenterRow(pc)
@@ -176,9 +174,8 @@ fun Board(game: Game) {
                 game.handCards.forEach { pc: PlayCard ->
                     DisplayDraggableCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
-                        //isPlayerTurn = notifyChangeTurn(game),
-                        isMovableUp = true,//playerRowCards.size < playerRowCapacity,
-                        isMovableUpTwoRank = (centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
+                        isMovableUp = game.playerRowCards.size < playerRowCapacity,
+                        isMovableUpTwoRank = (game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
                                 && (pc.cardType::class == VehicleCardType::class),
                         isMovableDown = false,
                         onDragEndUpOneRank = {
@@ -191,7 +188,7 @@ fun Board(game: Game) {
                                 game.opponent.playDeck.addCard(pc)
                                 game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
                                     .forEach { pc: PlayCard ->
-                                        //handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+                                        game.handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
                                     }
                                 game.notifyMovement(pc, Position.OPPONENT)
                             }

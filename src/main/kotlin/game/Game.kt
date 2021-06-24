@@ -55,7 +55,7 @@ class Game(
 
     val handCards= mutableStateListOf<PlayCard>()
     val playerRowCards = mutableStateListOf<PlayCard>()
-    val baseCards = mutableListOf<PlayCard>()
+    val baseCards = mutableStateListOf<PlayCard>()
     val centerRowCards = mutableStateListOf<PlayCard>()
     val opponentRowCards = mutableStateListOf<PlayCard>()
 
@@ -64,6 +64,14 @@ class Game(
             handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
             handCards.last().changePosition(Position.HAND)
         }
+        player.playDeck.getBaseCards().forEach { pc: PlayCard ->
+            baseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            baseCards.last().changePosition(Position.PLAYER)
+        }
+        opponent.playDeck.getBaseCards().forEach { pc: PlayCard ->
+            opponentRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            opponentRowCards.last().changePosition(Position.OPPONENT)
+        }
     }
 
     fun cardToPlayerRow(card: PlayCard) {
@@ -71,13 +79,14 @@ class Game(
         handCards.remove(card)
         centerRowCards.remove(card)
         card.changePosition(Position.PLAYER)
-
-        //playerRowCallback.forEach { it.onNewCard(pc = card)}
-        //handRowCallback.forEach { it.onNewCard(pc = card) }
     }
 
     fun cardToCenterRow(card: PlayCard) {
-        centerRowCallback.forEach { it.onNewCard(pc = card) }
+        centerRowCards.add(card)
+        playerRowCards.remove(card)
+        handCards.remove(card)
+        opponentRowCards.remove(card)
+        card.changePosition(Position.CENTER)
     }
 
     fun cardToDiscard(card: PlayCard) {
@@ -85,7 +94,10 @@ class Game(
     }
 
     fun cardToOpponentRow(card: PlayCard) {
-        opponentRowCallback.forEach { it.onNewCard(pc = card) }
+        opponentRowCards.add(card)
+        centerRowCards.remove(card)
+        handCards.remove(card)
+        card.changePosition(Position.OPPONENT)
     }
 
     fun registerToHandRow(callback: GameCallback) {
