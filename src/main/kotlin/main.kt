@@ -35,10 +35,10 @@ fun main(args: Array<String>): Unit {
         Pair("spy", SpyCardType::class),
         Pair("base", BaseCardType::class)
     )
-    //lateinit var game: Game
 
     Window(title = "HEIG game", size = IntSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT)) {
         val game= remember { mutableStateOf<Game?>(null) }
+
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
         val screenState = remember { mutableStateOf(Screen.BOARD) }
