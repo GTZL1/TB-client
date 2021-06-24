@@ -45,7 +45,6 @@ class WebSocketHandler {
 
     fun sendMessage(msg: JSONObject) {
         msgToSend.trySend(msg)
-        //println(msgToSend.size)
     }
 
     suspend fun receiveOne(): JSONObject {

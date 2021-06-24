@@ -1,4 +1,5 @@
 import androidx.compose.desktop.Window
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.IntSize
@@ -8,9 +9,7 @@ import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import network.Login
 import network.PlayerInitialization
 import network.SimpleMessage
@@ -36,9 +35,10 @@ fun main(args: Array<String>): Unit {
         Pair("spy", SpyCardType::class),
         Pair("base", BaseCardType::class)
     )
-    lateinit var game: Game
+    //lateinit var game: Game
 
     Window(title = "HEIG game", size = IntSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT)) {
+        val game= remember { mutableStateOf<Game?>(null) }
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
         val screenState = remember { mutableStateOf(Screen.BOARD) }
@@ -58,25 +58,34 @@ fun main(args: Array<String>): Unit {
 
             }
             Screen.BOARD -> {
-                GlobalScope.launch {  websocket.initialize { run{}} }
-                websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
-                runBlocking { websocket.receiveOne() }
                 val cardTypes=login.generateCardTypes(cardClasses)
                 val player=Player(
-                pseudo = username.value,
-                deckType = login.generateDeck(cardTypes)
+                    pseudo = username.value,
+                    deckType = login.generateDeck(cardTypes)
                 )
-                websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
-                val opponent= runBlocking { websocket.receiveOne() }
-
-                game = Game(
-                    Date.from(Instant.now()), websocket, idSession = idSession.value,
-                    player = player,
-                    opponent = Player(pseudo = opponent.getString("username"),
-                                        deckType =  login.generateDeck(cardTypes,opponent.getJSONObject("deckType")))
-                )
-                game.determineFirst()
-                Board(game)
+                LaunchedEffect(true) { launch{websocket.initialize { run{}} }
+                    websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
+                    websocket.receiveOne()
+                    websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
+                    val opponentDeck = websocket.receiveOne()
+                    val g = Game(
+                        Date.from(Instant.now()), websocket, idSession = idSession.value,
+                        player = player,
+                        opponent = Player(
+                            pseudo = opponentDeck.getString("username"),
+                            deckType = login.generateDeck(
+                                cardTypes,
+                                opponentDeck.getJSONObject("deckType")
+                            )
+                        )
+                    )
+                    g.determineFirst()
+                    game.value=g
+                }
+                val currentGame=game.value
+                if(currentGame!=null){
+                    Board(currentGame)
+                }
             }
         }
     }

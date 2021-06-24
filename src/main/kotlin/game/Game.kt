@@ -69,7 +69,7 @@ class Game(
     fun cardToPlayerRow(card: PlayCard) {
         playerRowCards.add(card)
         handCards.remove(card)
-        //centerRowCards.remove(card)
+        centerRowCards.remove(card)
         card.changePosition(Position.PLAYER)
 
         //playerRowCallback.forEach { it.onNewCard(pc = card)}
@@ -156,10 +156,10 @@ class Game(
         turnCallback.forEach { it.onChangeTurn() }
     }
 
-    fun determineFirst() {
+    suspend fun determineFirst() {
         val num=UUID.randomUUID().toString()
         webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
-        val msg =runBlocking { webSocketHandler.receiveOne() }
+        val msg =webSocketHandler.receiveOne()
         playerTurn=(num < msg.getString("type"))
     }
 
