@@ -2,11 +2,9 @@ package game
 
 import Constants
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
 import game.player.Player
-import kotlinx.coroutines.runBlocking
 import network.CardMovement
 import network.SimpleMessage
 import network.WebSocketHandler
@@ -51,13 +49,15 @@ class Game(
     private lateinit var oldCard: PlayCard
     private lateinit var oldClicked: MutableState<Boolean>
 
-    var playerTurn= false
+    internal var playerTurn= false
 
     val handCards= mutableStateListOf<PlayCard>()
     val playerRowCards = mutableStateListOf<PlayCard>()
     val baseCards = mutableStateListOf<PlayCard>()
     val centerRowCards = mutableStateListOf<PlayCard>()
     val opponentRowCards = mutableStateListOf<PlayCard>()
+
+    private val cardsAlreadyActed= mutableListOf<Int>()
 
     init {
         player.playDeck.drawHand().forEach { pc: PlayCard ->
@@ -79,6 +79,7 @@ class Game(
         handCards.remove(card)
         centerRowCards.remove(card)
         card.changePosition(Position.PLAYER)
+        cardsAlreadyActed.add(card.id)
     }
 
     fun cardToCenterRow(card: PlayCard) {
@@ -87,10 +88,11 @@ class Game(
         handCards.remove(card)
         opponentRowCards.remove(card)
         card.changePosition(Position.CENTER)
+        cardsAlreadyActed.add(card.id)
     }
 
     fun cardToDiscard(card: PlayCard) {
-        discardCallback.forEach { it.onNewCard(pc = card) }
+
     }
 
     fun cardToOpponentRow(card: PlayCard) {
@@ -99,6 +101,11 @@ class Game(
         handCards.remove(card)
         card.changePosition(Position.OPPONENT)
     }
+
+    fun cardCanAct(card: PlayCard):Boolean {
+        return !cardsAlreadyActed.contains(card.id)
+    }
+
 
     fun registerToHandRow(callback: GameCallback) {
         handRowCallback.add(callback)
@@ -161,11 +168,14 @@ class Game(
     }
 
     internal fun changeTurn() {
-        webSocketHandler.sendMessage(
-            JSONObject(SimpleMessage(Constants.CHANGE_TURN))
-        )
-        playerTurn=!playerTurn
-        turnCallback.forEach { it.onChangeTurn() }
+        if(playerTurn){
+            webSocketHandler.sendMessage(
+                JSONObject(SimpleMessage(Constants.CHANGE_TURN))
+            )
+            playerTurn=!playerTurn
+            cardsAlreadyActed.clear()
+            turnCallback.forEach { it.onChangeTurn() }
+        }
     }
 
     suspend fun determineFirst() {
@@ -184,6 +194,7 @@ class Game(
                 }
                 Constants.CHANGE_TURN -> {
                     playerTurn=!playerTurn
+                    cardsAlreadyActed.clear()
                     turnCallback.forEach { it.onChangeTurn() }
                 }
             }
@@ -226,8 +237,9 @@ class Game(
             ) {
                 clicked.value = false
                 //attacker is oldCard
-                if (canAttack(card.getPosition(), oldCard.getPosition())){
+                if (canAttack(oldCard, card)){
                     try {
+                        cardsAlreadyActed.add(oldCard.id)
                         (oldCard as UnitPlayCard).attack(card)
                     } catch (t: Throwable) { }
                 }
@@ -238,8 +250,9 @@ class Game(
         }
     }
 
-    private fun canAttack(posCard1: Position, posCard2: Position): Boolean {
-        return abs(posCard1.ordinal - posCard2.ordinal) <= 1
+    private fun canAttack(attackerCard: PlayCard, defenderCard: PlayCard): Boolean {
+        return cardCanAct(attackerCard)
+                && abs(attackerCard.getPosition().ordinal - defenderCard.getPosition().ordinal) <= 1
     }
 }
 

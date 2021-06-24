@@ -211,18 +211,19 @@ fun DisplayDraggableCard(
     card: PlayCard,
     toPlayer: Boolean,
     isPlayerTurn: Boolean = notifyChangeTurn(game),
+    hasCardActed: Boolean = game.cardCanAct(card),
     isMovableUp: Boolean,
     isMovableUpTwoRank: Boolean = false,
     isMovableDown: Boolean,
     onDragEndUpOneRank: () -> Unit,
     onDragEndUpTwoRank: () -> Unit = onDragEndUpOneRank,
     onDragEndDown: () -> Unit
-) = key(card, game, isMovableUp, isMovableUpTwoRank, isMovableDown, toPlayer, isPlayerTurn) {
+) = key(card, game, isMovableUp, isMovableUpTwoRank, isMovableDown, toPlayer, isPlayerTurn, hasCardActed) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     val startY = offsetY
     val startX = offsetX
-    val isMovable= isPlayerTurn && (isMovableUp || isMovableDown || isMovableUpTwoRank)
+    val isMovable= hasCardActed && isPlayerTurn && (isMovableUp || isMovableDown || isMovableUpTwoRank)
     Box(
         modifier = modifier
             .offset(offsetX.dp, offsetY.dp)
