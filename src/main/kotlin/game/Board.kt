@@ -36,8 +36,8 @@ import theme.cardFont
 
 @Composable
 fun Board(game: Game) {
-    val handCards = remember { mutableStateListOf<PlayCard>() }
-    val playerRowCards = remember { mutableStateListOf<PlayCard>() }
+    //val handCards = remember { game.handCards }
+    //val playerRowCards = remember { mutableStateListOf<PlayCard>() }
     val baseCards = remember { mutableStateListOf<PlayCard>() }
     val centerRowCards = remember { mutableStateListOf<PlayCard>() }
     val opponentRowCards = remember { mutableStateListOf<PlayCard>() }
@@ -45,10 +45,10 @@ fun Board(game: Game) {
         game.player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
 
     DisposableEffect(Unit) {
-        game.player.playDeck.drawHand().forEach { pc: PlayCard ->
+        /*game.player.playDeck.drawHand().forEach { pc: PlayCard ->
             handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
             handCards.last().changePosition(Position.HAND)
-        }
+        }*/
         game.player.playDeck.getBaseCards().forEach { pc: PlayCard ->
             baseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
             baseCards.last().changePosition(Position.PLAYER)
@@ -62,7 +62,7 @@ fun Board(game: Game) {
     }
 
     //to player row
-    DisposableEffect(game) {
+    /*DisposableEffect(game) {
         val callback =
             object : GameCallback {
                 override fun onNewCard(pc: PlayCard) {
@@ -74,15 +74,15 @@ fun Board(game: Game) {
             }
         game.registerToPlayerRow(callback)
         onDispose { game.unregisterToPlayerRow(callback) }
-    }
+    }*/
     //to center row
     DisposableEffect(game) {
         val callback =
             object : GameCallback {
                 override fun onNewCard(pc: PlayCard) {
                     centerRowCards.add(pc)
-                    playerRowCards.remove(pc)
-                    handCards.remove(pc)
+                    //playerRowCards.remove(pc)
+                    //handCards.remove(pc)
                     opponentRowCards.remove(pc)
                     pc.changePosition(Position.CENTER)
                 }
@@ -140,10 +140,10 @@ fun Board(game: Game) {
                 centerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
-                        isPlayerTurn = notifyChangeTurn(game),
+                        //isPlayerTurn = notifyChangeTurn(game),
                         isMovableUp = false,
-                        isMovableDown = ((playerRowCards.size < playerRowCapacity)
-                                && (pc.owner == game.player.pseudo)),
+                        isMovableDown = true, //((playerRowCards.size < playerRowCapacity)
+                                //&& (pc.owner == game.player.pseudo)),
                         onDragEndUpOneRank = {},
                         onDragEndDown = {
                             game.cardToPlayerRow(pc)
@@ -158,10 +158,10 @@ fun Board(game: Game) {
                         toPlayer = (it.owner == game.player.pseudo),
                     isPlayerTurn = false) //base is never clickable
                 }
-                playerRowCards.forEach { pc ->
+                game.playerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
-                        isPlayerTurn = notifyChangeTurn(game),
+                        //isPlayerTurn = notifyChangeTurn(game),
                         isMovableUp = centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
                         isMovableDown = false,
                         onDragEndUpOneRank = {
@@ -173,11 +173,11 @@ fun Board(game: Game) {
             })
             // Hand
             GameRow(content = {
-                handCards.forEach { pc: PlayCard ->
+                game.handCards.forEach { pc: PlayCard ->
                     DisplayDraggableCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
-                        isPlayerTurn = notifyChangeTurn(game),
-                        isMovableUp = playerRowCards.size < playerRowCapacity,
+                        //isPlayerTurn = notifyChangeTurn(game),
+                        isMovableUp = true,//playerRowCards.size < playerRowCapacity,
                         isMovableUpTwoRank = (centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
                                 && (pc.cardType::class == VehicleCardType::class),
                         isMovableDown = false,
@@ -191,7 +191,7 @@ fun Board(game: Game) {
                                 game.opponent.playDeck.addCard(pc)
                                 game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
                                     .forEach { pc: PlayCard ->
-                                        handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+                                        //handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
                                     }
                                 game.notifyMovement(pc, Position.OPPONENT)
                             }
@@ -213,14 +213,14 @@ fun DisplayDraggableCard(
     game: Game,
     card: PlayCard,
     toPlayer: Boolean,
-    isPlayerTurn: Boolean,
+    isPlayerTurn: Boolean = notifyChangeTurn(game),
     isMovableUp: Boolean,
     isMovableUpTwoRank: Boolean = false,
     isMovableDown: Boolean,
     onDragEndUpOneRank: () -> Unit,
     onDragEndUpTwoRank: () -> Unit = onDragEndUpOneRank,
     onDragEndDown: () -> Unit
-) = key(card, game, isPlayerTurn, isMovableUp, isMovableUpTwoRank, isMovableDown, toPlayer) {
+) = key(card, game, isMovableUp, isMovableUpTwoRank, isMovableDown, toPlayer, isPlayerTurn) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     val startY = offsetY
@@ -266,7 +266,7 @@ fun DisplayDraggableCard(
             game = game,
             card = card,
             toPlayer = toPlayer,
-            isPlayerTurn = isPlayerTurn
+            isPlayerTurn = notifyChangeTurn(game)
         )
     }
 }

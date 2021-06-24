@@ -59,8 +59,20 @@ class Game(
     val centerRowCards = mutableStateListOf<PlayCard>()
     val opponentRowCards = mutableStateListOf<PlayCard>()
 
+    init {
+        player.playDeck.drawHand().forEach { pc: PlayCard ->
+            handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            handCards.last().changePosition(Position.HAND)
+        }
+    }
+
     fun cardToPlayerRow(card: PlayCard) {
-        playerRowCallback.forEach { it.onNewCard(pc = card)}
+        playerRowCards.add(card)
+        handCards.remove(card)
+        //centerRowCards.remove(card)
+        card.changePosition(Position.PLAYER)
+
+        //playerRowCallback.forEach { it.onNewCard(pc = card)}
         //handRowCallback.forEach { it.onNewCard(pc = card) }
     }
 
@@ -238,7 +250,6 @@ fun notifyChangeTurn(game: Game): Boolean {
     return state
 }
 
-/*
 @Composable
 fun getHandCards(game: Game): State<MutableList<PlayCard>> {
     var cards = remember { mutableStateOf(game.handCards) }
@@ -247,6 +258,7 @@ fun getHandCards(game: Game): State<MutableList<PlayCard>> {
             object : GameCallback {
                 override fun onNewCard(pc: PlayCard) {
                     cards.value=game.handCards
+                    println("hand row callback ")
                 }
             }
         game.registerToHandRow(callback)
@@ -263,7 +275,6 @@ fun getPlayerRowCards(game: Game): State<MutableList<PlayCard>>{
             object : GameCallback {
                 override fun onNewCard(pc: PlayCard) {
                     cards.value=game.playerRowCards
-                    println("player row callback ")
                 }
             }
         game.registerToPlayerRow(callback)
@@ -271,7 +282,7 @@ fun getPlayerRowCards(game: Game): State<MutableList<PlayCard>>{
     }
     return cards
 }
-
+/*
 //fun baseCards(): List<PlayCard>{}
 
 @Composable
