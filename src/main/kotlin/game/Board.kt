@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
@@ -37,74 +38,13 @@ import theme.discardCardFont
 
 @Composable
 fun Board(game: Game) {
-    //val handCards = remember { game.handCards }
-    //val playerRowCards = remember { mutableStateListOf<PlayCard>() }
-    //val baseCards = remember { mutableStateListOf<PlayCard>() }
-    //val centerRowCards = remember { mutableStateListOf<PlayCard>() }
-    //val opponentRowCards = remember { mutableStateListOf<PlayCard>() }
     val playerRowCapacity =
         game.player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
 
     DisposableEffect(Unit) {
-        /*game.player.playDeck.drawHand().forEach { pc: PlayCard ->
-            handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
-            handCards.last().changePosition(Position.HAND)
-        }
-        game.player.playDeck.getBaseCards().forEach { pc: PlayCard ->
-            baseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
-            baseCards.last().changePosition(Position.PLAYER)
-        }
-        game.opponent.playDeck.getBaseCards().forEach { pc: PlayCard ->
-            opponentRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
-            opponentRowCards.last().changePosition(Position.OPPONENT)
-        }*/
        GlobalScope.launch { game.receiveMessages() }
         onDispose { }
     }
-
-    //to player row
-    /*DisposableEffect(game) {
-        val callback =
-            object : GameCallback {
-                override fun onNewCard(pc: PlayCard) {
-                    playerRowCards.add(pc)
-                    handCards.remove(pc)
-                    centerRowCards.remove(pc)
-                    pc.changePosition(Position.PLAYER)
-                }
-            }
-        game.registerToPlayerRow(callback)
-        onDispose { game.unregisterToPlayerRow(callback) }
-    }
-    //to center row
-    DisposableEffect(game) {
-        val callback =
-            object : GameCallback {
-                override fun onNewCard(pc: PlayCard) {
-                    centerRowCards.add(pc)
-                    //playerRowCards.remove(pc)
-                    //handCards.remove(pc)
-                    opponentRowCards.remove(pc)
-                    pc.changePosition(Position.CENTER)
-                }
-            }
-        game.registerToCenterRow(callback)
-        onDispose { game.unregisterToCenterRow(callback) }
-    }
-    //to opponent row
-    DisposableEffect(game) {
-        val callback =
-            object : GameCallback {
-                override fun onNewCard(pc: PlayCard) {
-                    opponentRowCards.add(pc)
-                    //centerRowCards.remove(pc)
-                    //handCards.remove(pc)
-                    pc.changePosition(Position.OPPONENT)
-                }
-            }
-        game.registerToOpponentRow(callback)
-        onDispose { game.unregisterToOpponentRow(callback) }
-    }*/
 
     Row() {
         //Infos on the side
@@ -127,7 +67,10 @@ fun Board(game: Game) {
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = if (notifyChangeTurn(game)) Color.Green else Color.Red,
                     )){}
-                Text(text= notifyChangeTurn(game).toString())
+                if(notifyChangeTurn(game)) {
+                    Text(text= "00:"+(game.delay.value/1000).toString())
+                }
+
             }
             //Discard
             Box(modifier = Modifier.fillMaxWidth()

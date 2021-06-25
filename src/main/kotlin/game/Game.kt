@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
 import game.player.Player
+import kotlinx.coroutines.*
 import network.CardAttack
 import network.CardMovement
 import network.SimpleMessage
@@ -21,30 +22,10 @@ interface TurnCallback {
     fun onChangeTurn()
 }
 
-/*interface GameInterface {
-    fun cardToPlayerRow(card: PlayCard)
-    fun cardToCenterRow(card: PlayCard)
-    fun cardToDiscard(card: PlayCard)
-    fun cardToOpponentRow(card: PlayCard)
-    fun registerToPlayerRow(callback: GameCallback)
-    fun unregisterToPlayerRow(callback: GameCallback)
-    fun registerToCenterRow(callback: GameCallback)
-    fun unregisterToCenterRow(callback: GameCallback)
-    fun registerToDiscard(callback: GameCallback)
-    fun unregisterToDiscard(callback: GameCallback)
-    fun registerToOpponentRow(callback: GameCallback)
-    fun unregisterToOpponentRow(callback: GameCallback)
-}*/
-
 class Game(
     private val date: Date, private val webSocketHandler: WebSocketHandler, private val idSession: Int,
     val player: Player, val opponent: Player
 )  {
-    private val handRowCallback = mutableListOf<GameCallback>()
-    private val playerRowCallback = mutableListOf<GameCallback>()
-    private val centerRowCallback = mutableListOf<GameCallback>()
-    private val discardCallback = mutableListOf<GameCallback>()
-    private val opponentRowCallback = mutableListOf<GameCallback>()
     private val turnCallback= mutableListOf<TurnCallback>()
 
     private lateinit var oldCard: PlayCard
@@ -62,6 +43,9 @@ class Game(
     private val cardsAlreadyActed= mutableListOf<Int>()
 
     internal var cardsMovedFromHand= mutableStateOf(0)
+
+    internal var delay = mutableStateOf(Constants.MOVEMENT_DELAY)
+    lateinit var delayJob: Job
 
     init {
         player.playDeck.drawHand().forEach { pc: PlayCard ->
@@ -104,6 +88,9 @@ class Game(
         playerRowCards.remove(card)
         centerRowCards.remove(card)
         opponentRowCards.remove(card)
+        baseCards.remove(card)
+
+        cardsAlreadyActed.remove(card.id) //necessary to the auto turn change
     }
 
     fun cardToOpponentRow(card: PlayCard) {
@@ -117,47 +104,6 @@ class Game(
 
     fun cardCanAct(card: PlayCard):Boolean {
         return !cardsAlreadyActed.contains(card.id)
-    }
-
-
-    fun registerToHandRow(callback: GameCallback) {
-        handRowCallback.add(callback)
-    }
-
-    fun unregisterToHandRow(callback: GameCallback) {
-        handRowCallback.remove(callback)
-    }
-
-    fun registerToPlayerRow(callback: GameCallback) {
-        playerRowCallback.add(callback)
-    }
-
-    fun unregisterToPlayerRow(callback: GameCallback) {
-        playerRowCallback.remove(callback)
-    }
-
-    fun registerToCenterRow(callback: GameCallback) {
-        centerRowCallback.add(callback)
-    }
-
-    fun unregisterToCenterRow(callback: GameCallback) {
-        centerRowCallback.remove(callback)
-    }
-
-    fun registerToDiscard(callback: GameCallback) {
-        discardCallback.add(callback)
-    }
-
-    fun unregisterToDiscard(callback: GameCallback) {
-        discardCallback.remove(callback)
-    }
-
-    fun registerToOpponentRow(callback: GameCallback) {
-        opponentRowCallback.add(callback)
-    }
-
-    fun unregisterToOpponentRow(callback: GameCallback) {
-        opponentRowCallback.remove(callback)
     }
 
     fun registerToTurnChange(callback: TurnCallback) {
@@ -178,6 +124,7 @@ class Game(
                 )
             )
         )
+        checkChangeTurn()
     }
 
     private fun notifyAttack(attackerCard: PlayCard, targetCard: PlayCard) {
@@ -191,6 +138,7 @@ class Game(
                 )
             )
         )
+        checkChangeTurn()
     }
 
     internal fun changeTurn() {
@@ -201,6 +149,11 @@ class Game(
             playerTurn=!playerTurn
             cardsAlreadyActed.clear()
             cardsMovedFromHand.value=0
+
+            if(this::delayJob.isInitialized) {
+                runBlocking { delayJob.cancel()}
+            }
+
             turnCallback.forEach { it.onChangeTurn() }
         }
     }
@@ -210,6 +163,31 @@ class Game(
         webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
         val msg =webSocketHandler.receiveOne()
         playerTurn=(num < msg.getString("type"))
+
+        checkTimerTurn()
+    }
+
+    private fun checkChangeTurn() {
+        delay.value = Constants.MOVEMENT_DELAY
+        if (playerTurn && (cardsMovedFromHand.value == (player.playDeck.getBaseCards().size))
+            && (cardsAlreadyActed.size == (filterCardsOwner(player.pseudo).size - player.playDeck.getBaseCards().size))
+        ) {
+            changeTurn()
+        }
+    }
+
+    private fun checkTimerTurn() {
+        delayJob = GlobalScope.launch {
+            delay.value= Constants.MOVEMENT_DELAY
+            while(delay.value > 0 && playerTurn) {
+                delay(1000)
+                delay.value -= 1000
+            }
+
+            if (playerTurn) {
+                changeTurn()
+            }
+        }
     }
 
     internal suspend fun receiveMessages() {
@@ -223,6 +201,8 @@ class Game(
                     playerTurn=!playerTurn
                     cardsAlreadyActed.clear()
                     cardsMovedFromHand.value=0
+                    checkChangeTurn()
+                    checkTimerTurn()
                     turnCallback.forEach { it.onChangeTurn() }
                 }
                 Constants.CARD_ATTACK -> {
@@ -329,56 +309,3 @@ fun notifyChangeTurn(game: Game): Boolean {
     }
     return state
 }
-
-@Composable
-fun getHandCards(game: Game): State<MutableList<PlayCard>> {
-    var cards = remember { mutableStateOf(game.handCards) }
-    DisposableEffect(game) {
-        val callback =
-            object : GameCallback {
-                override fun onNewCard(pc: PlayCard) {
-                    cards.value=game.handCards
-                    println("hand row callback ")
-                }
-            }
-        game.registerToHandRow(callback)
-        onDispose { game.unregisterToHandRow(callback) }
-    }
-    return cards
-}
-
-@Composable
-fun getPlayerRowCards(game: Game): State<MutableList<PlayCard>>{
-    var cards = remember { mutableStateOf(game.playerRowCards) }
-    DisposableEffect(game) {
-        val callback =
-            object : GameCallback {
-                override fun onNewCard(pc: PlayCard) {
-                    cards.value=game.playerRowCards
-                }
-            }
-        game.registerToPlayerRow(callback)
-        onDispose { game.unregisterToPlayerRow(callback) }
-    }
-    return cards
-}
-/*
-//fun baseCards(): List<PlayCard>{}
-
-@Composable
-fun getCenterRowCards(game: Game): List<PlayCard>{
-    val cards = remember { mutableStateOf(game.centerRowCards) }
-    DisposableEffect(game) {
-        val callback =
-            object : GameCallback {
-                override fun onNewCard(pc: PlayCard) {
-                    cards.value=game.centerRowCards
-                }
-            }
-        game.registerToCenterRow(callback)
-        onDispose { game.registerToCenterRow(callback) }
-    }
-    return cards.value
-}
-//fun opponentRowCards(): List<PlayCard>{}
-*/
