@@ -33,6 +33,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import theme.cardColors
 import theme.cardFont
+import theme.discardCardFont
 
 @Composable
 fun Board(game: Game) {
@@ -106,23 +107,53 @@ fun Board(game: Game) {
     }*/
 
     Row() {
+        //Infos on the side
         Column(
             modifier = Modifier.fillMaxHeight()
                 .width(Constants.CARD_WIDTH.dp)
                 .background(color = Color.Gray)
                 .padding(top=Constants.STATS_BOX_HEIGTH.dp,
                         bottom = Constants.STATS_BOX_HEIGTH.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            //Upper side of column
+            Column(modifier = Modifier.fillMaxWidth()
+                .height((Constants.CARD_HEIGHT*1.5).dp),
+                   horizontalAlignment = Alignment.CenterHorizontally ) {
                 Button(modifier= Modifier.size(Constants.STATS_BOX_WIDTH.dp),
                     onClick = { game.changeTurn() },
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
-                    backgroundColor = if (notifyChangeTurn(game)) Color.Green else Color.Red,
-                )){}
-            Text(text= notifyChangeTurn(game).toString())
+                        backgroundColor = if (notifyChangeTurn(game)) Color.Green else Color.Red,
+                    )){}
+                Text(text= notifyChangeTurn(game).toString())
+            }
+            //Discard
+            Box(modifier = Modifier.fillMaxWidth()
+                .height(Constants.CARD_HEIGHT.dp)
+            ) {
+                if (game.discardCards.isNotEmpty()) {
+                    val topDiscardCard: PlayCard = game.discardCards.last()
+                    DisplayCard(
+                        modifier= Modifier.align(Alignment.Center),
+                        card = topDiscardCard,
+                        game = game,
+                        toPlayer = (topDiscardCard.owner == game.player.pseudo),
+                        isPlayerTurn = false,
+                        width = (Constants.CARD_WIDTH * 0.7).toInt(),
+                        height = (Constants.CARD_HEIGHT * 0.7).toInt(),
+                        inDiscard = true
+                    )
+                }
+            }
+            //Lower side of column
+            Column(modifier = Modifier.fillMaxWidth()
+                .height((Constants.CARD_HEIGHT*1.5).dp),
+                horizontalAlignment = Alignment.CenterHorizontally ) { }
         }
 
+        //Game board
         Column(
             modifier = Modifier.fillMaxSize(1f),
             verticalArrangement = Arrangement.SpaceBetween,
@@ -171,7 +202,6 @@ fun Board(game: Game) {
             })
             // Hand
             GameRow(content = {
-                println(game.cardsMovedFromHand.value)
                 game.handCards.forEach { pc: PlayCard ->
                     DisplayDraggableCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
@@ -311,7 +341,10 @@ fun DisplayCard(
     card: PlayCard,
     toPlayer: Boolean,
     isPlayerTurn: Boolean,
-) = key(card, game, toPlayer, isPlayerTurn){
+    width: Int = Constants.CARD_WIDTH,
+    height: Int = Constants.CARD_HEIGHT,
+    inDiscard: Boolean = false
+) = key(card, game, toPlayer, isPlayerTurn, inDiscard){
     val clicked = remember { mutableStateOf(false) }
     val hover = remember { mutableStateOf(false) }
     Box(
@@ -323,7 +356,7 @@ fun DisplayCard(
             .clickable(enabled = isPlayerTurn, onClick = {
                     game.handleClick(clicked, card)
             })
-            .width(Constants.CARD_WIDTH.dp).height(Constants.CARD_HEIGHT.dp)
+            .width(width.dp).height(height.dp)
             .clip(shape = Constants.cardShape)
             .border(
                 width = 2.dp,
@@ -347,18 +380,21 @@ fun DisplayCard(
                     contentDescription = "Image of the card",
                     contentScale = ContentScale.Crop
                 )
-                StatsBox(
-                    modifier = modifier
-                        .align(Alignment.TopEnd)
-                        .border(width = 2.dp,
-                            color = if(clicked.value) Color.White else (if (toPlayer) Color.Red else Color.Blue),
-                            shape = Constants.statsBoxShape),
-                    card = card
-                )
+                if (!inDiscard) {
+                    StatsBox(
+                        modifier = modifier
+                            .align(Alignment.TopEnd)
+                            .border(width = 2.dp,
+                                color = if(clicked.value) Color.White else (if (toPlayer) Color.Red else Color.Blue),
+                                shape = Constants.statsBoxShape),
+                        card = card,
+                    )
+                }
             }
             CardEtiquette(
-                modifier = modifier.weight(1f),
-                card = card
+                modifier = Modifier.weight(1f),
+                card = card,
+                inDiscard = inDiscard
             )
         }
     }
@@ -367,7 +403,7 @@ fun DisplayCard(
 @Composable
 fun StatsBox(
     modifier: Modifier = Modifier,
-    card: PlayCard
+    card: PlayCard,
 ) {
     Box(
         modifier = modifier.width(Constants.STATS_BOX_WIDTH.dp)
@@ -380,7 +416,8 @@ fun StatsBox(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = card.getHealth().toString(), style = cardFont)
+            Text(text = card.getHealth().toString(),
+                style = cardFont)
             Text(text = card.cardType.attack.toString(), style = cardFont)
         }
     }
@@ -389,7 +426,8 @@ fun StatsBox(
 @Composable
 fun CardEtiquette(
     modifier: Modifier = Modifier,
-    card: PlayCard
+    card: PlayCard,
+    inDiscard: Boolean = false
 ) {
     Box(
         modifier = modifier
@@ -406,7 +444,7 @@ fun CardEtiquette(
         ) {
             Text(
                 text = card.cardType.name,
-                style = cardFont,
+                style = if (!inDiscard) cardFont else discardCardFont,
                 textAlign = TextAlign.Center
             )
         }

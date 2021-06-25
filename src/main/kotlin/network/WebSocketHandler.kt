@@ -78,16 +78,21 @@ class WebSocketHandler {
 data class SimpleMessage(
     val type: String= Constants.CONNECTION_INIT_MESSAGE
 )
-
 data class PlayerInitialization(
     val type: String="player",
     val username:String,
     val deckType:JSONObject
 )
-
 data class CardMovement(
     val type: String=Constants.CARD_MOVEMENT,
     val owner: String,
     val id: Int,
     val position: Position
+)
+data class CardAttack(
+    val type: String=Constants.CARD_ATTACK,
+    val attackerOwner: String,
+    val attackerId: Int,
+    val targetOwner: String,
+    val targetId: Int
 )

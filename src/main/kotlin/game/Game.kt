@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
 import game.player.Player
+import network.CardAttack
 import network.CardMovement
 import network.SimpleMessage
 import network.WebSocketHandler
@@ -99,7 +100,10 @@ class Game(
     }
 
     fun cardToDiscard(card: PlayCard) {
-
+        discardCards.add(card)
+        playerRowCards.remove(card)
+        centerRowCards.remove(card)
+        opponentRowCards.remove(card)
     }
 
     fun cardToOpponentRow(card: PlayCard) {
@@ -176,6 +180,19 @@ class Game(
         )
     }
 
+    private fun notifyAttack(attackerCard: PlayCard, targetCard: PlayCard) {
+        webSocketHandler.sendMessage(
+            JSONObject(
+                CardAttack(
+                    attackerOwner = attackerCard.owner,
+                    attackerId = attackerCard.id,
+                    targetOwner = targetCard.owner,
+                    targetId = targetCard.id
+                )
+            )
+        )
+    }
+
     internal fun changeTurn() {
         if(playerTurn){
             webSocketHandler.sendMessage(
@@ -208,6 +225,12 @@ class Game(
                     cardsMovedFromHand.value=0
                     turnCallback.forEach { it.onChangeTurn() }
                 }
+                Constants.CARD_ATTACK -> {
+                    applyAttack(attackerOwner = msg.getString("attackerOwner"),
+                                attackerId = msg.getInt("attackerId"),
+                                targetOwner = msg.getString("targetOwner"),
+                                targetId = msg.getInt("targetId"))
+                }
             }
         }
     }
@@ -237,6 +260,18 @@ class Game(
         }
     }
 
+    private fun applyAttack(attackerOwner: String, attackerId: Int, targetOwner: String, targetId: Int) {
+        val attacker = filterCardsOwner(attackerOwner).first { playCard -> playCard.id==attackerId }
+        val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id==targetId }
+        (attacker as UnitPlayCard).attack(target)
+        if(attacker.getHealth()<=0){
+            cardToDiscard(attacker)
+        }
+        if(target.getHealth()<=0){
+            cardToDiscard(target)
+        }
+    }
+
     internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard) {
         clicked.value = true
         if ((this::oldCard.isInitialized) && (card!=oldCard)) {
@@ -251,7 +286,9 @@ class Game(
                 if (canAttack(oldCard, card)){
                     try {
                         cardsAlreadyActed.add(oldCard.id)
-                        (oldCard as UnitPlayCard).attack(card)
+                        applyAttack(attackerOwner = oldCard.owner, attackerId = oldCard.id,
+                                    targetOwner = card.owner, targetId = card.id)
+                        notifyAttack(oldCard, card)
                     } catch (t: Throwable) { }
                 }
             }
@@ -261,9 +298,16 @@ class Game(
         }
     }
 
-    private fun canAttack(attackerCard: PlayCard, defenderCard: PlayCard): Boolean {
+    private fun canAttack(attackerCard: PlayCard, targetCard: PlayCard): Boolean {
         return cardCanAct(attackerCard)
-                && abs(attackerCard.getPosition().ordinal - defenderCard.getPosition().ordinal) <= 1
+                && abs(attackerCard.getPosition().ordinal - targetCard.getPosition().ordinal) <= 1
+    }
+
+    private fun filterCardsOwner(owner: String): List<PlayCard> {
+        return listOf(centerRowCards, playerRowCards,opponentRowCards, baseCards).flatten()
+            .filter { playCard: PlayCard ->
+            playCard.owner==owner
+        }.toList()
     }
 }
 
