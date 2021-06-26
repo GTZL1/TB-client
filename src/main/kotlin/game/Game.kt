@@ -284,7 +284,7 @@ class Game(
     }
 
     private fun filterCardsOwner(owner: String): List<PlayCard> {
-        return listOf(centerRowCards, playerRowCards,opponentRowCards, baseCards).flatten()
+        return listOf(centerRowCards, playerRowCards, opponentRowCards, baseCards).flatten()
             .filter { playCard: PlayCard ->
             playCard.owner==owner
         }.toList()

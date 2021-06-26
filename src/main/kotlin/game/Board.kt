@@ -126,10 +126,10 @@ fun Board(game: Game) {
             })
             // Player row
             GameRow(content = {
-                game.baseCards.forEach {
-                    DisplayCard(card = it, game = game,
-                        toPlayer = (it.owner == game.player.pseudo),
-                    isPlayerTurn = false) //base is never clickable
+                game.baseCards.forEach { pc: PlayCard ->
+                    DisplayCard(card = pc, game = game,
+                        toPlayer = (pc.owner == game.player.pseudo),
+                        isPlayerTurn = false) //base is never clickable
                 }
                 game.playerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
