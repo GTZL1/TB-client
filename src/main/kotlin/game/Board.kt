@@ -167,7 +167,7 @@ fun Board(game: Game) {
                             onDragEndUpOneRank = {
                                 if (pc.cardType::class != SpyCardType::class) {
                                     game.cardToPlayerRow(pc)
-                                    game.notifyMovement(pc, Position.PLAYER)
+                                    game.notifyMovement(pc, Position.PLAYER, true)
                                 } else {
                                     game.cardToOpponentRow(pc)
                                     (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
@@ -181,12 +181,12 @@ fun Board(game: Game) {
                                                 )
                                             )
                                         }
-                                    game.notifyMovement(pc, Position.SPY)
+                                    game.notifyMovement(pc, Position.SPY, true)
                                 }
                             },
                             onDragEndUpTwoRank = {
                                 game.cardToCenterRow(pc)
-                                game.notifyMovement(pc, Position.CENTER)
+                                game.notifyMovement(pc, Position.CENTER, true)
                             },
                             onDragEndDown = {})
                     }

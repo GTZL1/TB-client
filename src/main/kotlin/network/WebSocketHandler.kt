@@ -87,7 +87,8 @@ data class CardMovement(
     val type: String=Constants.CARD_MOVEMENT,
     val owner: String,
     val id: Int,
-    val position: Position
+    val position: Position,
+    val fromDeck: Boolean
 )
 data class CardAttack(
     val type: String=Constants.CARD_ATTACK,

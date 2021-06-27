@@ -63,6 +63,7 @@ class Game(
     }
 
     fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false) {
+        //println(card.cardType.name+" "+card.getHealth())
         playerRowCards.add(card)
         if(!isSpy && handCards.remove(card)){
             cardsMovedFromHand.value += 1
@@ -114,13 +115,14 @@ class Game(
         turnCallback.remove(callback)
     }
 
-    internal fun notifyMovement(card: PlayCard, position: Position) {
+    internal fun notifyMovement(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         webSocketHandler.sendMessage(
             JSONObject(
                 CardMovement(
                     owner = card.owner,
                     id = card.id,
-                    position = position
+                    position = position,
+                    fromDeck = fromDeck
                 )
             )
         )
@@ -169,8 +171,8 @@ class Game(
 
     private fun checkChangeTurn() {
         delay.value = Constants.MOVEMENT_DELAY
-        if (playerTurn && (cardsMovedFromHand.value == (player.playDeck.getBaseCards().size))
-            && (cardsAlreadyActed.size == (filterCardsOwner(player.pseudo).size - player.playDeck.getBaseCards().size))
+        if (playerTurn && ((cardsMovedFromHand.value == (player.playDeck.getBaseCards().size)) || handCards.isEmpty())
+            && (cardsAlreadyActed.size == (filterCardsOwner(player.pseudo).size - baseCards.size))
         ) {
             changeTurn()
         }
@@ -195,7 +197,8 @@ class Game(
             when(msg.getString("type")){
                 Constants.CARD_MOVEMENT -> {
                     applyMovement(msg.getString("owner"), msg.getInt("id"),
-                        Position.valueOf(msg.getString("position")))
+                        Position.valueOf(msg.getString("position")),
+                        msg.getBoolean("fromDeck"))
                 }
                 Constants.CHANGE_TURN -> {
                     playerTurn=!playerTurn
@@ -215,31 +218,25 @@ class Game(
         }
     }
 
-    private fun applyMovement(owner: String, id: Int, position: Position) {
+    private fun applyMovement(owner: String, id: Int, position: Position, fromDeck: Boolean) {
+        val card= if(fromDeck) {
+                (opponent.playDeck.getCards().first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
+        } else {
+            filterCardsOwner(owner).first { playCard -> playCard.id==id }
+        }
+
         when (position) {
             Position.PLAYER -> {
-                cardToOpponentRow(
-                    (opponent.playDeck.getCards()
-                        .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
-                )
+                cardToOpponentRow(card)
             }
             Position.CENTER -> {
-                cardToCenterRow(
-                    (opponent.playDeck.getCards()
-                        .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
-                )
+                cardToCenterRow(card)
             }
             Position.OPPONENT -> {
-                cardToPlayerRow(
-                    (opponent.playDeck.getCards()
-                        .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
-                )
+                cardToPlayerRow(card)
             }
             Position.SPY -> {
-                cardToPlayerRow(
-                    (opponent.playDeck.getCards()
-                        .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
-                )
+                cardToPlayerRow(card)
             }
             else -> {
             }
