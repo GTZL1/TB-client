@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
@@ -46,6 +45,7 @@ fun Board(game: Game) {
         onDispose { }
     }
 
+    //Window content
     Row() {
         //Infos on the side
         Column(
@@ -68,9 +68,9 @@ fun Board(game: Game) {
                         backgroundColor = if (notifyChangeTurn(game)) Color.Green else Color.Red,
                     )){}
                 if(notifyChangeTurn(game)) {
-                    Text(text= "00:"+(game.delay.value/1000).toString())
+                    val time = (game.delay.value/1000)
+                    Text(text= "00:"+ (if (time<10) "0" else "") + time.toString())
                 }
-
             }
             //Discard
             Box(modifier = Modifier.fillMaxWidth()
@@ -101,14 +101,21 @@ fun Board(game: Game) {
             modifier = Modifier.fillMaxSize(1f),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            // Opponent row
-            GameRow(content = {
-                game.opponentRowCards.forEach { pc ->
-                    DisplayCard(card = pc, game = game,
-                        toPlayer = (pc.owner == game.player.pseudo),
-                        isPlayerTurn = notifyChangeTurn(game))
+            //Opponent row with label
+            GameRowPlayerLabel(
+                labelPaddingModifier = Modifier.background(Color.Gray).padding(top = Constants.LABEL_PADDING.dp),
+                labelText = (Constants.OPPONENT_LABEL+game.opponent.pseudo+" !"),
+                top = true,
+                gameRowContent = {
+                    game.opponentRowCards.forEach { pc ->
+                        DisplayCard(
+                            card = pc, game = game,
+                            toPlayer = (pc.owner == game.player.pseudo),
+                            isPlayerTurn = notifyChangeTurn(game)
+                        )
+                    }
                 }
-            })
+            )
             // Center row
             GameRow(content = {
                 game.centerRowCards.forEach { pc ->
@@ -129,7 +136,7 @@ fun Board(game: Game) {
                 game.baseCards.forEach { pc: PlayCard ->
                     DisplayCard(card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
-                        isPlayerTurn = false) //base is never clickable
+                        isPlayerTurn = notifyChangeTurn(game)) //base is never clickable
                 }
                 game.playerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
@@ -143,45 +150,53 @@ fun Board(game: Game) {
                         onDragEndDown = {})
                 }
             })
-            // Hand
-            GameRow(content = {
-                game.handCards.forEach { pc: PlayCard ->
-                    DisplayDraggableCard(card = pc, game = game,
-                        toPlayer = (pc.owner == game.player.pseudo),
-                        isMovableUp = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
-                                && (game.playerRowCards.size < playerRowCapacity),
-                        isMovableUpTwoRank = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
-                                && (game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
-                                && (pc.cardType::class == VehicleCardType::class),
-                        isMovableDown = false,
-                        onDragEndUpOneRank = {
-                            if (pc.cardType::class != SpyCardType::class) {
-                                game.cardToPlayerRow(pc)
-                                game.notifyMovement(pc, Position.PLAYER)
-                            } else {
-                                game.cardToOpponentRow(pc)
-                                (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
-                                game.opponent.playDeck.addCard(pc)
-                                game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
-                                    .forEach { pc: PlayCard ->
-                                        game.handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
-                                    }
-                                game.notifyMovement(pc, Position.OPPONENT)
-                            }
-                        },
-                        onDragEndUpTwoRank = {
-                            game.cardToCenterRow(pc)
-                            game.notifyMovement(pc, Position.CENTER)
-                        },
-                        onDragEndDown = {})
-                }
-            })
+            // Hand with label
+            GameRowPlayerLabel(labelPaddingModifier = Modifier.background(Color.Gray).padding(bottom = Constants.LABEL_PADDING.dp),
+                labelText = (Constants.PLAYER_LABEL+game.player.pseudo+"."),
+                top = false,
+                gameRowContent = {
+                    game.handCards.forEach { pc ->
+                        DisplayDraggableCard(card = pc, game = game,
+                            toPlayer = (pc.owner == game.player.pseudo),
+                            isMovableUp = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
+                                    && (game.playerRowCards.size < playerRowCapacity),
+                            isMovableUpTwoRank = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
+                                    && (game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
+                                    && (pc.cardType::class == VehicleCardType::class),
+                            isMovableDown = false,
+                            onDragEndUpOneRank = {
+                                if (pc.cardType::class != SpyCardType::class) {
+                                    game.cardToPlayerRow(pc)
+                                    game.notifyMovement(pc, Position.PLAYER)
+                                } else {
+                                    game.cardToOpponentRow(pc)
+                                    (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
+                                    game.opponent.playDeck.addCard(pc)
+                                    game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
+                                        .forEach { pc: PlayCard ->
+                                            game.handCards.add(
+                                                pc.cardType.generatePlayCard(
+                                                    pc.owner,
+                                                    pc.id
+                                                )
+                                            )
+                                        }
+                                    game.notifyMovement(pc, Position.SPY)
+                                }
+                            },
+                            onDragEndUpTwoRank = {
+                                game.cardToCenterRow(pc)
+                                game.notifyMovement(pc, Position.CENTER)
+                            },
+                            onDragEndDown = {})
+                    }
+                })
         }
     }
 }
 
 @Composable
-fun DisplayDraggableCard(
+private fun DisplayDraggableCard(
     modifier: Modifier = Modifier,
     game: Game,
     card: PlayCard,
@@ -251,29 +266,68 @@ private fun moveVehicle(
     onDragEndUpLow: () -> Unit,
     onDragEndUpHigh: () -> Unit
 ) {
-    if (isMovableUpLow && (startY - offsetY < (Constants.CARD_DRAG_MARGIN + Constants.ROW_HEIGHT))) {
+    if (isMovableUpLow && (startY - offsetY < (Constants.CARD_DRAG_MARGIN + Constants.BIG_ROW_HEIGHT))) {
         onDragEndUpLow()
     } else {
         onDragEndUpHigh()
     }
 }
 
-
-
 @Composable
-fun GameRow(
+private fun GameRow(
     modifier: Modifier = Modifier,
+    height: Int= Constants.SMALL_ROW_HEIGHT,
     content: @Composable () -> Unit,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth().height(Constants.ROW_HEIGHT.dp).zIndex(0f)
+        modifier = modifier.fillMaxWidth().height(height.dp).zIndex(0f)
             .background(Color.Gray),
         horizontalArrangement = Arrangement.spacedBy(
             Constants.SPACE_BETWEEN_CARDS.dp,
             Alignment.CenterHorizontally
-        )
+        ),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         content()
+    }
+}
+
+@Composable
+private fun GameRowPlayerLabel(
+    modifier: Modifier = Modifier,
+    labelPaddingModifier: Modifier,
+    labelText: String,
+    top : Boolean,
+    gameRowContent: @Composable () -> Unit,
+) {
+    Column(modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center
+    ){
+        if(!top) {
+            GameRow(content = gameRowContent)
+            PlayerLabel(paddingModifier = labelPaddingModifier,
+            text = labelText)
+        } else {
+            PlayerLabel(paddingModifier = labelPaddingModifier,
+                text = labelText)
+            GameRow(content = gameRowContent)
+        }
+    }
+}
+
+@Composable
+private fun PlayerLabel(
+    paddingModifier: Modifier,
+    text: String
+) {
+    Row(
+        modifier = paddingModifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = text,
+            style = cardFont
+        )
     }
 }
 

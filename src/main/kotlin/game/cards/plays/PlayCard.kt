@@ -1,18 +1,19 @@
 package game.cards.plays
 
+import androidx.compose.runtime.mutableStateOf
 import game.Position
 import game.cards.types.*
 
 abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
-    private var health = cardType.life
+    private var health = mutableStateOf(cardType.life)
     private var position=Position.DECK
 
     fun getHealth(): Int {
-        return health
+        return health.value
     }
 
     fun takeDamage(damage: Int) {
-        health -= damage
+        health.value -= damage
     }
 
     fun getPosition():Position{

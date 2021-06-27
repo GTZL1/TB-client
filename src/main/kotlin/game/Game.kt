@@ -62,9 +62,9 @@ class Game(
         }
     }
 
-    fun cardToPlayerRow(card: PlayCard) {
+    fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false) {
         playerRowCards.add(card)
-        if(handCards.remove(card)){
+        if(!isSpy && handCards.remove(card)){
             cardsMovedFromHand.value += 1
         }
         centerRowCards.remove(card)
@@ -235,6 +235,12 @@ class Game(
                         .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
                 )
             }
+            Position.SPY -> {
+                cardToPlayerRow(
+                    (opponent.playDeck.getCards()
+                        .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
+                )
+            }
             else -> {
             }
         }
@@ -292,7 +298,7 @@ class Game(
 }
 
 enum class Position {
-    DECK, HAND, PLAYER, CENTER, OPPONENT, DISCARD
+    DECK, HAND, PLAYER, CENTER, OPPONENT, DISCARD, SPY
 }
 
 @Composable
