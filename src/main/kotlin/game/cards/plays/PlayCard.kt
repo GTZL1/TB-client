@@ -1,18 +1,20 @@
 package game.cards.plays
 
+import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableStateOf
 import game.Position
 import game.cards.types.*
 
 abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
-    private var health = cardType.life
+    private val health = mutableStateOf(cardType.life)
     private var position=Position.DECK
 
     fun getHealth(): Int {
-        return health
+        return health.value
     }
 
     fun takeDamage(damage: Int) {
-        health -= damage
+        health.value -= damage
     }
 
     fun getPosition():Position{
@@ -24,7 +26,7 @@ abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) 
     }
 
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
+        //if (this === other) return true
         if (other !is PlayCard) return false
 
         if (cardType != other.cardType) return false
