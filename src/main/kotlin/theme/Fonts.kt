@@ -7,3 +7,4 @@ import androidx.compose.ui.unit.sp
 
 
 val cardFont =TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+val discardCardFont =TextStyle(fontFamily = FontFamily.Default, fontSize = 10.sp, fontWeight = FontWeight.Bold)

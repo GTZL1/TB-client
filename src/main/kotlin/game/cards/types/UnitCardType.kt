@@ -5,7 +5,7 @@ import kotlin.reflect.KClass
 
 
 open class UnitCardType constructor(
-    name: String, life: Int, attack: Int, maxNumberInDeck: Int, image: String,
+    name: String, life: Int, attack: Int, maxNumberInDeck: Int,
     playType: KClass<out PlayCard> = UnitPlayCard::class
-) : CardType(name, life, attack, maxNumberInDeck, image, playType) {
+) : CardType(name, life, attack, maxNumberInDeck, playType) {
 }

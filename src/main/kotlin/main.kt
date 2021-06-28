@@ -1,29 +1,25 @@
 import androidx.compose.desktop.Window
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-//import androidx.compose.ui.gesture.ExperimentalPointerInput
 import androidx.compose.ui.unit.IntSize
-import game.Game
+import game.*
 import game.cards.types.*
 import game.decks.DeckScreen
 import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import network.SimpleMessage
 import network.Login
 import network.PlayerInitialization
+import network.SimpleMessage
 import network.WebSocketHandler
 import org.json.JSONObject
 import java.time.Instant
 import java.util.*
 import kotlin.reflect.KClass
 
-//@ExperimentalPointerInput
-//@OptIn(DelicateCoroutinesApi::class)
 fun main(args: Array<String>): Unit {
     System.setProperty("skiko.renderApi", "OPENGL")
     val httpClient = HttpClient {
@@ -41,7 +37,9 @@ fun main(args: Array<String>): Unit {
         Pair("base", BaseCardType::class)
     )
 
-    Window(title = "HEIG game", size = IntSize(700, 1010)) {
+    Window(title = "HEIG game", size = IntSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT)) {
+        val game= remember { mutableStateOf<Game?>(null) }
+
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
         val screenState = remember { mutableStateOf(Screen.DECK) }
@@ -61,24 +59,34 @@ fun main(args: Array<String>): Unit {
                 DeckScreen(listOf(login.generateDeck(login.generateCardTypes(cardClasses))))
             }
             Screen.BOARD -> {
-                GlobalScope.launch {  websocket.initialize { run{}} }
-                websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
-                runBlocking { websocket.receiveOne() }
                 val cardTypes=login.generateCardTypes(cardClasses)
                 val player=Player(
-                pseudo = username.value,
-                deckType = login.generateDeck(cardTypes)
+                    pseudo = username.value,
+                    deckType = login.generateDeck(cardTypes)
                 )
-                websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
-                val opponent= runBlocking { websocket.receiveOne() }
-
-                val game = Game(
-                    Date.from(Instant.now()), httpClient, idSession = idSession.value,
-                    player,
-                    Player(pseudo = opponent.getString("username"),
-                    deckType =  login.generateDeck(cardTypes,opponent.getJSONObject("deckType")))
-                )
-                game.Board()
+                LaunchedEffect(true) { launch{websocket.initialize { run{}} }
+                    websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
+                    websocket.receiveOne()
+                    websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
+                    val opponentDeck = websocket.receiveOne()
+                    val g = Game(
+                        Date.from(Instant.now()), websocket, idSession = idSession.value,
+                        player = player,
+                        opponent = Player(
+                            pseudo = opponentDeck.getString("username"),
+                            deckType = login.generateDeck(
+                                cardTypes,
+                                opponentDeck.getJSONObject("deckType")
+                            )
+                        )
+                    )
+                    g.determineFirst()
+                    game.value=g
+                }
+                val currentGame=game.value
+                if(currentGame!=null){
+                    Board(currentGame)
+                }
             }
         }
     }
