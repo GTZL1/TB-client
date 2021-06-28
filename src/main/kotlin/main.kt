@@ -42,7 +42,7 @@ fun main(args: Array<String>): Unit {
 
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
-        val screenState = remember { mutableStateOf(Screen.DECK) }
+        val screenState = remember { mutableStateOf(Screen.BOARD) }
         val login = Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.DECK },

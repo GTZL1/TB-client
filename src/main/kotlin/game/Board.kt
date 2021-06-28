@@ -336,22 +336,43 @@ fun DisplayCard(
 ) = key(card, game, toPlayer, isPlayerTurn, inDiscard){
     val clicked = remember { mutableStateOf(false) }
     val hover = remember { mutableStateOf(false) }
+    DisplayNonClickableCard(modifier = modifier
+                            .pointerMoveFilter (onEnter = {hover.value=true
+                                                          false},
+                            onExit = {hover.value=false
+                            false})
+                            .clickable(enabled = isPlayerTurn, onClick = {
+                                    game.handleClick(clicked, card)
+                            }),
+            card = card,
+            toPlayer= toPlayer,
+            clicked=clicked.value,
+            hover=hover.value,
+            width=width,
+            height=height,
+            inDiscard=inDiscard)
+}
+
+@Composable
+fun DisplayNonClickableCard(
+    modifier: Modifier = Modifier,
+    card: PlayCard,
+    toPlayer: Boolean,
+    clicked: Boolean,
+    hover: Boolean,
+    width: Int = Constants.CARD_WIDTH,
+    height: Int = Constants.CARD_HEIGHT,
+    inDiscard: Boolean = false
+) = key(card, toPlayer, clicked, hover, inDiscard){
     Box(
         modifier = modifier
-            .pointerMoveFilter (onEnter = {hover.value=true
-                                          false},
-            onExit = {hover.value=false
-            false})
-            .clickable(enabled = isPlayerTurn, onClick = {
-                    game.handleClick(clicked, card)
-            })
-            .width(width.dp).height(height.dp)
             .clip(shape = Constants.cardShape)
             .border(
                 width = 2.dp,
-                color = if(clicked.value || hover.value) Color.White else (if (toPlayer) Color.Red else Color.Blue),
+                color = if(clicked || hover) Color.White else (if (toPlayer) Color.Red else Color.Blue),
                 shape = Constants.cardShape
             )
+            .width(width.dp).height(height.dp)
     ) {
         Column(
             modifier = modifier.fillMaxSize(1f),
@@ -374,7 +395,7 @@ fun DisplayCard(
                         modifier = modifier
                             .align(Alignment.TopEnd)
                             .border(width = 2.dp,
-                                color = if(clicked.value) Color.White else (if (toPlayer) Color.Red else Color.Blue),
+                                color = if(clicked) Color.White else (if (toPlayer) Color.Red else Color.Blue),
                                 shape = Constants.statsBoxShape),
                         card = card,
                     )

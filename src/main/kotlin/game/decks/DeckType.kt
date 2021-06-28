@@ -6,7 +6,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.ArrayList
 
-class DeckType(val name: String, val cardTypes: Map<CardType, Short>) {
+class DeckType(var name: String, val cardTypes: Map<CardType, Short>) {
     fun generatePlayDeck(playerName:String):PlayDeck{
         val deck= ArrayList<PlayCard>()
         var id=-1
