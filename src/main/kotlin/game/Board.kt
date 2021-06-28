@@ -228,19 +228,11 @@ private fun DisplayDraggableCard(
                         }
                     },
                     onDragEnd = {
-                        if ((isMovableUp || isMovableUpTwoRank) && ((startY - offsetY) > Constants.CARD_DRAG_MARGIN)) {
-                            try {
-                                moveVehicle(
-                                    card = card as VehiclePlayCard,
-                                    startY = startY,
-                                    offsetY = offsetY,
-                                    isMovableUpLow = isMovableUp,
-                                    onDragEndUpLow = onDragEndUpOneRank,
-                                    onDragEndUpHigh = onDragEndUpTwoRank
-                                )
-                            } catch (t: Throwable) {
-                                onDragEndUpOneRank()
-                            }
+                        if (isMovableUpTwoRank && (startY - offsetY > (Constants.CARD_DRAG_MARGIN + Constants.BIG_ROW_HEIGHT))) {
+                            onDragEndUpTwoRank()
+                        }
+                        else if ((isMovableUp) && ((startY - offsetY) > Constants.CARD_DRAG_MARGIN)) {
+                            onDragEndUpOneRank()
                         } else if (isMovableDown && ((startY - offsetY) < -Constants.CARD_DRAG_MARGIN)) {
                             onDragEndDown()
                         } else {
