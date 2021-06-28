@@ -42,7 +42,7 @@ fun main(args: Array<String>): Unit {
 
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
-        val screenState = remember { mutableStateOf(Screen.BOARD) }
+        val screenState = remember { mutableStateOf(Screen.DECK) }
         val login = Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.DECK },
@@ -56,7 +56,8 @@ fun main(args: Array<String>): Unit {
 
             }
             Screen.DECK ->{
-                DeckScreen(listOf(login.generateDeck(login.generateCardTypes(cardClasses))))
+                DeckScreen(login.generateCardTypes(cardClasses),
+                    listOf(login.generateDeck(login.generateCardTypes(cardClasses))))
             }
             Screen.BOARD -> {
                 val cardTypes=login.generateCardTypes(cardClasses)
