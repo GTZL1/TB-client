@@ -56,7 +56,8 @@ fun main(args: Array<String>): Unit {
 
             }
             Screen.DECK ->{
-                DeckScreen(listOf(login.generateDeck(login.generateCardTypes(cardClasses))))
+                DeckScreen(login.generateCardTypes(cardClasses),
+                    listOf(login.generateDeck(login.generateCardTypes(cardClasses))))
             }
             Screen.BOARD -> {
                 val cardTypes=login.generateCardTypes(cardClasses)
