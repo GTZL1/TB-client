@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.IntSize
 import game.*
 import game.cards.types.*
+import game.decks.DeckGUI
 import game.decks.DeckScreen
 import game.player.Player
 import io.ktor.client.*
@@ -42,7 +43,7 @@ fun main(args: Array<String>): Unit {
 
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
-        val screenState = remember { mutableStateOf(Screen.BOARD) }
+        val screenState = remember { mutableStateOf(Screen.DECK) }
         val login = Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.DECK },
@@ -56,8 +57,11 @@ fun main(args: Array<String>): Unit {
 
             }
             Screen.DECK ->{
-                DeckScreen(login.generateCardTypes(cardClasses),
-                    listOf(login.generateDeck(login.generateCardTypes(cardClasses))))
+                val deckGUI=DeckGUI(idSession = idSession,
+                    httpClient = httpClient,
+                    cardTypes = login.generateCardTypes(cardClasses),
+                    decks = listOf(login.generateDeck(login.generateCardTypes(cardClasses))))
+                DeckScreen(deckGUI = deckGUI)
             }
             Screen.BOARD -> {
                 val cardTypes=login.generateCardTypes(cardClasses)

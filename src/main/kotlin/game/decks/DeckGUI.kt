@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,21 +19,37 @@ import game.DisplayNonClickableCard
 import game.cards.types.BaseCardType
 import game.cards.types.CardType
 import io.ktor.client.*
-import io.ktor.client.features.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import kotlinx.coroutines.runBlocking
-import network.LoginRequest
-import network.LoginResponse
 import org.json.JSONObject
-import theme.*
+import theme.buttonFont
+import theme.menuFont
+import theme.miniFont
+import theme.quantityFont
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.MutableMap
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.filter
+import kotlin.collections.filterValues
+import kotlin.collections.first
+import kotlin.collections.forEach
+import kotlin.collections.map
+import kotlin.collections.set
+import kotlin.collections.sum
 
 class DeckGUI(
     private val idSession: MutableState<Int>,
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
+    val cardTypes: List<CardType>,
+    val decks: List<DeckType>
 ) {
+    val deck = mutableStateOf(decks.first())
+    var deckName =mutableStateOf(deck.value.name)
+    val baseCards = cardTypes.filter { cardType: CardType -> cardType::class == BaseCardType::class }
+
     internal fun updateDeck(
     ) {
+        println(deck.value.serialize())
         /*try {
             val response = runBlocking {
                 httpClient.request<LoginResponse> {
@@ -58,15 +73,12 @@ class DeckGUI(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DeckScreen(cardTypes: List<CardType>, decks: List<DeckType>) {
-    val deck = remember { mutableStateOf(decks.first()) }
-    var deckName by remember { mutableStateOf(deck.value.name) }
-    val cardsTotal =  remember { mutableStateOf(deck.value.cardTypes.map { (_, qty) -> qty }.sum()) }
-    val baseCards = cardTypes.filter { cardType: CardType -> cardType::class == BaseCardType::class }
+fun DeckScreen(deckGUI: DeckGUI) {
+    val cardsTotal =  remember { mutableStateOf(deckGUI.deck.value.cardTypes.map { (_, qty) -> qty }.sum()) }
 
     val cardsDeck= mutableStateMapOf<CardType, Short>()
     DisposableEffect(Unit){
-        cardsDeck.putAll(deck.value.cardTypes)
+        cardsDeck.putAll(deckGUI.deck.value.cardTypes)
 
         onDispose {  }
     }
@@ -82,11 +94,12 @@ fun DeckScreen(cardTypes: List<CardType>, decks: List<DeckType>) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            DeckChoiceMenu(decks, deck)
+            DeckChoiceMenu(deckGUI.decks, deckGUI.deck)
             TextField(
-                value = deckName,
-                onValueChange = { deckName = it
-                    deck.value.name=deckName},
+                value = deckGUI.deckName.value,
+                onValueChange = { value ->
+                    deckGUI.deckName.value = value
+                    deckGUI.deck.value.name=deckGUI.deckName.value},
                 textStyle = menuFont,
                 label = {
                     Text(
@@ -98,8 +111,8 @@ fun DeckScreen(cardTypes: List<CardType>, decks: List<DeckType>) {
             Total(cardsDeck)
             Button(modifier = Modifier.height(50.dp),
                     onClick = {
-                        deck.value.cardTypes = (cardsDeck.filterValues { qty: Short -> qty > 0.toShort() })
-                        println(deck.value.serialize())
+                        deckGUI.deck.value.cardTypes = (cardsDeck.filterValues { qty: Short -> qty > 0.toShort() })
+                        deckGUI.updateDeck()
                     }){
                     Text(text = "Save deck",
                         color = Color.White,
@@ -112,14 +125,14 @@ fun DeckScreen(cardTypes: List<CardType>, decks: List<DeckType>) {
                 cells = GridCells.Adaptive((Constants.CARD_WIDTH + 40).dp),
             ) {
                 items(
-                    cardTypes.filter { cardType: CardType -> !baseCards.contains(cardType) }.size
+                    deckGUI.cardTypes.filter { cardType: CardType -> !deckGUI.baseCards.contains(cardType) }.size
                 ) { ixCard ->
                     val card =
-                        cardTypes.filter { cardType: CardType -> !baseCards.contains(cardType) }[ixCard]
+                        deckGUI.cardTypes.filter { cardType: CardType -> !deckGUI.baseCards.contains(cardType) }[ixCard]
                     CardMenuItem(
                         cardDecks = cardsDeck,
                         cardType = card,
-                        quantity = mutableStateOf(deck.value.cardTypes[card] ?: 0),
+                        quantity = mutableStateOf(deckGUI.deck.value.cardTypes[card] ?: 0),
                         cardsCount = cardsTotal
                     )
                 }

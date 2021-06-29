@@ -21,6 +21,6 @@ class DeckType(val id: Long, var name: String, var cardTypes: Map<CardType, Shor
     fun serialize():JSONObject{
         val cards:JSONArray= JSONArray()
         cardTypes.forEach { ct, s -> cards.put(JSONObject().put("name",ct.name).put("quantity", s)) }
-        return JSONObject().put("name", name).put("cards", cards)
+        return JSONObject().put("id", id).put("name", name).put("cards", cards)
     }
 }
