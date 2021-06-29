@@ -60,14 +60,14 @@ fun main(args: Array<String>): Unit {
                 val deckGUI=DeckGUI(idSession = idSession,
                     httpClient = httpClient,
                     cardTypes = login.generateCardTypes(cardClasses),
-                    decks = listOf(login.generateDeck(login.generateCardTypes(cardClasses))))
+                    decks = login.generateDeck(login.generateCardTypes(cardClasses)))
                 DeckScreen(deckGUI = deckGUI)
             }
             Screen.BOARD -> {
                 val cardTypes=login.generateCardTypes(cardClasses)
                 val player=Player(
                     pseudo = username.value,
-                    deckType = login.generateDeck(cardTypes)
+                    deckType = login.generateDeck(cardTypes).first()
                 )
                 LaunchedEffect(true) { launch{websocket.initialize { run{}} }
                     websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))

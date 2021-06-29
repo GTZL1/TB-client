@@ -198,7 +198,7 @@ class Login(
         return cardTypes
     }
 
-    /*fun generateDeck(cardTypes: List<CardType>, playerDecks: JSONArray = decksRequest()): List<DeckType> {
+    fun generateDeck(cardTypes: List<CardType>, playerDecks: JSONArray = decksRequest()): List<DeckType> {
         val decks= mutableListOf<DeckType>()
 
         for(y in 0 until playerDecks.length()){
@@ -206,9 +206,9 @@ class Login(
             decks.add(generateDeck(cardTypes, deck))
         }
         return decks.toList()
-    }*/
+    }
 
-    fun generateDeck(cardTypes: List<CardType>, playerDeck: JSONObject  = decksRequest().getJSONObject(0)): DeckType {
+    fun generateDeck(cardTypes: List<CardType>, playerDeck: JSONObject): DeckType {
         val deckType= mutableMapOf<CardType,Short>()
 
         for(x in 0 until playerDeck.getJSONArray("cards").length()){

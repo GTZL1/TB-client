@@ -19,6 +19,10 @@ import game.DisplayNonClickableCard
 import game.cards.types.BaseCardType
 import game.cards.types.CardType
 import io.ktor.client.*
+import io.ktor.client.features.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import theme.buttonFont
 import theme.menuFont
@@ -50,24 +54,21 @@ class DeckGUI(
     internal fun updateDeck(
     ) {
         println(deck.value.serialize())
-        /*try {
+        try {
             val response = runBlocking {
-                httpClient.request<LoginResponse> {
-                    url("http://localhost:9000/login")
+                httpClient.request<String> {
+                    url("http://localhost:9000/decks")
                     headers {
                         append("Content-Type", "application/json")
                     }
                     body = UpdateDeckRequest(idSession = idSession.value,
-                                            deckType = )
-                    method = HttpMethod.Get
+                                            deckType = deck.value)
+                    method = HttpMethod.Post
                 }
             }
-            if (response.granted) {
-                idSession.value = response.idSession
-
-            }
+            println(response)
         } catch (exception: ClientRequestException) {
-        }*/
+        }
     }
 }
 
@@ -315,5 +316,5 @@ private fun BaseCardsRow(
 
 data class UpdateDeckRequest(
     val idSession: Int,
-    val deckType: JSONObject
+    val deckType: DeckType
 )
