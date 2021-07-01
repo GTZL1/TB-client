@@ -244,13 +244,14 @@ private fun QuantitySetter(//deck: DeckType,
             },
             textStyle = quantityFont,
         )
-        /*Column(modifier = Modifier.fillMaxHeight(),
+        Column(modifier = Modifier.fillMaxHeight(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally){
+            var newQty=0
             IconButton(modifier = Modifier.padding(bottom = 3.dp)
                 .height(23.dp).width(30.dp),
-                onClick = { if(quantity.value.toInt() < cardType.maxNumberInDeck) {
-                                cardDecks[cardType] += 1
+                onClick = { if(cardDecks[cardType]== null || cardDecks[cardType]!! < cardType.maxNumberInDeck) {
+                                cardDecks[cardType] = ((cardDecks[cardType] ?: 0) + 1.toShort()).toShort()
                 }
                             //cardDecks[cardType]= quantity.value
                 },
@@ -259,17 +260,16 @@ private fun QuantitySetter(//deck: DeckType,
                         contentDescription = "Arrow up icon",)
                 })
             IconButton(modifier = Modifier.height(23.dp).width(30.dp),
-                onClick = { if(quantity.value.toInt() > 0) {
-                                quantity.value--
-
-                            }
+                onClick = { if(cardDecks[cardType]!= null && cardDecks[cardType]!! > 0) {
+                    cardDecks[cardType] = (cardDecks[cardType]!! - 1.toShort()).toShort()
+                }
                             //cardDecks[cardType]= quantity.value
                     },
                 content = {
                     Image(painter = svgResource("icons/arrow_drop_down.svg"),
                         contentDescription = "Arrow up icon",)
                 })
-        }*/
+        }
     }
 }
 
