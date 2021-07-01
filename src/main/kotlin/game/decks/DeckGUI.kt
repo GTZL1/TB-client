@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import game.DisplayNonClickableCard
 import game.cards.types.BaseCardType
 import game.cards.types.CardType
+import game.cards.types.HeroCardType
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
@@ -79,7 +80,6 @@ class DeckGUI(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DeckScreen(deckGUI: DeckGUI) {
-    //val cardsTotal =  remember { mutableStateOf(deckGUI.deck.value.cardTypes.map { (_, qty) -> qty }.sum()) }
     Column(
         modifier = Modifier.fillMaxSize()
     ){
@@ -106,13 +106,14 @@ fun DeckScreen(deckGUI: DeckGUI) {
                 },
             )
             Column {
-                Text(text = "Hero cards: ",
+                Text(text = "Hero cards: "+ TotalHeroes(deckGUI.cardsDeck),
                     color = Color.White)
-                Text(text = "Total cards: "+ Total(deckGUI.cardsDeck),
+                Text(text = "Total cards: "+ Total(deckGUI.cardsDeck)
+                    +" (min "+ TotalMinimum(deckGUI.cardsDeck) +")",
                     color = Color.White)
             }
-
             Button(modifier = Modifier.height(50.dp),
+                    enabled = Total(deckGUI.cardsDeck) >= TotalMinimum(deckGUI.cardsDeck),
                     onClick = {
                         deckGUI.deck.value.cardTypes = (deckGUI.cardsDeck.filterValues { qty: Short -> qty > 0.toShort() })
                         deckGUI.updateDeck()
@@ -135,16 +136,12 @@ fun DeckScreen(deckGUI: DeckGUI) {
                     CardMenuItem(
                         cardsDeck = deckGUI.cardsDeck,
                         cardType = card,
-                        quantity = mutableStateOf(deckGUI.deck.value.cardTypes[card] ?: 0),
-                        //cardsCount = cardsTotal
                     )
                 }
             }
         }
-        //if(cardsDeck.isNotEmpty()){
-            BaseCardsRow(deck = deckGUI.deck.value, baseCards = deckGUI.baseCards,
+        BaseCardsRow(deck = deckGUI.deck.value, baseCards = deckGUI.baseCards,
                 cardDecks = deckGUI.cardsDeck)
-        //}
     }
 }
 
@@ -152,7 +149,22 @@ fun DeckScreen(deckGUI: DeckGUI) {
 private fun Total(
     cardsDeck: Map<CardType, Short>
 ): Int{
-    return cardsDeck.map { (_, qty) -> qty }.sum()
+    return cardsDeck.filter { (card, _) -> card::class!=BaseCardType::class }
+        .map { (_, qty) -> qty }.sum()
+}
+
+@Composable
+private fun TotalHeroes(
+    cardsDeck: Map<CardType, Short>
+): Int{
+    return Total(cardsDeck.filter { (card, _) -> card::class==HeroCardType::class })
+}
+
+@Composable
+private fun TotalMinimum(
+    cardsDeck: Map<CardType, Short>
+): Int {
+    return (Constants.MINIMAL_DECK_QUANTITY + TotalHeroes(cardsDeck)*Constants.CARD_TO_ADD_FOR_HERO)
 }
 
 @Composable
@@ -184,11 +196,9 @@ private fun DeckChoiceMenu(
 }
 
 @Composable
-private fun CardMenuItem(//deck: DeckType,
+private fun CardMenuItem(
     cardsDeck: MutableMap<CardType, Short>,
     cardType: CardType,
-    quantity: MutableState<Short>,
-    //cardsCount: MutableState<Int>
 ) = key(cardsDeck){
     Box(modifier = Modifier.padding(20.dp)
         .width(Constants.CARD_WIDTH.dp)){
@@ -206,17 +216,14 @@ private fun CardMenuItem(//deck: DeckType,
                 color = Color.Gray)
             }
             QuantitySetter(cardDecks = cardsDeck,
-                            cardType = cardType,
-                            quantity = quantity,)
+                            cardType = cardType,)
         }
     }
 }
 
 @Composable
-private fun QuantitySetter(//deck: DeckType,
-                            cardDecks: MutableMap<CardType, Short>,
-                            cardType: CardType,
-                           quantity: MutableState<Short>)=key(quantity){
+private fun QuantitySetter(cardDecks: MutableMap<CardType, Short>,
+                            cardType: CardType,){
     Row(modifier = Modifier.width(Constants.CARD_WIDTH.dp)
         .height(50.dp),
         horizontalArrangement = Arrangement.Center){

@@ -34,6 +34,7 @@ object Constants {
     const val PLAYER_ROW_CAPACITY = 3
 
     const val MINIMAL_DECK_QUANTITY = 18
+    const val CARD_TO_ADD_FOR_HERO = 2
 
     private const val SHAPE_SIZE = 5
     val cardShape = CutCornerShape(SHAPE_SIZE.dp)
