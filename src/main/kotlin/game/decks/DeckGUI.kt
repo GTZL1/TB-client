@@ -141,10 +141,10 @@ fun DeckScreen(deckGUI: DeckGUI) {
                 }
             }
         }
-        /*if(cardsDeck.isNotEmpty()){
-            BaseCardsRow(deck = deck.value, baseCards = baseCards,
-                cardDecks = cardsDeck)
-        }*/
+        //if(cardsDeck.isNotEmpty()){
+            BaseCardsRow(deck = deckGUI.deck.value, baseCards = deckGUI.baseCards,
+                cardDecks = deckGUI.cardsDeck)
+        //}
     }
 }
 
@@ -152,12 +152,6 @@ fun DeckScreen(deckGUI: DeckGUI) {
 private fun Total(
     cardsDeck: Map<CardType, Short>
 ): Int{
-    /*Column {
-        Text(text = "Hero cards: ",
-            color = Color.White)
-        Text(text = "Total cards: "+ ,
-            color = Color.White)
-    }*/
     return cardsDeck.map { (_, qty) -> qty }.sum()
 }
 
@@ -228,7 +222,7 @@ private fun QuantitySetter(//deck: DeckType,
         horizontalArrangement = Arrangement.Center){
         TextField(
             modifier = Modifier.fillMaxWidth(0.5f),
-            value = cardDecks[cardType].toString(),
+            value = (cardDecks[cardType] ?: 0).toString(),
             onValueChange = { cardDecks[cardType] = try{
                     var s = it.toShort()
                     if (s> cardType.maxNumberInDeck) {
@@ -253,7 +247,6 @@ private fun QuantitySetter(//deck: DeckType,
                 onClick = { if(cardDecks[cardType]== null || cardDecks[cardType]!! < cardType.maxNumberInDeck) {
                                 cardDecks[cardType] = ((cardDecks[cardType] ?: 0) + 1.toShort()).toShort()
                 }
-                            //cardDecks[cardType]= quantity.value
                 },
                 content = {
                     Image(painter = svgResource("icons/arrow_drop_up.svg"),
@@ -263,7 +256,6 @@ private fun QuantitySetter(//deck: DeckType,
                 onClick = { if(cardDecks[cardType]!= null && cardDecks[cardType]!! > 0) {
                     cardDecks[cardType] = (cardDecks[cardType]!! - 1.toShort()).toShort()
                 }
-                            //cardDecks[cardType]= quantity.value
                     },
                 content = {
                     Image(painter = svgResource("icons/arrow_drop_down.svg"),
