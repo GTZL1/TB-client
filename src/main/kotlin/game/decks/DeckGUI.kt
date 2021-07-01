@@ -59,7 +59,6 @@ class DeckGUI(
 
     internal fun updateDeck(
     ) {
-        println(deck.value.serialize())
         try {
             val response = runBlocking {
                 httpClient.request<String> {
@@ -72,6 +71,7 @@ class DeckGUI(
                     method = HttpMethod.Post
                 }
             }
+            println(response)
         } catch (exception: ClientRequestException) {
         }
     }
