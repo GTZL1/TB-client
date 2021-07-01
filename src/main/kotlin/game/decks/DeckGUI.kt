@@ -23,7 +23,6 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
-import org.json.JSONObject
 import theme.buttonFont
 import theme.menuFont
 import theme.miniFont
@@ -51,6 +50,12 @@ class DeckGUI(
     var deckName =mutableStateOf(deck.value.name)
     val baseCards = cardTypes.filter { cardType: CardType -> cardType::class == BaseCardType::class }
 
+    val cardsDeck= mutableStateMapOf<CardType, Short>()
+
+    init {
+        cardsDeck.putAll(deck.value.cardTypes)
+    }
+
     internal fun updateDeck(
     ) {
         println(deck.value.serialize())
@@ -62,11 +67,10 @@ class DeckGUI(
                         append("Content-Type", "application/json")
                     }
                     body = UpdateDeckRequest(idSession = idSession.value,
-                                            deckType = deck.value)
+                                            deckType = deck.value.serialize().toString())
                     method = HttpMethod.Post
                 }
             }
-            println(response)
         } catch (exception: ClientRequestException) {
         }
     }
@@ -75,15 +79,7 @@ class DeckGUI(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DeckScreen(deckGUI: DeckGUI) {
-    val cardsTotal =  remember { mutableStateOf(deckGUI.deck.value.cardTypes.map { (_, qty) -> qty }.sum()) }
-
-    val cardsDeck= mutableStateMapOf<CardType, Short>()
-    DisposableEffect(Unit){
-        cardsDeck.putAll(deckGUI.deck.value.cardTypes)
-
-        onDispose {  }
-    }
-
+    //val cardsTotal =  remember { mutableStateOf(deckGUI.deck.value.cardTypes.map { (_, qty) -> qty }.sum()) }
     Column(
         modifier = Modifier.fillMaxSize()
     ){
@@ -100,7 +96,7 @@ fun DeckScreen(deckGUI: DeckGUI) {
                 value = deckGUI.deckName.value,
                 onValueChange = { value ->
                     deckGUI.deckName.value = value
-                    deckGUI.deck.value.name=deckGUI.deckName.value},
+                    deckGUI.deck.value.name=value},
                 textStyle = menuFont,
                 label = {
                     Text(
@@ -109,10 +105,16 @@ fun DeckScreen(deckGUI: DeckGUI) {
                     )
                 },
             )
-            Total(cardsDeck)
+            Column {
+                Text(text = "Hero cards: ",
+                    color = Color.White)
+                Text(text = "Total cards: "+ Total(deckGUI.cardsDeck),
+                    color = Color.White)
+            }
+
             Button(modifier = Modifier.height(50.dp),
                     onClick = {
-                        deckGUI.deck.value.cardTypes = (cardsDeck.filterValues { qty: Short -> qty > 0.toShort() })
+                        deckGUI.deck.value.cardTypes = (deckGUI.cardsDeck.filterValues { qty: Short -> qty > 0.toShort() })
                         deckGUI.updateDeck()
                     }){
                     Text(text = "Save deck",
@@ -131,10 +133,10 @@ fun DeckScreen(deckGUI: DeckGUI) {
                     val card =
                         deckGUI.cardTypes.filter { cardType: CardType -> !deckGUI.baseCards.contains(cardType) }[ixCard]
                     CardMenuItem(
-                        cardDecks = cardsDeck,
+                        cardsDeck = deckGUI.cardsDeck,
                         cardType = card,
                         quantity = mutableStateOf(deckGUI.deck.value.cardTypes[card] ?: 0),
-                        cardsCount = cardsTotal
+                        //cardsCount = cardsTotal
                     )
                 }
             }
@@ -149,20 +151,21 @@ fun DeckScreen(deckGUI: DeckGUI) {
 @Composable
 private fun Total(
     cardsDeck: Map<CardType, Short>
-){
-    Column {
+): Int{
+    /*Column {
         Text(text = "Hero cards: ",
             color = Color.White)
-        Text(text = "Total cards: "+ (cardsDeck.map { (_, qty) -> qty }.sum()),
+        Text(text = "Total cards: "+ ,
             color = Color.White)
-    }
+    }*/
+    return cardsDeck.map { (_, qty) -> qty }.sum()
 }
 
 @Composable
 private fun DeckChoiceMenu(
     decks: List<DeckType>,
     deck: MutableState<DeckType>
-) = key(deck){
+) = key(decks, deck){
     var expanded by remember { mutableStateOf(false) }
     Text(text = deck.value.name,
         modifier = Modifier.clickable(onClick = {
@@ -188,10 +191,11 @@ private fun DeckChoiceMenu(
 
 @Composable
 private fun CardMenuItem(//deck: DeckType,
-                         cardDecks: MutableMap<CardType, Short>,
-                        cardType: CardType,
-                        quantity: MutableState<Short>,
-                        cardsCount: MutableState<Int>){
+    cardsDeck: MutableMap<CardType, Short>,
+    cardType: CardType,
+    quantity: MutableState<Short>,
+    //cardsCount: MutableState<Int>
+) = key(cardsDeck){
     Box(modifier = Modifier.padding(20.dp)
         .width(Constants.CARD_WIDTH.dp)){
         Column(modifier = Modifier.fillMaxSize(),
@@ -207,10 +211,9 @@ private fun CardMenuItem(//deck: DeckType,
                 style = miniFont,
                 color = Color.Gray)
             }
-            QuantitySetter(cardDecks = cardDecks,
+            QuantitySetter(cardDecks = cardsDeck,
                             cardType = cardType,
-                            quantity = quantity,
-                            cardsCount = cardsCount)
+                            quantity = quantity,)
         }
     }
 }
@@ -219,15 +222,14 @@ private fun CardMenuItem(//deck: DeckType,
 private fun QuantitySetter(//deck: DeckType,
                             cardDecks: MutableMap<CardType, Short>,
                             cardType: CardType,
-                           quantity: MutableState<Short>,
-                           cardsCount: MutableState<Int>){
+                           quantity: MutableState<Short>)=key(quantity){
     Row(modifier = Modifier.width(Constants.CARD_WIDTH.dp)
         .height(50.dp),
         horizontalArrangement = Arrangement.Center){
         TextField(
             modifier = Modifier.fillMaxWidth(0.5f),
-            value = quantity.value.toString(),
-            onValueChange = { quantity.value = try{
+            value = cardDecks[cardType].toString(),
+            onValueChange = { cardDecks[cardType] = try{
                     var s = it.toShort()
                     if (s> cardType.maxNumberInDeck) {
                         s= cardType.maxNumberInDeck.toShort()
@@ -238,26 +240,19 @@ private fun QuantitySetter(//deck: DeckType,
                 } catch (t: NumberFormatException){
                     0
                 }
-                val oldQuantity = cardDecks[cardType] ?: 0
-                if(oldQuantity < quantity.value){
-                    cardsCount.value += (quantity.value-oldQuantity)
-                } else {
-                    cardsCount.value -= (oldQuantity- quantity.value)
-                }
-                cardDecks[cardType]=quantity.value
+               //cardDecks[cardType]=quantity.value
             },
             textStyle = quantityFont,
         )
-        Column(modifier = Modifier.fillMaxHeight(),
+        /*Column(modifier = Modifier.fillMaxHeight(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally){
             IconButton(modifier = Modifier.padding(bottom = 3.dp)
                 .height(23.dp).width(30.dp),
                 onClick = { if(quantity.value.toInt() < cardType.maxNumberInDeck) {
-                                quantity.value++
-                                cardsCount.value++
-                            }
-                            cardDecks[cardType]= quantity.value
+                                cardDecks[cardType] += 1
+                }
+                            //cardDecks[cardType]= quantity.value
                 },
                 content = {
                     Image(painter = svgResource("icons/arrow_drop_up.svg"),
@@ -266,14 +261,15 @@ private fun QuantitySetter(//deck: DeckType,
             IconButton(modifier = Modifier.height(23.dp).width(30.dp),
                 onClick = { if(quantity.value.toInt() > 0) {
                                 quantity.value--
-                                cardsCount.value--
+
                             }
-                            cardDecks[cardType]= quantity.value},
+                            //cardDecks[cardType]= quantity.value
+                    },
                 content = {
                     Image(painter = svgResource("icons/arrow_drop_down.svg"),
                         contentDescription = "Arrow up icon",)
                 })
-        }
+        }*/
     }
 }
 
@@ -316,5 +312,5 @@ private fun BaseCardsRow(
 
 data class UpdateDeckRequest(
     val idSession: Int,
-    val deckType: DeckType
+    val deckType: String
 )
