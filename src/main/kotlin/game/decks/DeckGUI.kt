@@ -28,6 +28,7 @@ import theme.buttonFont
 import theme.menuFont
 import theme.miniFont
 import theme.quantityFont
+import java.util.*
 import kotlin.collections.List
 import kotlin.collections.Map
 import kotlin.collections.MutableMap
@@ -45,10 +46,11 @@ class DeckGUI(
     private val idSession: MutableState<Int>,
     private val httpClient: HttpClient,
     val cardTypes: List<CardType>,
-    val decks: List<DeckType>
+    decksList: List<DeckType>
 ) {
+    val decks = mutableStateListOf<DeckType>().apply { addAll(decksList) }
     val deck = mutableStateOf(decks.first())
-    var deckName =mutableStateOf(deck.value.name)
+
     val baseCards = cardTypes.filter { cardType: CardType -> cardType::class == BaseCardType::class }
 
     val cardsDeck= mutableStateMapOf<CardType, Short>()
@@ -75,11 +77,17 @@ class DeckGUI(
         } catch (exception: ClientRequestException) {
         }
     }
+
+    internal fun newDeck() {
+        decks.add(DeckType((-1), UUID.randomUUID().toString().take(15), mapOf(Pair(cardTypes.get(30),2), Pair(cardTypes.get(18),1))))
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DeckScreen(deckGUI: DeckGUI) {
+fun DeckScreen(deckGUI: DeckGUI)
+{
+    val deckName =mutableStateOf(deckGUI.deck.value.name)
     Column(
         modifier = Modifier.fillMaxSize()
     ){
@@ -93,10 +101,10 @@ fun DeckScreen(deckGUI: DeckGUI) {
         ) {
             DeckChoiceMenu(deckGUI.decks, deckGUI.deck)
             TextField(
-                value = deckGUI.deckName.value,
+                value = deckName.value,
                 onValueChange = { value ->
-                    deckGUI.deckName.value = value
-                    deckGUI.deck.value.name=value},
+                    deckName.value = value
+                    deckGUI.deck.value.name=value },
                 textStyle = menuFont,
                 label = {
                     Text(
@@ -111,6 +119,14 @@ fun DeckScreen(deckGUI: DeckGUI) {
                 Text(text = "Total cards: "+ Total(deckGUI.cardsDeck)
                     +" (min "+ TotalMinimum(deckGUI.cardsDeck) +")",
                     color = Color.White)
+            }
+            Button(modifier = Modifier.height(50.dp).padding(horizontal = 10.dp),
+                onClick = {
+                    deckGUI.newDeck()
+                }){
+                Text(text = "New deck",
+                    color = Color.White,
+                    style = buttonFont)
             }
             Button(modifier = Modifier.height(50.dp),
                     enabled = Total(deckGUI.cardsDeck) >= TotalMinimum(deckGUI.cardsDeck),
@@ -146,32 +162,10 @@ fun DeckScreen(deckGUI: DeckGUI) {
 }
 
 @Composable
-private fun Total(
-    cardsDeck: Map<CardType, Short>
-): Int{
-    return cardsDeck.filter { (card, _) -> card::class!=BaseCardType::class }
-        .map { (_, qty) -> qty }.sum()
-}
-
-@Composable
-private fun TotalHeroes(
-    cardsDeck: Map<CardType, Short>
-): Int{
-    return Total(cardsDeck.filter { (card, _) -> card::class==HeroCardType::class })
-}
-
-@Composable
-private fun TotalMinimum(
-    cardsDeck: Map<CardType, Short>
-): Int {
-    return (Constants.MINIMAL_DECK_QUANTITY + TotalHeroes(cardsDeck)*Constants.CARD_TO_ADD_FOR_HERO)
-}
-
-@Composable
 private fun DeckChoiceMenu(
     decks: List<DeckType>,
     deck: MutableState<DeckType>
-) = key(decks, deck){
+) = key(decks, deck) {
     var expanded by remember { mutableStateOf(false) }
     Text(text = deck.value.name,
         modifier = Modifier.clickable(onClick = {
@@ -187,7 +181,8 @@ private fun DeckChoiceMenu(
             decks.forEach { deckType: DeckType ->
                 DropdownMenuItem(onClick = {
                     expanded = false
-                    deck.value=deckType}){
+                    deck.value=deckType
+                }){
                     Text(text = deckType.name,
                         style = menuFont)
                 }
@@ -241,7 +236,6 @@ private fun QuantitySetter(cardDecks: MutableMap<CardType, Short>,
                 } catch (t: NumberFormatException){
                     0
                 }
-               //cardDecks[cardType]=quantity.value
             },
             textStyle = quantityFont,
         )
@@ -307,6 +301,28 @@ private fun BaseCardsRow(
             }
         }
     }
+}
+
+@Composable
+private fun Total(
+    cardsDeck: Map<CardType, Short>
+): Int{
+    return cardsDeck.filter { (card, _) -> card::class!=BaseCardType::class }
+        .map { (_, qty) -> qty }.sum()
+}
+
+@Composable
+private fun TotalHeroes(
+    cardsDeck: Map<CardType, Short>
+): Int{
+    return Total(cardsDeck.filter { (card, _) -> card::class==HeroCardType::class })
+}
+
+@Composable
+private fun TotalMinimum(
+    cardsDeck: Map<CardType, Short>
+): Int {
+    return (Constants.MINIMAL_DECK_QUANTITY + TotalHeroes(cardsDeck)*Constants.CARD_TO_ADD_FOR_HERO)
 }
 
 data class UpdateDeckRequest(

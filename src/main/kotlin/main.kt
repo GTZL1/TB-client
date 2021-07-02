@@ -60,8 +60,8 @@ fun main(args: Array<String>): Unit {
                 val deckGUI=DeckGUI(idSession = idSession,
                     httpClient = httpClient,
                     cardTypes = login.generateCardTypes(cardClasses),
-                    decks = login.generateDeck(login.generateCardTypes(cardClasses)))
-                DeckScreen(deckGUI = deckGUI)
+                    decksList = login.generateDeck(login.generateCardTypes(cardClasses)))
+                DeckScreen(deckGUI = remember { deckGUI })
             }
             Screen.BOARD -> {
                 val cardTypes=login.generateCardTypes(cardClasses)
