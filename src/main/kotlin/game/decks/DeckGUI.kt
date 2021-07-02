@@ -70,10 +70,29 @@ class DeckGUI(
                     method = HttpMethod.Post
                 }
             })
-            println(response)
             if(response.getLong("idDeck")!=deck.value.id) {
                 deck.value.id=response.getLong("idDeck")
             }
+        } catch (exception: ClientRequestException) {
+        }
+    }
+
+    internal fun removeDeck(
+    ) {
+        try {
+            runBlocking {
+                httpClient.request<String> {
+                    url("http://localhost:9000/decks")
+                    headers {
+                        append("Content-Type", "application/json")
+                    }
+                    body = UpdateDeckRequest(idSession = idSession.value,
+                        deckType = deck.value.serialize().toString())
+                    method = HttpMethod.Delete
+                }
+            }
+            decks.remove(deck.value)
+            deck.value = decks.first()
         } catch (exception: ClientRequestException) {
         }
     }
@@ -83,7 +102,7 @@ class DeckGUI(
     }
 
     internal fun newDeck() {
-        decks.add(DeckType((-1), UUID.randomUUID().toString().take(15), mapOf(Pair(cardTypes.get(30),2), Pair(cardTypes.get(18),1))))
+        decks.add(DeckType((-1), UUID.randomUUID().toString().take(15), mapOf()))
         changeDeck(decks.last())
     }
 
@@ -137,6 +156,15 @@ fun DeckScreen(deckGUI: DeckGUI)
                     deckGUI.newDeck()
                 }){
                 Text(text = "New deck",
+                    color = Color.White,
+                    style = buttonFont)
+            }
+            Button(modifier = Modifier.height(50.dp).padding(horizontal = 10.dp),
+                enabled = deckGUI.decks.size > 1,
+                onClick = {
+                    deckGUI.removeDeck()
+                }){
+                Text(text = "Delete deck",
                     color = Color.White,
                     style = buttonFont)
             }
