@@ -79,7 +79,7 @@ class Login(
         try {
             val response = runBlocking {
                 httpClient.request<LoginResponse> {
-                    url("http://localhost:9000/login")
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/login")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -100,7 +100,7 @@ class Login(
         try {
             val response = JSONObject(runBlocking {
                 httpClient.request<String> {
-                    url("http://localhost:9000/cards")
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/cards")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -118,7 +118,7 @@ class Login(
         try {
             val response = JSONArray(runBlocking {
                 httpClient.request<String> {
-                    url("http://localhost:9000/powers")
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/powers")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -136,7 +136,7 @@ class Login(
         try {
             val response = JSONArray(runBlocking<String> {
                 httpClient.request {
-                    url("http://localhost:9000/decks")
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/decks")
                     headers {
                         append("Content-Type", "application/json")
                     }

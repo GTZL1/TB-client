@@ -27,16 +27,12 @@ class WebSocketHandler {
         websocketHttpClient.webSocket(
             method = HttpMethod.Get,
             host = "localhost",
-            port = 9000,
+            port = System.getenv("TB_SERVER_PORT").toInt(),
             path = "/plop"
         ) {
             val messageOutputRoutine = launch { outputMessages() }
             val userInputRoutine = launch { inputMessages() }
 
-            /*val firstMsg=runBlocking { msgReceived.receive()}
-            if(firstMsg.getString("type").equals(Constants.CONNECTION_INIT_MESSAGE)){
-                onConnectionEstablished()
-            }*/
             userInputRoutine.join() // Wait for completion; either "exit" or error
 
             messageOutputRoutine.cancelAndJoin()

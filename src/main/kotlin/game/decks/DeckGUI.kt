@@ -61,7 +61,7 @@ class DeckGUI(
         try {
             val response = JSONObject(runBlocking {
                 httpClient.request<String> {
-                    url("http://localhost:9000/decks")
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/decks")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -82,7 +82,7 @@ class DeckGUI(
         try {
             runBlocking {
                 httpClient.request<String> {
-                    url("http://localhost:9000/decks")
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/decks")
                     headers {
                         append("Content-Type", "application/json")
                     }

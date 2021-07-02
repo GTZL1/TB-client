@@ -63,7 +63,6 @@ class Game(
     }
 
     fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false) {
-        //println(card.cardType.name+" "+card.getHealth())
         playerRowCards.add(card)
         if(!isSpy && handCards.remove(card)){
             cardsMovedFromHand.value += 1
