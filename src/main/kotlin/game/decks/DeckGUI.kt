@@ -24,6 +24,7 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import theme.buttonFont
 import theme.menuFont
 import theme.miniFont
@@ -53,16 +54,12 @@ class DeckGUI(
 
     val baseCards = cardTypes.filter { cardType: CardType -> cardType::class == BaseCardType::class }
 
-    val cardsDeck= mutableStateMapOf<CardType, Short>()
-
-    init {
-        cardsDeck.putAll(deck.value.cardTypes)
-    }
+    val cardsDeck= mutableStateMapOf<CardType, Short>().apply { putAll(deck.value.cardTypes) }
 
     internal fun updateDeck(
     ) {
         try {
-            val response = runBlocking {
+            val response = JSONObject(runBlocking {
                 httpClient.request<String> {
                     url("http://localhost:9000/decks")
                     headers {
@@ -72,14 +69,29 @@ class DeckGUI(
                                             deckType = deck.value.serialize().toString())
                     method = HttpMethod.Post
                 }
-            }
+            })
             println(response)
+            if(response.getLong("idDeck")!=deck.value.id) {
+                deck.value.id=response.getLong("idDeck")
+            }
         } catch (exception: ClientRequestException) {
         }
     }
 
+    internal fun saveDeckLocally() {
+        deck.value.cardTypes = (cardsDeck.filterValues { qty: Short -> qty > 0.toShort() })
+    }
+
     internal fun newDeck() {
         decks.add(DeckType((-1), UUID.randomUUID().toString().take(15), mapOf(Pair(cardTypes.get(30),2), Pair(cardTypes.get(18),1))))
+        changeDeck(decks.last())
+    }
+
+    internal fun changeDeck(newDeckType: DeckType) {
+        saveDeckLocally()
+        deck.value=newDeckType
+        cardsDeck.clear()
+        cardsDeck.putAll(deck.value.cardTypes)
     }
 }
 
@@ -99,7 +111,7 @@ fun DeckScreen(deckGUI: DeckGUI)
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            DeckChoiceMenu(deckGUI.decks, deckGUI.deck)
+            DeckChoiceMenu(deckGUI, deckGUI.decks, deckGUI.deck)
             TextField(
                 value = deckName.value,
                 onValueChange = { value ->
@@ -131,7 +143,7 @@ fun DeckScreen(deckGUI: DeckGUI)
             Button(modifier = Modifier.height(50.dp),
                     enabled = Total(deckGUI.cardsDeck) >= TotalMinimum(deckGUI.cardsDeck),
                     onClick = {
-                        deckGUI.deck.value.cardTypes = (deckGUI.cardsDeck.filterValues { qty: Short -> qty > 0.toShort() })
+                        deckGUI.saveDeckLocally()
                         deckGUI.updateDeck()
                     }){
                     Text(text = "Save deck",
@@ -163,6 +175,7 @@ fun DeckScreen(deckGUI: DeckGUI)
 
 @Composable
 private fun DeckChoiceMenu(
+    deckGUI: DeckGUI,
     decks: List<DeckType>,
     deck: MutableState<DeckType>
 ) = key(decks, deck) {
@@ -181,7 +194,7 @@ private fun DeckChoiceMenu(
             decks.forEach { deckType: DeckType ->
                 DropdownMenuItem(onClick = {
                     expanded = false
-                    deck.value=deckType
+                    deckGUI.changeDeck(deckType)
                 }){
                     Text(text = deckType.name,
                         style = menuFont)
@@ -270,11 +283,15 @@ private fun QuantitySetter(cardDecks: MutableMap<CardType, Short>,
 private fun BaseCardsRow(
     deck: DeckType,
     cardDecks: MutableMap<CardType, Short>,
-    baseCards: List<CardType>){
+    baseCards: List<CardType>) = key(deck, cardDecks){
     Row(modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center){
         val currentBase = remember { mutableStateOf<CardType>(
-            cardDecks.filter { (card, _) -> baseCards.contains(card) }.map { (card, _) -> card }.first()
+            if(cardDecks.filter { (card, _) -> baseCards.contains(card) }.isEmpty()) {
+                baseCards.first()
+            } else {
+                cardDecks.filter { (card, _) -> baseCards.contains(card) }.map { (card, _) -> card }.first()
+            }
         ) }
         baseCards.forEach { baseCard: CardType ->
             Column(modifier = Modifier.padding(horizontal = 10.dp)
