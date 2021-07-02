@@ -116,7 +116,8 @@ class DeckGUI(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DeckScreen(deckGUI: DeckGUI)
+fun DeckScreen(deckGUI: DeckGUI,
+    onSelect: (deck: DeckType) -> Unit)
 {
     val deckName =mutableStateOf(deckGUI.deck.value.name)
     Column(
@@ -151,7 +152,7 @@ fun DeckScreen(deckGUI: DeckGUI)
                     +" (min "+ TotalMinimum(deckGUI.cardsDeck) +")",
                     color = Color.White)
             }
-            Button(modifier = Modifier.height(50.dp).padding(horizontal = 10.dp),
+            Button(modifier = Modifier.height(50.dp).width(160.dp).padding(horizontal = 10.dp),
                 onClick = {
                     deckGUI.newDeck()
                 }){
@@ -168,7 +169,7 @@ fun DeckScreen(deckGUI: DeckGUI)
                     color = Color.White,
                     style = buttonFont)
             }
-            Button(modifier = Modifier.height(50.dp),
+            Button(modifier = Modifier.height(50.dp).width(160.dp),
                     enabled = Total(deckGUI.cardsDeck) >= TotalMinimum(deckGUI.cardsDeck),
                     onClick = {
                         deckGUI.saveDeckLocally()
@@ -177,6 +178,15 @@ fun DeckScreen(deckGUI: DeckGUI)
                     Text(text = "Save deck",
                         color = Color.White,
                         style = buttonFont)
+            }
+            Button(modifier = Modifier.height(50.dp),
+                enabled = Total(deckGUI.cardsDeck) >= TotalMinimum(deckGUI.cardsDeck),
+                onClick = {
+                    onSelect(deckGUI.deck.value)
+                }){
+                Text(text = "Select and play !",
+                    color = Color.White,
+                    style = buttonFont)
             }
         }
         Row(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f)
