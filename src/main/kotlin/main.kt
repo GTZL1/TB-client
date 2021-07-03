@@ -5,6 +5,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.IntSize
 import game.*
 import game.cards.types.*
+import game.decks.DeckGUI
+import game.decks.DeckScreen
+import game.decks.DeckType
 import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.json.*
@@ -36,34 +39,51 @@ fun main(args: Array<String>): Unit {
         Pair("base", BaseCardType::class)
     )
 
+    lateinit var cardTypes: List<CardType>
     Window(title = "HEIG game", size = IntSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT)) {
         val game= remember { mutableStateOf<Game?>(null) }
-
+        val playerDeck = remember { mutableStateOf<DeckType?>(null) }
+        val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
-        val screenState = remember { mutableStateOf(Screen.BOARD) }
+        val screenState = remember { mutableStateOf(Screen.DECK) }
         val login = Login(
             httpClient = httpClient,
-            onRightLogin = { screenState.value = Screen.BOARD },
+            onRightLogin = { screenState.value = Screen.DECK },
             idSession = idSession,
             playerPseudo = username
         )
+
         val websocket=WebSocketHandler()
         when (val screen = screenState.value) {
             Screen.LOGIN -> {
                 login.LoginScreen()
-
             }
-            Screen.MATCHMAKING ->{
-
+            Screen.DECK ->{
+                LaunchedEffect(true) {
+                    cardTypes=login.generateCardTypes(cardClasses)
+                    val dG=DeckGUI(idSession = idSession,
+                        httpClient = httpClient,
+                        cardTypes = cardTypes,
+                        decksList = login.generateDeck(cardTypes))
+                    deckGUI.value = dG
+                }
+                val currentDeckGUI= deckGUI.value
+                if(currentDeckGUI!=null) {
+                    DeckScreen(deckGUI = remember { currentDeckGUI }, onSelect = {
+                            deck: DeckType ->
+                        playerDeck.value=deck
+                        screenState.value = Screen.BOARD
+                    })
+                }
             }
             Screen.BOARD -> {
-                val cardTypes=login.generateCardTypes(cardClasses)
-                val player=Player(
-                    pseudo = username.value,
-                    deckType = login.generateDeck(cardTypes)
-                )
                 LaunchedEffect(true) { launch{websocket.initialize { run{}} }
+                    val player=Player(
+                        pseudo = username.value,
+                        deckType = playerDeck.value!!
+                    )
+
                     websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
                     websocket.receiveOne()
                     websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
@@ -92,7 +112,7 @@ fun main(args: Array<String>): Unit {
 }
 
 enum class Screen {
-    LOGIN, BOARD, MATCHMAKING
+    LOGIN, BOARD, DECK
 }
 
 

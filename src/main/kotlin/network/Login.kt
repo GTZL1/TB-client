@@ -79,7 +79,7 @@ class Login(
         try {
             val response = runBlocking {
                 httpClient.request<LoginResponse> {
-                    url("http://localhost:9000/login")
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/login")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -100,7 +100,7 @@ class Login(
         try {
             val response = JSONObject(runBlocking {
                 httpClient.request<String> {
-                    url("http://localhost:9000/cards")
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/cards")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -118,7 +118,7 @@ class Login(
         try {
             val response = JSONArray(runBlocking {
                 httpClient.request<String> {
-                    url("http://localhost:9000/powers")
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/powers")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -134,9 +134,9 @@ class Login(
 
     private fun decksRequest(): JSONArray {
         try {
-            val response = JSONArray(runBlocking {
-                httpClient.request<String> {
-                    url("http://localhost:9000/decks")
+            val response = JSONArray(runBlocking<String> {
+                httpClient.request {
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/decks")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -198,15 +198,26 @@ class Login(
         return cardTypes
     }
 
-    fun generateDeck(cardTypes: List<CardType>, playerDeck: JSONObject = decksRequest().getJSONObject(0)): DeckType {
+    fun generateDeck(cardTypes: List<CardType>, playerDecks: JSONArray = decksRequest()): List<DeckType> {
+        val decks= mutableListOf<DeckType>()
+
+        for(y in 0 until playerDecks.length()){
+            val deck=playerDecks.getJSONObject(y)
+            decks.add(generateDeck(cardTypes, deck))
+        }
+        return decks.toList()
+    }
+
+    fun generateDeck(cardTypes: List<CardType>, playerDeck: JSONObject): DeckType {
         val deckType= mutableMapOf<CardType,Short>()
+
         for(x in 0 until playerDeck.getJSONArray("cards").length()){
             val currentJsonCard= playerDeck.getJSONArray("cards").getJSONObject(x)
             val cardType=cardTypes.filter { ct -> ct.name.equals(
                 currentJsonCard.getString("name")) }.first()
             deckType[cardType] = currentJsonCard.getInt("quantity").toShort()
         }
-        return DeckType(playerDeck.getString("name"), deckType.toMap())
+        return (DeckType(playerDeck.getLong("id"), playerDeck.getString("name"), deckType.toMap()))
     }
 }
 

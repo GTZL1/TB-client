@@ -9,12 +9,13 @@ object Constants {
     const val CARD_MOVEMENT = "movement"
     const val CARD_ATTACK = "attack"
     const val CHANGE_TURN="turn"
-    const val MOVEMENT_DELAY : Long = 46000
 
+    const val MOVEMENT_DELAY : Long = 46000
     const val CARD_HEIGHT = 180
     const val CARD_WIDTH = 100
     const val BIG_ROW_HEIGHT = 220
     const val SMALL_ROW_HEIGHT = CARD_HEIGHT+16
+
     const val CARD_DRAG_MARGIN = (CARD_HEIGHT * 0.35).toInt()
     private const val MAX_CARDS_ON_ROW = NB_CARDS_HAND
     const val SPACE_BETWEEN_CARDS = 10
@@ -31,6 +32,9 @@ object Constants {
     const val WINDOW_HEIGHT = 1010
     const val CENTER_ROW_CAPACITY = 6
     const val PLAYER_ROW_CAPACITY = 3
+
+    const val MINIMAL_DECK_QUANTITY = 18
+    const val CARD_TO_ADD_FOR_HERO = 2
 
     private const val SHAPE_SIZE = 5
     val cardShape = CutCornerShape(SHAPE_SIZE.dp)
