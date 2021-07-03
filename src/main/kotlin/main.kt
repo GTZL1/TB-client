@@ -99,7 +99,11 @@ fun main(args: Array<String>): Unit {
                                 cardTypes,
                                 opponentDeck.getJSONObject("deckType")
                             )
-                        )
+                        ),
+                        onEnding = {
+                            game.value=null
+                            screenState.value = Screen.DECK
+                        }
                     )
                     g.determineFirst()
                     game.value=g

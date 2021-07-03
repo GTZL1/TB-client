@@ -36,7 +36,7 @@ class WebSocketHandler {
             userInputRoutine.join() // Wait for completion; either "exit" or error
             messageOutputRoutine.cancelAndJoin()
 
-            onConnectionEstablished()
+            //onConnectionEstablished()
         }
     }
 

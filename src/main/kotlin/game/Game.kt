@@ -4,6 +4,7 @@ import Constants
 import androidx.compose.runtime.*
 import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
+import game.cards.types.BaseCardType
 import game.player.Player
 import kotlinx.coroutines.*
 import network.CardAttack
@@ -23,26 +24,30 @@ interface TurnCallback {
 }
 
 class Game(
-    private val date: Date, private val webSocketHandler: WebSocketHandler, private val idSession: Int,
-    val player: Player, val opponent: Player
-)  {
-    private val turnCallback= mutableListOf<TurnCallback>()
+    private val date: Date,
+    private val webSocketHandler: WebSocketHandler,
+    private val idSession: Int,
+    val player: Player,
+    val opponent: Player,
+    private val onEnding: () -> Unit
+) {
+    private val turnCallback = mutableListOf<TurnCallback>()
 
     private lateinit var oldCard: PlayCard
     private lateinit var oldClicked: MutableState<Boolean>
 
-    internal var playerTurn= false
+    internal var playerTurn = false
 
-    val handCards= mutableStateListOf<PlayCard>()
+    val handCards = mutableStateListOf<PlayCard>()
     val playerRowCards = mutableStateListOf<PlayCard>()
     val baseCards = mutableStateListOf<PlayCard>()
     val centerRowCards = mutableStateListOf<PlayCard>()
     val opponentRowCards = mutableStateListOf<PlayCard>()
     val discardCards = mutableStateListOf<PlayCard>()
 
-    private val cardsAlreadyActed= mutableListOf<Int>()
+    private val cardsAlreadyActed = mutableListOf<Int>()
 
-    internal var cardsMovedFromHand= mutableStateOf(0)
+    internal var cardsMovedFromHand = mutableStateOf(0)
 
     internal var delay = mutableStateOf(Constants.MOVEMENT_DELAY)
     lateinit var delayJob: Job
@@ -64,7 +69,7 @@ class Game(
 
     fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false) {
         playerRowCards.add(card)
-        if(!isSpy && handCards.remove(card)){
+        if (!isSpy && handCards.remove(card)) {
             cardsMovedFromHand.value += 1
         }
         centerRowCards.remove(card)
@@ -75,7 +80,7 @@ class Game(
     fun cardToCenterRow(card: PlayCard) {
         centerRowCards.add(card)
         playerRowCards.remove(card)
-        if(handCards.remove(card)){
+        if (handCards.remove(card)) {
             cardsMovedFromHand.value += 1
         }
         opponentRowCards.remove(card)
@@ -91,18 +96,19 @@ class Game(
         baseCards.remove(card)
 
         cardsAlreadyActed.remove(card.id) //necessary to the auto turn change
+        checkEnding()
     }
 
     fun cardToOpponentRow(card: PlayCard) {
         opponentRowCards.add(card)
         centerRowCards.remove(card)
-        if(handCards.remove(card)){
+        if (handCards.remove(card)) {
             cardsMovedFromHand.value += 1
         }
         card.changePosition(Position.OPPONENT)
     }
 
-    fun cardCanAct(card: PlayCard):Boolean {
+    fun cardCanAct(card: PlayCard): Boolean {
         return !cardsAlreadyActed.contains(card.id)
     }
 
@@ -143,16 +149,16 @@ class Game(
     }
 
     internal fun changeTurn() {
-        if(playerTurn){
+        if (playerTurn) {
             webSocketHandler.sendMessage(
                 JSONObject(SimpleMessage(Constants.CHANGE_TURN))
             )
-            playerTurn=!playerTurn
+            playerTurn = !playerTurn
             cardsAlreadyActed.clear()
-            cardsMovedFromHand.value=0
+            cardsMovedFromHand.value = 0
 
-            if(this::delayJob.isInitialized) {
-                runBlocking { delayJob.cancel()}
+            if (this::delayJob.isInitialized) {
+                runBlocking { delayJob.cancel() }
             }
 
             turnCallback.forEach { it.onChangeTurn() }
@@ -160,10 +166,10 @@ class Game(
     }
 
     suspend fun determineFirst() {
-        val num=UUID.randomUUID().toString()
+        val num = UUID.randomUUID().toString()
         webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
-        val msg =webSocketHandler.receiveOne()
-        playerTurn=(num < msg.getString("type"))
+        val msg = webSocketHandler.receiveOne()
+        playerTurn = (num < msg.getString("type"))
 
         checkTimerTurn()
     }
@@ -179,8 +185,8 @@ class Game(
 
     private fun checkTimerTurn() {
         delayJob = GlobalScope.launch {
-            delay.value= Constants.MOVEMENT_DELAY
-            while(delay.value > 0 && playerTurn) {
+            delay.value = Constants.MOVEMENT_DELAY
+            while (delay.value > 0 && playerTurn) {
                 delay(1000)
                 delay.value -= 1000
             }
@@ -193,35 +199,40 @@ class Game(
 
     internal suspend fun receiveMessages() {
         for (msg in webSocketHandler.msgReceived) {
-            when(msg.getString("type")){
+            when (msg.getString("type")) {
                 Constants.CARD_MOVEMENT -> {
-                    applyMovement(msg.getString("owner"), msg.getInt("id"),
+                    applyMovement(
+                        msg.getString("owner"), msg.getInt("id"),
                         Position.valueOf(msg.getString("position")),
-                        msg.getBoolean("fromDeck"))
+                        msg.getBoolean("fromDeck")
+                    )
                 }
                 Constants.CHANGE_TURN -> {
-                    playerTurn=!playerTurn
+                    playerTurn = !playerTurn
                     cardsAlreadyActed.clear()
-                    cardsMovedFromHand.value=0
+                    cardsMovedFromHand.value = 0
                     checkChangeTurn()
                     checkTimerTurn()
                     turnCallback.forEach { it.onChangeTurn() }
                 }
                 Constants.CARD_ATTACK -> {
-                    applyAttack(attackerOwner = msg.getString("attackerOwner"),
-                                attackerId = msg.getInt("attackerId"),
-                                targetOwner = msg.getString("targetOwner"),
-                                targetId = msg.getInt("targetId"))
+                    applyAttack(
+                        attackerOwner = msg.getString("attackerOwner"),
+                        attackerId = msg.getInt("attackerId"),
+                        targetOwner = msg.getString("targetOwner"),
+                        targetId = msg.getInt("targetId")
+                    )
                 }
             }
         }
     }
 
     private fun applyMovement(owner: String, id: Int, position: Position, fromDeck: Boolean) {
-        val card= if(fromDeck) {
-                (opponent.playDeck.getCards().first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
+        val card = if (fromDeck) {
+            (opponent.playDeck.getCards()
+                .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
         } else {
-            filterCardsOwner(owner).first { playCard -> playCard.id==id }
+            filterCardsOwner(owner).first { playCard -> playCard.id == id }
         }
 
         when (position) {
@@ -242,22 +253,28 @@ class Game(
         }
     }
 
-    private fun applyAttack(attackerOwner: String, attackerId: Int, targetOwner: String, targetId: Int) {
-        val attacker = filterCardsOwner(attackerOwner).first { playCard -> playCard.id==attackerId }
-        val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id==targetId }
+    private fun applyAttack(
+        attackerOwner: String,
+        attackerId: Int,
+        targetOwner: String,
+        targetId: Int
+    ) {
+        val attacker =
+            filterCardsOwner(attackerOwner).first { playCard -> playCard.id == attackerId }
+        val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id == targetId }
         (attacker as UnitPlayCard).attack(target)
-        if(attacker.getHealth()<=0){
+        if (attacker.getHealth() <= 0) {
             cardToDiscard(attacker)
         }
-        if(target.getHealth()<=0){
+        if (target.getHealth() <= 0) {
             cardToDiscard(target)
         }
     }
 
     internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard) {
         clicked.value = true
-        if ((this::oldCard.isInitialized) && (card!=oldCard)) {
-            oldClicked.value=false
+        if ((this::oldCard.isInitialized) && (card != oldCard)) {
+            oldClicked.value = false
             if (card.owner == oldCard.owner) {
                 oldCard = card
                 oldClicked = clicked
@@ -265,13 +282,16 @@ class Game(
             ) {
                 clicked.value = false
                 //attacker is oldCard
-                if (canAttack(oldCard, card)){
+                if (canAttack(oldCard, card)) {
                     try {
                         cardsAlreadyActed.add(oldCard.id)
-                        applyAttack(attackerOwner = oldCard.owner, attackerId = oldCard.id,
-                                    targetOwner = card.owner, targetId = card.id)
+                        applyAttack(
+                            attackerOwner = oldCard.owner, attackerId = oldCard.id,
+                            targetOwner = card.owner, targetId = card.id
+                        )
                         notifyAttack(oldCard, card)
-                    } catch (t: Throwable) { }
+                    } catch (t: Throwable) {
+                    }
                 }
             }
         } else {
@@ -288,8 +308,23 @@ class Game(
     private fun filterCardsOwner(owner: String): List<PlayCard> {
         return listOf(centerRowCards, playerRowCards, opponentRowCards, baseCards).flatten()
             .filter { playCard: PlayCard ->
-            playCard.owner==owner
-        }.toList()
+                playCard.owner == owner
+            }.toList()
+    }
+
+    private fun checkEnding() {
+        if (baseCards.isEmpty() ||
+            filterCardsOwner(opponent.pseudo).filter { playCard: PlayCard ->
+                playCard.cardType::class == BaseCardType::class
+            }.isEmpty()
+        ) {
+            if(baseCards.isEmpty()) {
+                println("Defeat !")
+            } else {
+                println("Victory !")
+            }
+            onEnding()
+        }
     }
 }
 
@@ -301,9 +336,9 @@ enum class Position {
 fun notifyChangeTurn(game: Game): Boolean {
     var state by remember { mutableStateOf(game.playerTurn) }
     DisposableEffect(game) {
-        val callback = object : TurnCallback{
+        val callback = object : TurnCallback {
             override fun onChangeTurn() {
-                state=game.playerTurn
+                state = game.playerTurn
             }
         }
         game.registerToTurnChange(callback)
