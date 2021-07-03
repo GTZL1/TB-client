@@ -78,12 +78,14 @@ fun main(args: Array<String>): Unit {
                 }
             }
             Screen.BOARD -> {
-                val player=Player(
-                    pseudo = username.value,
-                    deckType = playerDeck.value!!
-                )
-
-                LaunchedEffect(true) { launch{websocket.initialize { run{screenState.value = Screen.DECK}} }
+                LaunchedEffect(true) { launch{websocket.initialize { run{
+                    game.value=null
+                    screenState.value = Screen.DECK
+                }} }
+                    val player=Player(
+                        pseudo = username.value,
+                        deckType = playerDeck.value!!
+                    )
                     websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
                     websocket.receiveOne()
                     websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
