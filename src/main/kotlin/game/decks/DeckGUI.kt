@@ -182,6 +182,7 @@ fun DeckScreen(deckGUI: DeckGUI,
             Button(modifier = Modifier.height(50.dp),
                 enabled = Total(deckGUI.cardsDeck) >= TotalMinimum(deckGUI.cardsDeck),
                 onClick = {
+                    deckGUI.saveDeckLocally()
                     onSelect(deckGUI.deck.value)
                 }){
                 Text(text = "Select and play !",

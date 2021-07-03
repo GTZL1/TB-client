@@ -43,9 +43,10 @@ fun main(args: Array<String>): Unit {
     Window(title = "HEIG game", size = IntSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT)) {
         val game= remember { mutableStateOf<Game?>(null) }
         val playerDeck = remember { mutableStateOf<DeckType?>(null) }
+        val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
-        val screenState = remember { mutableStateOf(Screen.LOGIN) }
+        val screenState = remember { mutableStateOf(Screen.DECK) }
         val login = Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.DECK },
@@ -59,16 +60,22 @@ fun main(args: Array<String>): Unit {
                 login.LoginScreen()
             }
             Screen.DECK ->{
-                cardTypes=login.generateCardTypes(cardClasses)
-                val deckGUI=DeckGUI(idSession = idSession,
-                    httpClient = httpClient,
-                    cardTypes = cardTypes,
-                    decksList = login.generateDeck(cardTypes))
-                DeckScreen(deckGUI = remember { deckGUI }, onSelect = {
-                    deck: DeckType ->
-                    playerDeck.value=deck
-                    screenState.value = Screen.BOARD
-                })
+                LaunchedEffect(true) {
+                    cardTypes=login.generateCardTypes(cardClasses)
+                    val dG=DeckGUI(idSession = idSession,
+                        httpClient = httpClient,
+                        cardTypes = cardTypes,
+                        decksList = login.generateDeck(cardTypes))
+                    deckGUI.value = dG
+                }
+                val currentDeckGUI= deckGUI.value
+                if(currentDeckGUI!=null) {
+                    DeckScreen(deckGUI = remember { currentDeckGUI }, onSelect = {
+                            deck: DeckType ->
+                        playerDeck.value=deck
+                        screenState.value = Screen.BOARD
+                    })
+                }
             }
             Screen.BOARD -> {
                 LaunchedEffect(true) { launch{websocket.initialize { run{}} }
