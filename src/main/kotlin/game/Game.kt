@@ -29,7 +29,7 @@ class Game(
     private val idSession: Int,
     val player: Player,
     val opponent: Player,
-    private val onEnding: () -> Unit
+    private val onEnding: (String, Boolean) -> Unit
 ) {
     private val turnCallback = mutableListOf<TurnCallback>()
 
@@ -318,12 +318,7 @@ class Game(
                 playCard.cardType::class == BaseCardType::class
             }.isEmpty()
         ) {
-            if(baseCards.isEmpty()) {
-                println("Defeat !")
-            } else {
-                println("Victory !")
-            }
-            onEnding()
+            onEnding(opponent.pseudo, !baseCards.isEmpty())
         }
     }
 }

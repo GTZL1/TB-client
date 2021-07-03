@@ -11,3 +11,4 @@ val menuFont =TextStyle(fontFamily = FontFamily.Default, fontSize = 18.sp, fontW
 val quantityFont =TextStyle(fontFamily = FontFamily.Default, fontSize = 12.sp, fontWeight = FontWeight.Normal)
 val miniFont =TextStyle(fontFamily = FontFamily.Default, fontSize = 10.sp, fontWeight = FontWeight.Normal)
 val buttonFont =TextStyle(fontFamily = FontFamily.Default, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+val endingFont =TextStyle(fontFamily = FontFamily.Default, fontSize = 36.sp, fontWeight = FontWeight.Bold)

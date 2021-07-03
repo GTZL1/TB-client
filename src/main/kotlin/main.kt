@@ -46,6 +46,8 @@ fun main(args: Array<String>): Unit {
         val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
+        val opponentName = remember { mutableStateOf("ikrie") }
+        val victory = remember { mutableStateOf(false) }
         val screenState = remember { mutableStateOf(Screen.DECK) }
         val login = Login(
             httpClient = httpClient,
@@ -100,9 +102,11 @@ fun main(args: Array<String>): Unit {
                                 opponentDeck.getJSONObject("deckType")
                             )
                         ),
-                        onEnding = {
+                        onEnding = { oppName : String, vic: Boolean ->
+                            opponentName.value=oppName
+                            victory.value= vic
                             game.value=null
-                            screenState.value = Screen.DECK
+                            screenState.value = Screen.ENDING
                         }
                     )
                     g.determineFirst()
@@ -113,12 +117,19 @@ fun main(args: Array<String>): Unit {
                     Board(currentGame)
                 }
             }
+            Screen.ENDING -> {
+                EndingScreen(playerName = username.value,
+                opponentName = opponentName.value,
+                victory = victory.value,
+                onDeckScreen = {screenState.value = Screen.DECK},
+                onGameAgain = {screenState.value = Screen.BOARD})
+            }
         }
     }
 }
 
 enum class Screen {
-    LOGIN, BOARD, DECK
+    LOGIN, BOARD, DECK, ENDING
 }
 
 
