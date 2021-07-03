@@ -9,6 +9,7 @@ object Constants {
     const val CARD_MOVEMENT = "movement"
     const val CARD_ATTACK = "attack"
     const val CHANGE_TURN="turn"
+    const val EXIT_MESSAGE = "exit"
 
     const val MOVEMENT_DELAY : Long = 46000
     const val CARD_HEIGHT = 180

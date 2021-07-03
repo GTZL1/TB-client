@@ -34,8 +34,9 @@ class WebSocketHandler {
             val userInputRoutine = launch { inputMessages() }
 
             userInputRoutine.join() // Wait for completion; either "exit" or error
-
             messageOutputRoutine.cancelAndJoin()
+
+            onConnectionEstablished()
         }
     }
 
@@ -51,7 +52,11 @@ class WebSocketHandler {
         try {
             for (message in incoming) {
                 message as? Frame.Text ?: continue
-                msgReceived.send(JSONObject(message.readText()))
+                if(message.readText().equals(Constants.EXIT_MESSAGE)){
+                    sendMessage(JSONObject(SimpleMessage(message.readText())))
+                } else {
+                    msgReceived.send(JSONObject(message.readText()))
+                }
             }
         } catch (e: Exception) {
             println("Error while receiving: " + e.localizedMessage)
@@ -60,14 +65,13 @@ class WebSocketHandler {
 
     private suspend fun DefaultClientWebSocketSession.inputMessages() {
         for (msg in msgToSend) {
-            if (msg.equals(SimpleMessage("exit"))) break
+            if (msg.getString("type").equals(Constants.EXIT_MESSAGE)) break
             try {
                 send(msg.toString())
             } catch (e: Exception) {
                 println("Error while sending: " + e.localizedMessage)
             }
         }
-        println("joined")
     }
 }
 
