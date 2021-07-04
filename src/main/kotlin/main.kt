@@ -9,6 +9,8 @@ import game.decks.DeckGUI
 import game.decks.DeckScreen
 import game.decks.DeckType
 import game.player.Player
+import game.screens.GameHistory
+import game.screens.HistoryScreen
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
@@ -47,11 +49,12 @@ fun main(args: Array<String>): Unit {
         val game= remember { mutableStateOf<Game?>(null) }
         val playerDeck = remember { mutableStateOf<DeckType?>(null) }
         val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
+        val gameHistory = remember { mutableStateOf<GameHistory?>(null) }
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
         val opponentName = remember { mutableStateOf("ikrie") }
         val victory = remember { mutableStateOf(false) }
-        val screenState = remember { mutableStateOf(Screen.DECK) }
+        val screenState = remember { mutableStateOf(Screen.INTERMEDIATE) }
         val login = Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.INTERMEDIATE },
@@ -68,8 +71,24 @@ fun main(args: Array<String>): Unit {
                 IntermediateScreen(
                     username = username.value,
                     onDeckScreen = { screenState.value = Screen.DECK },
-                    onGameHistory = {}
+                    onGameHistory = { screenState.value = Screen.HISTORY }
                 )
+            }
+            Screen.HISTORY -> {
+                LaunchedEffect(true) {
+                    val gH =GameHistory(
+                        idSession = idSession.value,
+                        httpClient = httpClient,
+                        username = username.value)
+                    gameHistory.value=gH
+                }
+                val currentGameHistory = gameHistory.value
+                if(currentGameHistory!=null){
+                    HistoryScreen(
+                        gameHistory = remember { currentGameHistory },
+                        onBack = {screenState.value = Screen.INTERMEDIATE}
+                    )
+                }
             }
             Screen.DECK ->{
                 LaunchedEffect(true) {
@@ -142,7 +161,7 @@ fun main(args: Array<String>): Unit {
 }
 
 enum class Screen {
-    LOGIN, INTERMEDIATE, BOARD, DECK, ENDING
+    LOGIN, INTERMEDIATE, BOARD, DECK, ENDING, HISTORY
 }
 
 
