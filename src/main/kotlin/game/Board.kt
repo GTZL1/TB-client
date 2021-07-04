@@ -41,7 +41,7 @@ fun Board(game: Game) {
         game.player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
 
     DisposableEffect(Unit) {
-       GlobalScope.launch { game.receiveMessages() }
+        GlobalScope.launch { game.receiveMessages() }
         onDispose { }
     }
 
@@ -52,34 +52,41 @@ fun Board(game: Game) {
             modifier = Modifier.fillMaxHeight()
                 .width(Constants.CARD_WIDTH.dp)
                 .background(color = Color.Gray)
-                .padding(top=Constants.STATS_BOX_HEIGTH.dp,
-                        bottom = Constants.STATS_BOX_HEIGTH.dp),
+                .padding(
+                    top = Constants.STATS_BOX_HEIGTH.dp,
+                    bottom = Constants.STATS_BOX_HEIGTH.dp
+                ),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             //Upper side of column
-            Column(modifier = Modifier.fillMaxWidth()
-                .height((Constants.CARD_HEIGHT*1.5).dp),
-                   horizontalAlignment = Alignment.CenterHorizontally ) {
-                Button(modifier= Modifier.size(Constants.STATS_BOX_WIDTH.dp),
+            Column(
+                modifier = Modifier.fillMaxWidth()
+                    .height((Constants.CARD_HEIGHT * 1.5).dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Button(
+                    modifier = Modifier.size(Constants.STATS_BOX_WIDTH.dp),
                     onClick = { game.changeTurn() },
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = if (notifyChangeTurn(game)) Color.Green else Color.Red,
-                    )){}
-                if(notifyChangeTurn(game)) {
-                    val time = (game.delay.value/1000)
-                    Text(text= "00:"+ (if (time<10) "0" else "") + time.toString())
+                    )
+                ) {}
+                if (notifyChangeTurn(game)) {
+                    val time = (game.delay.value / 1000)
+                    Text(text = "00:" + (if (time < 10) "0" else "") + time.toString())
                 }
             }
             //Discard
-            Box(modifier = Modifier.fillMaxWidth()
-                .height(Constants.CARD_HEIGHT.dp)
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .height(Constants.CARD_HEIGHT.dp)
             ) {
                 if (game.discardCards.isNotEmpty()) {
                     val topDiscardCard: PlayCard = game.discardCards.last()
                     DisplayCard(
-                        modifier= Modifier.align(Alignment.Center),
+                        modifier = Modifier.align(Alignment.Center),
                         card = topDiscardCard,
                         game = game,
                         toPlayer = (topDiscardCard.owner == game.player.pseudo),
@@ -91,9 +98,11 @@ fun Board(game: Game) {
                 }
             }
             //Lower side of column
-            Column(modifier = Modifier.fillMaxWidth()
-                .height((Constants.CARD_HEIGHT*1.5).dp),
-                horizontalAlignment = Alignment.CenterHorizontally ) { }
+            Column(
+                modifier = Modifier.fillMaxWidth()
+                    .height((Constants.CARD_HEIGHT * 1.5).dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) { }
         }
 
         //Game board
@@ -103,8 +112,9 @@ fun Board(game: Game) {
         ) {
             //Opponent row with label
             GameRowPlayerLabel(
-                labelPaddingModifier = Modifier.background(Color.Gray).padding(top = Constants.LABEL_PADDING.dp),
-                labelText = (Constants.OPPONENT_LABEL+game.opponent.pseudo+" !"),
+                labelPaddingModifier = Modifier.background(Color.Gray)
+                    .padding(top = Constants.LABEL_PADDING.dp),
+                labelText = (Constants.OPPONENT_LABEL + game.opponent.pseudo + " !"),
                 top = true,
                 gameRowContent = {
                     game.opponentRowCards.forEach { pc ->
@@ -134,9 +144,11 @@ fun Board(game: Game) {
             // Player row
             GameRow(content = {
                 game.baseCards.forEach { pc: PlayCard ->
-                    DisplayCard(card = pc, game = game,
+                    DisplayCard(
+                        card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
-                        isPlayerTurn = notifyChangeTurn(game)) //base is never clickable
+                        isPlayerTurn = notifyChangeTurn(game)
+                    ) //base is never clickable
                 }
                 game.playerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
@@ -151,8 +163,9 @@ fun Board(game: Game) {
                 }
             })
             // Hand with label
-            GameRowPlayerLabel(labelPaddingModifier = Modifier.background(Color.Gray).padding(bottom = Constants.LABEL_PADDING.dp),
-                labelText = (Constants.PLAYER_LABEL+game.player.pseudo+"."),
+            GameRowPlayerLabel(labelPaddingModifier = Modifier.background(Color.Gray)
+                .padding(bottom = Constants.LABEL_PADDING.dp),
+                labelText = (Constants.PLAYER_LABEL + game.player.pseudo + "."),
                 top = false,
                 gameRowContent = {
                     game.handCards.forEach { pc ->
@@ -209,12 +222,22 @@ private fun DisplayDraggableCard(
     onDragEndUpOneRank: () -> Unit,
     onDragEndUpTwoRank: () -> Unit = onDragEndUpOneRank,
     onDragEndDown: () -> Unit
-) = key(card, game, isMovableUp, isMovableUpTwoRank, isMovableDown, toPlayer, isPlayerTurn, hasCardActed) {
+) = key(
+    card,
+    game,
+    isMovableUp,
+    isMovableUpTwoRank,
+    isMovableDown,
+    toPlayer,
+    isPlayerTurn,
+    hasCardActed
+) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     val startY = offsetY
     val startX = offsetX
-    val isMovable= hasCardActed && isPlayerTurn && (isMovableUp || isMovableDown || isMovableUpTwoRank)
+    val isMovable =
+        hasCardActed && isPlayerTurn && (isMovableUp || isMovableDown || isMovableUpTwoRank)
     Box(
         modifier = modifier
             .offset(offsetX.dp, offsetY.dp)
@@ -230,8 +253,7 @@ private fun DisplayDraggableCard(
                     onDragEnd = {
                         if (isMovableUpTwoRank && (startY - offsetY > (Constants.CARD_DRAG_MARGIN + Constants.BIG_ROW_HEIGHT))) {
                             onDragEndUpTwoRank()
-                        }
-                        else if ((isMovableUp) && ((startY - offsetY) > Constants.CARD_DRAG_MARGIN)) {
+                        } else if ((isMovableUp) && ((startY - offsetY) > Constants.CARD_DRAG_MARGIN)) {
                             onDragEndUpOneRank()
                         } else if (isMovableDown && ((startY - offsetY) < -Constants.CARD_DRAG_MARGIN)) {
                             onDragEndDown()
@@ -268,7 +290,7 @@ private fun moveVehicle(
 @Composable
 private fun GameRow(
     modifier: Modifier = Modifier,
-    height: Int= Constants.SMALL_ROW_HEIGHT,
+    height: Int = Constants.SMALL_ROW_HEIGHT,
     content: @Composable () -> Unit,
 ) {
     Row(
@@ -289,19 +311,24 @@ private fun GameRowPlayerLabel(
     modifier: Modifier = Modifier,
     labelPaddingModifier: Modifier,
     labelText: String,
-    top : Boolean,
+    top: Boolean,
     gameRowContent: @Composable () -> Unit,
 ) {
-    Column(modifier = modifier.fillMaxWidth(),
+    Column(
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center
-    ){
-        if(!top) {
+    ) {
+        if (!top) {
             GameRow(content = gameRowContent)
-            PlayerLabel(paddingModifier = labelPaddingModifier,
-            text = labelText)
+            PlayerLabel(
+                paddingModifier = labelPaddingModifier,
+                text = labelText
+            )
         } else {
-            PlayerLabel(paddingModifier = labelPaddingModifier,
-                text = labelText)
+            PlayerLabel(
+                paddingModifier = labelPaddingModifier,
+                text = labelText
+            )
             GameRow(content = gameRowContent)
         }
     }
@@ -333,24 +360,30 @@ fun DisplayCard(
     width: Int = Constants.CARD_WIDTH,
     height: Int = Constants.CARD_HEIGHT,
     inDiscard: Boolean = false
-) = key(card, game, toPlayer, isPlayerTurn, inDiscard){
+) = key(card, game, toPlayer, isPlayerTurn, inDiscard) {
     val clicked = remember { mutableStateOf(false) }
     val hover = remember { mutableStateOf(false) }
-    DisplayNonClickableCard(modifier = modifier
-                            .pointerMoveFilter (onEnter = {hover.value=true
-                                                          false},
-                            onExit = {hover.value=false
-                            false})
-                            .clickable(enabled = isPlayerTurn, onClick = {
-                                    game.handleClick(clicked, card)
-                            }),
-            card = card,
-            toPlayer= toPlayer,
-            clicked=clicked.value,
-            hover=hover.value,
-            width=width,
-            height=height,
-            inDiscard=inDiscard)
+    DisplayNonClickableCard(
+        modifier = modifier
+            .pointerMoveFilter(onEnter = {
+                hover.value = true
+                false
+            },
+                onExit = {
+                    hover.value = false
+                    false
+                })
+            .clickable(enabled = isPlayerTurn, onClick = {
+                game.handleClick(clicked, card)
+            }),
+        card = card,
+        toPlayer = toPlayer,
+        clicked = clicked.value,
+        hover = hover.value,
+        width = width,
+        height = height,
+        inDiscard = inDiscard
+    )
 }
 
 @Composable
@@ -363,13 +396,13 @@ fun DisplayNonClickableCard(
     width: Int = Constants.CARD_WIDTH,
     height: Int = Constants.CARD_HEIGHT,
     inDiscard: Boolean = false
-) = key(card, toPlayer, clicked, hover, inDiscard){
+) = key(card, toPlayer, clicked, hover, inDiscard) {
     Box(
         modifier = modifier
             .clip(shape = Constants.cardShape)
             .border(
                 width = 2.dp,
-                color = if(clicked || hover) Color.White else (if (toPlayer) Color.Red else Color.Blue),
+                color = if (clicked || hover) Color.White else (if (toPlayer) Color.Red else Color.Blue),
                 shape = Constants.cardShape
             )
             .width(width.dp).height(height.dp)
@@ -394,9 +427,11 @@ fun DisplayNonClickableCard(
                     StatsBox(
                         modifier = modifier
                             .align(Alignment.TopEnd)
-                            .border(width = 2.dp,
-                                color = if(clicked) Color.White else (if (toPlayer) Color.Red else Color.Blue),
-                                shape = Constants.statsBoxShape),
+                            .border(
+                                width = 2.dp,
+                                color = if (clicked) Color.White else (if (toPlayer) Color.Red else Color.Blue),
+                                shape = Constants.statsBoxShape
+                            ),
                         card = card,
                     )
                 }
@@ -426,8 +461,10 @@ fun StatsBox(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = card.getHealth().toString(),
-                style = cardFont)
+            Text(
+                text = card.getHealth().toString(),
+                style = cardFont
+            )
             Text(text = card.cardType.attack.toString(), style = cardFont)
         }
     }

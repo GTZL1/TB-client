@@ -26,6 +26,8 @@ object Constants {
     const val PLAYER_LABEL = "You are "
     const val OPPONENT_LABEL = "You're fighting "
     const val LABEL_PADDING = 8
+    const val VICTORY_MESSAGE = "Victory !"
+    const val DEFEAT_MESSAGE = "Defeat !"
 
     const val WINDOW_WIDTH =
         ((MAX_CARDS_ON_ROW + 1) * (CARD_WIDTH + SPACE_BETWEEN_CARDS) //board rows

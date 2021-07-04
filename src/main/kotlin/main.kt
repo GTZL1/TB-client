@@ -9,6 +9,8 @@ import game.decks.DeckGUI
 import game.decks.DeckScreen
 import game.decks.DeckType
 import game.player.Player
+import game.screens.GameHistory
+import game.screens.HistoryScreen
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
@@ -18,8 +20,7 @@ import network.PlayerInitialization
 import network.SimpleMessage
 import network.WebSocketHandler
 import org.json.JSONObject
-import java.time.Instant
-import java.util.*
+import java.time.LocalDateTime
 import kotlin.reflect.KClass
 
 fun main(args: Array<String>): Unit {
@@ -44,12 +45,15 @@ fun main(args: Array<String>): Unit {
         val game= remember { mutableStateOf<Game?>(null) }
         val playerDeck = remember { mutableStateOf<DeckType?>(null) }
         val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
+        val gameHistory = remember { mutableStateOf<GameHistory?>(null) }
         val idSession = remember { mutableStateOf(args[0].toInt()) }
         val username = remember { mutableStateOf(args[1]) }
-        val screenState = remember { mutableStateOf(Screen.DECK) }
+        val opponentName = remember { mutableStateOf("ikrie") }
+        val victory = remember { mutableStateOf(false) }
+        val screenState = remember { mutableStateOf(Screen.INTERMEDIATE) }
         val login = Login(
             httpClient = httpClient,
-            onRightLogin = { screenState.value = Screen.DECK },
+            onRightLogin = { screenState.value = Screen.INTERMEDIATE },
             idSession = idSession,
             playerPseudo = username
         )
@@ -58,6 +62,29 @@ fun main(args: Array<String>): Unit {
         when (val screen = screenState.value) {
             Screen.LOGIN -> {
                 login.LoginScreen()
+            }
+            Screen.INTERMEDIATE -> {
+                IntermediateScreen(
+                    username = username.value,
+                    onDeckScreen = { screenState.value = Screen.DECK },
+                    onGameHistory = { screenState.value = Screen.HISTORY }
+                )
+            }
+            Screen.HISTORY -> {
+                LaunchedEffect(true) {
+                    val gH =GameHistory(
+                        idSession = idSession.value,
+                        httpClient = httpClient,
+                        username = username.value)
+                    gameHistory.value=gH
+                }
+                val currentGameHistory = gameHistory.value
+                if(currentGameHistory!=null){
+                    HistoryScreen(
+                        gameHistory = remember { currentGameHistory },
+                        onBack = {screenState.value = Screen.INTERMEDIATE}
+                    )
+                }
             }
             Screen.DECK ->{
                 LaunchedEffect(true) {
@@ -74,22 +101,28 @@ fun main(args: Array<String>): Unit {
                             deck: DeckType ->
                         playerDeck.value=deck
                         screenState.value = Screen.BOARD
-                    })
+                    },
+                    onBack = {screenState.value = Screen.INTERMEDIATE})
                 }
             }
             Screen.BOARD -> {
-                val player=Player(
-                    pseudo = username.value,
-                    deckType = playerDeck.value!!
-                )
-
-                LaunchedEffect(true) { launch{websocket.initialize { run{screenState.value = Screen.DECK}} }
+                LaunchedEffect(true) { launch{websocket.initialize { run{
+                    game.value=null
+                    screenState.value = Screen.DECK
+                }} }
+                    val player=Player(
+                        pseudo = username.value,
+                        deckType = playerDeck.value!!
+                    )
                     websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
                     websocket.receiveOne()
                     websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
                     val opponentDeck = websocket.receiveOne()
                     val g = Game(
-                        Date.from(Instant.now()), websocket, idSession = idSession.value,
+                        date = LocalDateTime.now(),
+                        webSocketHandler = websocket,
+                        httpClient = httpClient,
+                        idSession = idSession,
                         player = player,
                         opponent = Player(
                             pseudo = opponentDeck.getString("username"),
@@ -97,7 +130,13 @@ fun main(args: Array<String>): Unit {
                                 cardTypes,
                                 opponentDeck.getJSONObject("deckType")
                             )
-                        )
+                        ),
+                        onEnding = { oppName : String, vic: Boolean ->
+                            opponentName.value=oppName
+                            victory.value= vic
+                            game.value=null
+                            screenState.value = Screen.ENDING
+                        }
                     )
                     g.determineFirst()
                     game.value=g
@@ -107,12 +146,19 @@ fun main(args: Array<String>): Unit {
                     Board(currentGame)
                 }
             }
+            Screen.ENDING -> {
+                EndingScreen(playerName = username.value,
+                opponentName = opponentName.value,
+                victory = victory.value,
+                onIntermediateScreen = {screenState.value = Screen.INTERMEDIATE},
+                onGameAgain = {screenState.value = Screen.BOARD})
+            }
         }
     }
 }
 
 enum class Screen {
-    LOGIN, BOARD, DECK
+    LOGIN, INTERMEDIATE, BOARD, DECK, ENDING, HISTORY
 }
 
 
