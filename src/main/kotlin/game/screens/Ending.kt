@@ -19,7 +19,7 @@ fun EndingScreen(
     playerName : String,
     opponentName : String,
     victory: Boolean,
-    onDeckScreen: () -> Unit,
+    onIntermediateScreen: () -> Unit,
     onGameAgain: () -> Unit
 ) {
     Row(
@@ -39,9 +39,9 @@ fun EndingScreen(
             )
             Button(modifier = Modifier.padding(bottom = 10.dp).height(50.dp).width(220.dp),
                 onClick = {
-                    onDeckScreen()
+                    onIntermediateScreen()
                 }){
-                Text(text = "Back to decks",
+                Text(text = "Back to menu",
                     color = Color.White,
                     style = buttonFont
                 )

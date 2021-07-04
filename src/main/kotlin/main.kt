@@ -20,11 +20,7 @@ import network.PlayerInitialization
 import network.SimpleMessage
 import network.WebSocketHandler
 import org.json.JSONObject
-import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.*
 import kotlin.reflect.KClass
 
 fun main(args: Array<String>): Unit {
@@ -105,7 +101,8 @@ fun main(args: Array<String>): Unit {
                             deck: DeckType ->
                         playerDeck.value=deck
                         screenState.value = Screen.BOARD
-                    })
+                    },
+                    onBack = {screenState.value = Screen.INTERMEDIATE})
                 }
             }
             Screen.BOARD -> {
@@ -153,7 +150,7 @@ fun main(args: Array<String>): Unit {
                 EndingScreen(playerName = username.value,
                 opponentName = opponentName.value,
                 victory = victory.value,
-                onDeckScreen = {screenState.value = Screen.DECK},
+                onIntermediateScreen = {screenState.value = Screen.INTERMEDIATE},
                 onGameAgain = {screenState.value = Screen.BOARD})
             }
         }

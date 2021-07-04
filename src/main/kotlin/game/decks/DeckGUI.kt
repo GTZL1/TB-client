@@ -117,7 +117,8 @@ class DeckGUI(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DeckScreen(deckGUI: DeckGUI,
-    onSelect: (deck: DeckType) -> Unit)
+    onSelect: (deck: DeckType) -> Unit,
+    onBack: () -> Unit)
 {
     val deckName =mutableStateOf(deckGUI.deck.value.name)
     Column(
@@ -131,6 +132,14 @@ fun DeckScreen(deckGUI: DeckGUI,
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Button(modifier = Modifier.height(50.dp).padding(horizontal = 10.dp),
+                onClick = {
+                    onBack()
+                }){
+                Text(text = "Back",
+                    color = Color.White,
+                    style = buttonFont)
+            }
             DeckChoiceMenu(deckGUI, deckGUI.decks, deckGUI.deck)
             TextField(
                 value = deckName.value,
