@@ -37,7 +37,7 @@ fun EndingScreen(
             text = "For you $playerName against $opponentName.",
             style = menuFont
             )
-            Button(modifier = Modifier.height(50.dp).width(220.dp).padding(bottom = 10.dp),
+            Button(modifier = Modifier.padding(bottom = 10.dp).height(50.dp).width(220.dp),
                 onClick = {
                     onDeckScreen()
                 }){
