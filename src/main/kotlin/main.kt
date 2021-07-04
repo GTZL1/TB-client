@@ -19,6 +19,9 @@ import network.SimpleMessage
 import network.WebSocketHandler
 import org.json.JSONObject
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -48,7 +51,7 @@ fun main(args: Array<String>): Unit {
         val username = remember { mutableStateOf(args[1]) }
         val opponentName = remember { mutableStateOf("ikrie") }
         val victory = remember { mutableStateOf(false) }
-        val screenState = remember { mutableStateOf(Screen.INTERMEDIATE) }
+        val screenState = remember { mutableStateOf(Screen.DECK) }
         val login = Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.INTERMEDIATE },
@@ -100,7 +103,10 @@ fun main(args: Array<String>): Unit {
                     websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
                     val opponentDeck = websocket.receiveOne()
                     val g = Game(
-                        Date.from(Instant.now()), websocket, idSession = idSession.value,
+                        date = LocalDateTime.now(),
+                        webSocketHandler = websocket,
+                        httpClient = httpClient,
+                        idSession = idSession,
                         player = player,
                         opponent = Player(
                             pseudo = opponentDeck.getString("username"),

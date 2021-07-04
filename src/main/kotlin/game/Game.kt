@@ -6,27 +6,31 @@ import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
 import game.cards.types.BaseCardType
 import game.player.Player
+import io.ktor.client.*
+import io.ktor.client.features.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import network.CardAttack
 import network.CardMovement
 import network.SimpleMessage
 import network.WebSocketHandler
 import org.json.JSONObject
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.math.abs
-
-interface GameCallback {
-    fun onNewCard(pc: PlayCard)
-}
 
 interface TurnCallback {
     fun onChangeTurn()
 }
 
 class Game(
-    private val date: Date,
+    private val date: LocalDateTime,
     private val webSocketHandler: WebSocketHandler,
-    private val idSession: Int,
+    private val httpClient: HttpClient,
+    private val idSession: MutableState<Int>,
     val player: Player,
     val opponent: Player,
     private val onEnding: (String, Boolean) -> Unit
@@ -318,7 +322,26 @@ class Game(
                 playCard.cardType::class == BaseCardType::class
             }.isEmpty()
         ) {
-            onEnding(opponent.pseudo, !baseCards.isEmpty())
+            val victory= !baseCards.isEmpty()
+            try {
+                runBlocking {
+                    httpClient.request<String> {
+                        url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/game")
+                        headers {
+                            append("Content-Type", "application/json")
+                        }
+                        body = JSONObject(GameIssue(
+                            idSession = idSession.value,
+                            date = date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                            winner = if(victory) player.pseudo else opponent.pseudo,
+                            looser = if(victory) opponent.pseudo else player.pseudo
+                        ))
+                        method = HttpMethod.Post
+                    }
+                }
+            } catch (exception: ClientRequestException) {
+            }
+            onEnding(opponent.pseudo, victory)
         }
     }
 }
@@ -341,3 +364,10 @@ fun notifyChangeTurn(game: Game): Boolean {
     }
     return state
 }
+
+data class GameIssue(
+    val idSession: Int,
+    val date : String,
+    val winner: String,
+    val looser: String
+)
