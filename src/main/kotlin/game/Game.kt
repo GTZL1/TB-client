@@ -268,7 +268,12 @@ class Game(
         val attacker =
             filterCardsOwner(attackerOwner).first { playCard -> playCard.id == attackerId }
         val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id == targetId }
-        (attacker as UnitPlayCard).attack(target)
+        if(attacker != target){
+            (attacker as UnitPlayCard).attack(target)
+        } else {
+            (attacker as HeroPlayCard).attack(attacker)
+        }
+
         if (attacker.getHealth() <= 0) {
             cardToDiscard(attacker)
         }
