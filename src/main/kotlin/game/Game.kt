@@ -165,6 +165,14 @@ class Game(
             cardsMovedFromHand.value = 0
             oldCard=null
 
+            try {
+                //double strike heroes
+                filterCardsOwner(player.pseudo).filter { playCard: PlayCard ->
+                    playCard.cardType::class == HeroCardType::class
+                }.forEach { playCard: PlayCard -> (playCard as HeroPlayCard).heroCardType.power.reset() }
+            } catch (t: Throwable){
+            }
+
             if (this::delayJob.isInitialized) {
                 runBlocking { delayJob.cancel() }
             }

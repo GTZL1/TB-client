@@ -12,10 +12,13 @@ open class Power(val id: Int, val name: String) {
                     onAction: () -> Unit = {}): Boolean{
         return false
     }
+
     open fun action(cards: List<PlayCard>,
                     onAction: (PlayCard) -> Unit): Boolean{
         return false
     }
+
+    open fun reset() {}
 }
 
 class PrecisionStrikePower: Power(1, "PrecisionStrike") {
@@ -49,16 +52,17 @@ class DoubleStrikePower: Power(4, "DoubleStrike") {
     override fun action(owner: HeroPlayCard, target: PlayCard,
                         onAction: () -> Unit): Boolean{
         return if(target != owner && doubleStrike.value){
-            println("double strike, "+doubleStrike.value)
             doubleStrike.value = false
             owner.attack(target)
             onAction()
             true
         } else {
-            println("double strike, "+doubleStrike.value)
-            doubleStrike.value = true
             false
         }
+    }
+
+    override fun reset() {
+        doubleStrike.value = true
     }
 }
 
