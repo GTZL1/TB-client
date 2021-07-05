@@ -286,7 +286,8 @@ class Game(
         clicked.value = true
         if ((oldCard!=null) && (card != oldCard)) {
             oldClicked.value = false
-            if (card.owner == oldCard!!.owner) {
+            if (card.owner == oldCard!!.owner ||
+                    oldCard!!.owner != player.pseudo) {
                 oldCard = card
                 oldClicked = clicked
             } else if ((oldCard!!.owner == player.pseudo)
@@ -313,6 +314,7 @@ class Game(
                 //healing power of heroes
                 (oldCard as HeroPlayCard).attack(card)
                 cardsAlreadyActed.add(oldCard!!.id)
+                notifyAttack(card, card)
             } catch (t :Throwable) {}
         } else {
             oldCard = card
