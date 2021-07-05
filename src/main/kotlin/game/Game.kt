@@ -6,6 +6,7 @@ import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
 import game.cards.types.BaseCardType
+import game.cards.types.HeroCardType
 import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.*
@@ -76,6 +77,7 @@ class Game(
         playerRowCards.add(card)
         if (!isSpy && handCards.remove(card)) {
             cardsMovedFromHand.value += 1
+            tryIncinerationPower(card, opponent.pseudo)
         }
         centerRowCards.remove(card)
         card.changePosition(Position.PLAYER)
@@ -240,6 +242,8 @@ class Game(
         } else {
             filterCardsOwner(owner).first { playCard -> playCard.id == id }
         }
+        //a fromDeck card is always owned by opponent
+        if(fromDeck) tryIncinerationPower(card, player.pseudo)
 
         when (position) {
             Position.PLAYER -> {
@@ -271,6 +275,7 @@ class Game(
         if(attacker != target){
             (attacker as UnitPlayCard).attack(target)
         } else {
+            //healing power
             (attacker as HeroPlayCard).attack(attacker)
         }
 
@@ -312,8 +317,10 @@ class Game(
             clicked.value=false
             try {
                 //healing power of heroes
-                (oldCard as HeroPlayCard).attack(card)
-                cardsAlreadyActed.add(oldCard!!.id)
+                (oldCard as HeroPlayCard).heroCardType.power.action(owner = oldCard as HeroPlayCard,
+                                                                    target = oldCard as HeroPlayCard,
+                                                                    onAction = {cardsAlreadyActed.add(oldCard!!.id)})
+                //cardsAlreadyActed.add(oldCard!!.id)
                 notifyAttack(card, card)
             } catch (t :Throwable) {}
         } else {
@@ -361,6 +368,19 @@ class Game(
             }
             onEnding(opponent.pseudo, victory)
         }
+    }
+
+    private fun tryIncinerationPower(card: PlayCard, targetOwner: String) {
+        //incineration hero power
+        try {
+            (card as HeroPlayCard).heroCardType.power.action(
+                cards = filterCardsOwner(targetOwner).filter { playCard: PlayCard ->
+                    playCard.cardType::class != BaseCardType::class &&
+                    playCard.cardType::class != HeroCardType::class
+                },
+                onAction = {playCard: PlayCard -> cardToDiscard(playCard) }
+            )
+        } catch (t: Throwable) {}
     }
 }
 
