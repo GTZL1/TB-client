@@ -45,6 +45,21 @@ class HealingPower: Power(3, "Healing") {
 }
 
 class DoubleStrikePower: Power(4, "DoubleStrike") {
+    private val doubleStrike= mutableStateOf(true)
+    override fun action(owner: HeroPlayCard, target: PlayCard,
+                        onAction: () -> Unit): Boolean{
+        return if(target != owner && doubleStrike.value){
+            println("double strike, "+doubleStrike.value)
+            doubleStrike.value = false
+            owner.attack(target)
+            onAction()
+            true
+        } else {
+            println("double strike, "+doubleStrike.value)
+            doubleStrike.value = true
+            false
+        }
+    }
 }
 
 class IncinerationPower: Power(5, "Incineration") {

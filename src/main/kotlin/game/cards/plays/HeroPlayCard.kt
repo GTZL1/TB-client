@@ -9,6 +9,13 @@ class HeroPlayCard(val heroCardType:  HeroCardType, player:String, id :Int): Uni
         }
     }
 
+    fun attack(target: PlayCard, onAction: () -> Unit) {
+        if(!heroCardType.power.action(this, target, onAction) && this != target) {
+            println("no action")
+            super.attack(target)
+        }
+    }
+
     fun regainHealth(amount : Int) {
         this.health.value = (getHealth() + amount).coerceAtMost(heroCardType.life)
     }

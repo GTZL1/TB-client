@@ -273,7 +273,13 @@ class Game(
             filterCardsOwner(attackerOwner).first { playCard -> playCard.id == attackerId }
         val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id == targetId }
         if(attacker != target){
-            (attacker as UnitPlayCard).attack(target)
+            try {
+                //double strike heroes
+                        println("double strike")
+                (attacker as HeroPlayCard).attack(target, { cardsAlreadyActed.remove(attackerId) })
+            } catch (t: Throwable){
+                (attacker as UnitPlayCard).attack(target)
+            }
         } else {
             //healing power
             (attacker as HeroPlayCard).attack(attacker)
@@ -320,7 +326,6 @@ class Game(
                 (oldCard as HeroPlayCard).heroCardType.power.action(owner = oldCard as HeroPlayCard,
                                                                     target = oldCard as HeroPlayCard,
                                                                     onAction = {cardsAlreadyActed.add(oldCard!!.id)})
-                //cardsAlreadyActed.add(oldCard!!.id)
                 notifyAttack(card, card)
             } catch (t :Throwable) {}
         } else {
