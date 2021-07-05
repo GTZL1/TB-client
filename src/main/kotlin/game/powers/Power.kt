@@ -22,7 +22,7 @@ class PrecisionStrikePower: Power(1, "PrecisionStrike") {
     override fun action(owner: HeroPlayCard, target: PlayCard,
                         onAction: () -> Unit): Boolean{
         return if(target != owner &&
-            target.cardType.life<= (owner.cardType.life/2)){
+            target.getHealth() <= (owner.cardType.life/2)){
                 target.takeDamage(owner.cardType.attack)
                 true
         } else false
@@ -51,7 +51,10 @@ class IncinerationPower: Power(5, "Incineration") {
     override fun action(cards: List<PlayCard>,
                         onAction: (PlayCard) -> Unit): Boolean {
         if(!acted.value && cards.isNotEmpty()){
-            onAction(cards.maxByOrNull { playCard: PlayCard -> playCard.cardType.attack }!!)
+            val max = cards.maxByOrNull { playCard: PlayCard -> playCard.cardType.attack }!!.cardType.attack
+            cards.forEach { playCard: PlayCard ->
+                if(playCard.cardType.attack==max) onAction(playCard)
+            }
             acted.value=true
         }
         return false
