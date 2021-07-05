@@ -2,6 +2,7 @@ package game
 
 import Constants
 import androidx.compose.runtime.*
+import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
 import game.cards.plays.UnitPlayCard
 import game.cards.types.BaseCardType
@@ -37,7 +38,7 @@ class Game(
 ) {
     private val turnCallback = mutableListOf<TurnCallback>()
 
-    private lateinit var oldCard: PlayCard
+    private var oldCard: PlayCard? = null
     private lateinit var oldClicked: MutableState<Boolean>
 
     internal var playerTurn = false
@@ -160,6 +161,7 @@ class Game(
             playerTurn = !playerTurn
             cardsAlreadyActed.clear()
             cardsMovedFromHand.value = 0
+            oldCard=null
 
             if (this::delayJob.isInitialized) {
                 runBlocking { delayJob.cancel() }
@@ -277,27 +279,36 @@ class Game(
 
     internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard) {
         clicked.value = true
-        if ((this::oldCard.isInitialized) && (card != oldCard)) {
+        if ((oldCard!=null) && (card != oldCard)) {
             oldClicked.value = false
-            if (card.owner == oldCard.owner) {
+            if (card.owner == oldCard!!.owner) {
                 oldCard = card
                 oldClicked = clicked
-            } else if ((oldCard.owner == player.pseudo)
+            } else if ((oldCard!!.owner == player.pseudo)
             ) {
                 clicked.value = false
                 //attacker is oldCard
-                if (canAttack(oldCard, card)) {
+                if (canAttack(oldCard!!, card)) {
                     try {
-                        cardsAlreadyActed.add(oldCard.id)
+                        cardsAlreadyActed.add(oldCard!!.id)
                         applyAttack(
-                            attackerOwner = oldCard.owner, attackerId = oldCard.id,
+                            attackerOwner = oldCard!!.owner, attackerId = oldCard!!.id,
                             targetOwner = card.owner, targetId = card.id
                         )
-                        notifyAttack(oldCard, card)
+                        notifyAttack(oldCard!!, card)
                     } catch (t: Throwable) {
                     }
                 }
             }
+        } else if ((oldCard!=null) && (card == oldCard)
+            && cardCanAct(card = oldCard!!)) {
+                oldClicked.value=false
+            clicked.value=false
+            try {
+                //healing power of heroes
+                (oldCard as HeroPlayCard).attack(card)
+                cardsAlreadyActed.add(oldCard!!.id)
+            } catch (t :Throwable) {}
         } else {
             oldCard = card
             oldClicked = clicked

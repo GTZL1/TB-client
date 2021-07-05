@@ -6,7 +6,7 @@ import game.Position
 import game.cards.types.*
 
 abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
-    private val health = mutableStateOf(cardType.life)
+    protected val health = mutableStateOf(cardType.life)
     private var position=Position.DECK
 
     fun getHealth(): Int {
@@ -26,7 +26,6 @@ abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) 
     }
 
     override fun equals(other: Any?): Boolean {
-        //if (this === other) return true
         if (other !is PlayCard) return false
 
         if (cardType != other.cardType) return false

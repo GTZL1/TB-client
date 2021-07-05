@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
 import game.decks.DeckType
 import game.powers.Power
+import game.powers.powersList
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
@@ -167,7 +168,7 @@ class Login(
     fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
         val cardTypes = mutableListOf<CardType>()
         val cards = cardsRequest()
-        val powers = generatePowerTypes()
+        //val powers = generatePowerTypes()
 
         for (tc: Pair<String, KClass<out CardType>> in typesConstructs) {
             for (x in 0 until cards.getJSONArray(tc.first).length()) {
@@ -179,10 +180,11 @@ class Login(
                             card.getInt("lifePoints"),
                             card.getInt("attackPoints"),
                             card.getInt("maxNumberInDeck"),
-                            Power(
+                            powersList[card.getInt("idxPower")]
+                            /*Power(
                                 powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.id,
                                 powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.name
-                            )
+                            )*/
                         )
                     } else {
                         val constructor=tc.second.constructors.first()
