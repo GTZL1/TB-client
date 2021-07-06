@@ -6,7 +6,6 @@ import game.cards.plays.PlayCard
 
 //TODO make Power abstract
 open class Power(val id: Int, val name: String) {
-    val acted= mutableStateOf(false)
     open fun action(owner: HeroPlayCard,
                     target: PlayCard,
                     onAction: () -> Unit = {}): Boolean{
@@ -69,12 +68,11 @@ class DoubleStrikePower: Power(4, "DoubleStrike") {
 class IncinerationPower: Power(5, "Incineration") {
     override fun action(cards: List<PlayCard>,
                         onAction: (PlayCard) -> Unit): Boolean {
-        if(!acted.value && cards.isNotEmpty()){
+        if(cards.isNotEmpty()){
             val max = cards.maxByOrNull { playCard: PlayCard -> playCard.cardType.attack }!!.cardType.attack
             cards.forEach { playCard: PlayCard ->
                 if(playCard.cardType.attack==max) onAction(playCard)
             }
-            acted.value=true
         }
         return false
     }

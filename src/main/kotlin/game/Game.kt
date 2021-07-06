@@ -4,6 +4,7 @@ import Constants
 import androidx.compose.runtime.*
 import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
+import game.cards.plays.SpyPlayCard
 import game.cards.plays.UnitPlayCard
 import game.cards.types.BaseCardType
 import game.cards.types.HeroCardType
@@ -283,8 +284,7 @@ class Game(
         if(attacker != target){
             try {
                 //double strike heroes
-                        println("double strike")
-                (attacker as HeroPlayCard).attack(target, { cardsAlreadyActed.remove(attackerId) })
+                (attacker as HeroPlayCard).attack(target) { cardsAlreadyActed.remove(attackerId) }
             } catch (t: Throwable){
                 (attacker as UnitPlayCard).attack(target)
             }
