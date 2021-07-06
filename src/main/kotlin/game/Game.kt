@@ -4,7 +4,6 @@ import Constants
 import androidx.compose.runtime.*
 import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
-import game.cards.plays.SpyPlayCard
 import game.cards.plays.UnitPlayCard
 import game.cards.types.BaseCardType
 import game.cards.types.HeroCardType
@@ -19,7 +18,6 @@ import network.CardMovement
 import network.SimpleMessage
 import network.WebSocketHandler
 import org.json.JSONObject
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -142,14 +140,15 @@ class Game(
         checkChangeTurn()
     }
 
-    private fun notifyAttack(attackerCard: PlayCard, targetCard: PlayCard) {
+    private fun notifyAttack(attackerCard: PlayCard, targetCard: PlayCard, specialPower: Boolean = false) {
         webSocketHandler.sendMessage(
             JSONObject(
                 CardAttack(
                     attackerOwner = attackerCard.owner,
                     attackerId = attackerCard.id,
                     targetOwner = targetCard.owner,
-                    targetId = targetCard.id
+                    targetId = targetCard.id,
+                    specialPower = specialPower
                 )
             )
         )
@@ -237,7 +236,8 @@ class Game(
                         attackerOwner = msg.getString("attackerOwner"),
                         attackerId = msg.getInt("attackerId"),
                         targetOwner = msg.getString("targetOwner"),
-                        targetId = msg.getInt("targetId")
+                        targetId = msg.getInt("targetId"),
+                        specialPower = msg.getBoolean("specialPower")
                     )
                 }
             }
@@ -276,14 +276,16 @@ class Game(
         attackerOwner: String,
         attackerId: Int,
         targetOwner: String,
-        targetId: Int
+        targetId: Int,
+        specialPower: Boolean = false
     ) {
         val attacker =
             filterCardsOwner(attackerOwner).first { playCard -> playCard.id == attackerId }
         val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id == targetId }
         if(attacker != target){
             try {
-                //double strike heroes
+                //heroes
+                if(specialPower) (attacker as HeroPlayCard).heroCardType.power.powerAuthorization()
                 (attacker as HeroPlayCard).attack(target) { cardsAlreadyActed.remove(attackerId) }
             } catch (t: Throwable){
                 (attacker as UnitPlayCard).attack(target)
@@ -301,7 +303,7 @@ class Game(
         }
     }
 
-    internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard) {
+    internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard, specialPower: Boolean = false) {
         clicked.value = true
         if ((oldCard!=null) && (card != oldCard)) {
             oldClicked.value = false
@@ -320,7 +322,7 @@ class Game(
                             attackerOwner = oldCard!!.owner, attackerId = oldCard!!.id,
                             targetOwner = card.owner, targetId = card.id
                         )
-                        notifyAttack(oldCard!!, card)
+                        notifyAttack(oldCard!!, card, specialPower)
                     } catch (t: Throwable) {
                     }
                 }

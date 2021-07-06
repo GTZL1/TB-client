@@ -180,7 +180,7 @@ class Login(
                             card.getInt("lifePoints"),
                             card.getInt("attackPoints"),
                             card.getInt("maxNumberInDeck"),
-                            powersList[card.getInt("idxPower")]
+                            powersList[card.getInt("idxPower")]!!.constructors.first().call()
                             /*Power(
                                 powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.id,
                                 powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.name

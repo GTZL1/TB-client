@@ -1,8 +1,19 @@
 package game.powers
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
+import game.notifyChangeTurn
+import theme.SpyBackgroundColor
+import kotlin.reflect.KClass
 
 //TODO make Power abstract
 open class Power(val id: Int, val name: String) {
@@ -18,6 +29,13 @@ open class Power(val id: Int, val name: String) {
     }
 
     open fun reset() {}
+
+    open fun powerAuthorization(){}
+
+    @Composable
+    open fun Button(modifier: Modifier,
+        onClick: () -> Unit = {}){
+    }
 }
 
 class PrecisionStrikePower: Power(1, "PrecisionStrike") {
@@ -32,6 +50,38 @@ class PrecisionStrikePower: Power(1, "PrecisionStrike") {
 }
 
 class DistanceStrikePower: Power(2, "DistanceStrike") {
+    private val distanceStrike= mutableStateOf(false)
+
+    override fun action(owner: HeroPlayCard, target: PlayCard,
+                        onAction: () -> Unit): Boolean{
+        return if(distanceStrike.value &&
+                target != owner){
+            target.takeDamage(owner.cardType.attack/2)
+            true
+        } else false
+    }
+
+    @Composable
+    override fun Button(modifier: Modifier,
+        onClick: () -> Unit) {
+        Button(
+            modifier = modifier.size(Constants.STATS_BOX_WIDTH.dp),
+            onClick = { //this.powerAuthorization()
+                onClick() },
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color.SpyBackgroundColor,
+            )
+        ) {}
+    }
+
+    override fun powerAuthorization() {
+        distanceStrike.value = true
+    }
+
+    override fun reset() {
+        distanceStrike.value = false
+    }
 }
 
 class HealingPower: Power(3, "Healing") {
@@ -81,6 +131,6 @@ class IncinerationPower: Power(5, "Incineration") {
 class WhipStrikePower: Power(6, "Whipstrike") {
 }
 
-val powersList= mapOf<Int, Power>(1 to PrecisionStrikePower(),2 to DistanceStrikePower(),
-                                    3 to HealingPower(), 4 to DoubleStrikePower(),
-                                    5 to IncinerationPower(), 6 to WhipStrikePower())
+val powersList= mapOf<Int, KClass<out Power>>(1 to PrecisionStrikePower::class,2 to DistanceStrikePower::class,
+                                    3 to HealingPower::class, 4 to DoubleStrikePower::class,
+                                    5 to IncinerationPower::class, 6 to WhipStrikePower::class)

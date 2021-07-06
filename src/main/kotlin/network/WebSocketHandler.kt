@@ -95,5 +95,6 @@ data class CardAttack(
     val attackerOwner: String,
     val attackerId: Int,
     val targetOwner: String,
-    val targetId: Int
+    val targetId: Int,
+    val specialPower: Boolean = false
 )

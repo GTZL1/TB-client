@@ -1,5 +1,7 @@
 package game.cards.plays
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import game.cards.types.HeroCardType
 
 class HeroPlayCard(val heroCardType:  HeroCardType, player:String, id :Int): UnitPlayCard(heroCardType, player, id = id) {
@@ -17,5 +19,11 @@ class HeroPlayCard(val heroCardType:  HeroCardType, player:String, id :Int): Uni
 
     fun regainHealth(amount : Int) {
         this.health.value = (getHealth() + amount).coerceAtMost(heroCardType.life)
+    }
+
+    @Composable
+    override fun CardButton(modifier: Modifier,
+        onClick: () -> Unit){
+        heroCardType.power.Button(modifier, onClick)
     }
 }

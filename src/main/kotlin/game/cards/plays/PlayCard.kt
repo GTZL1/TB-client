@@ -2,6 +2,7 @@ package game.cards.plays
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
 import game.Position
 import game.cards.types.*
 
@@ -24,6 +25,10 @@ abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) 
     fun changePosition(position: Position){
         this.position=position
     }
+
+    @Composable
+    open fun CardButton(modifier: Modifier = Modifier,
+        onClick: () -> Unit = {}){}
 
     override fun equals(other: Any?): Boolean {
         if (other !is PlayCard) return false

@@ -24,6 +24,7 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
 import game.cards.plays.SpyPlayCard
 import game.cards.plays.VehiclePlayCard
@@ -382,7 +383,10 @@ fun DisplayCard(
         hover = hover.value,
         width = width,
         height = height,
-        inDiscard = inDiscard
+        inDiscard = inDiscard,
+        onButtonClick = { playCard: PlayCard ->
+            game.handleClick(clicked, playCard, true)
+        }
     )
 }
 
@@ -395,7 +399,8 @@ fun DisplayNonClickableCard(
     hover: Boolean,
     width: Int = Constants.CARD_WIDTH,
     height: Int = Constants.CARD_HEIGHT,
-    inDiscard: Boolean = false
+    inDiscard: Boolean = false,
+    onButtonClick: (PlayCard) -> Unit = {}
 ) = key(card, toPlayer, clicked, hover, inDiscard) {
     Box(
         modifier = modifier
@@ -434,6 +439,9 @@ fun DisplayNonClickableCard(
                             ),
                         card = card,
                     )
+                    //Distance strike and whip strike hero powers
+                    card.CardButton(modifier = Modifier.align(Alignment.BottomCenter),
+                        onClick = {onButtonClick(card)})
                 }
             }
             CardEtiquette(
