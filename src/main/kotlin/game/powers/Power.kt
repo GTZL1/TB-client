@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import game.Game
+import game.Position
 import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
 import game.notifyChangeTurn
@@ -19,7 +21,7 @@ import kotlin.reflect.KClass
 open class Power(val id: Int, val name: String) {
     open fun action(owner: HeroPlayCard,
                     target: PlayCard,
-                    onAction: () -> Unit = {}): Boolean{
+                    game: Game? = null): Boolean{
         return false
     }
 
@@ -39,12 +41,13 @@ open class Power(val id: Int, val name: String) {
 }
 
 class PrecisionStrikePower: Power(1, "PrecisionStrike") {
-    override fun action(owner: HeroPlayCard, target: PlayCard,
-                        onAction: () -> Unit): Boolean{
+    override fun action(owner: HeroPlayCard,
+                        target: PlayCard,
+                        game: Game?): Boolean {
         return if(target != owner &&
-            target.getHealth() <= (owner.cardType.life/2)){
-                target.takeDamage(owner.cardType.attack)
-                true
+                target.getHealth() <= (owner.cardType.life/2)){
+            target.takeDamage(owner.cardType.attack)
+            true
         } else false
     }
 }
@@ -52,8 +55,10 @@ class PrecisionStrikePower: Power(1, "PrecisionStrike") {
 class DistanceStrikePower: Power(2, "DistanceStrike") {
     private val distanceStrike= mutableStateOf(false)
 
-    override fun action(owner: HeroPlayCard, target: PlayCard,
-                        onAction: () -> Unit): Boolean{
+    override fun action(owner: HeroPlayCard,
+                        target: PlayCard,
+                        game: Game?): Boolean{
+        println("Distance strike")
         return if(distanceStrike.value &&
                 target != owner){
             target.takeDamage(owner.cardType.attack/2)
@@ -66,8 +71,7 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
         onClick: () -> Unit) {
         Button(
             modifier = modifier.size(Constants.STATS_BOX_WIDTH.dp),
-            onClick = { //this.powerAuthorization()
-                onClick()
+            onClick = { onClick()
                       },
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(
@@ -86,12 +90,13 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
 }
 
 class HealingPower: Power(3, "Healing") {
-    override fun action(owner: HeroPlayCard, target: PlayCard,
-                        onAction: () -> Unit): Boolean{
+    override fun action(owner: HeroPlayCard,
+                        target: PlayCard,
+                        game: Game?): Boolean{
         return if(target == owner &&
             owner.getHealth() < owner.cardType.life){
             owner.regainHealth(owner.cardType.life/2)
-            onAction()
+            game!!.cardsAlreadyActed.add(owner!!.id)
             true
         } else false
     }
@@ -99,12 +104,13 @@ class HealingPower: Power(3, "Healing") {
 
 class DoubleStrikePower: Power(4, "DoubleStrike") {
     private val doubleStrike= mutableStateOf(true)
-    override fun action(owner: HeroPlayCard, target: PlayCard,
-                        onAction: () -> Unit): Boolean{
+    override fun action(owner: HeroPlayCard,
+                        target: PlayCard,
+                        game: Game?): Boolean{
         return if(target != owner && doubleStrike.value){
             doubleStrike.value = false
             owner.attack(target)
-            onAction()
+            game!!.cardsAlreadyActed.remove(owner.id)
             true
         } else {
             false
@@ -130,6 +136,54 @@ class IncinerationPower: Power(5, "Incineration") {
 }
 
 class WhipStrikePower: Power(6, "Whipstrike") {
+    private val whipStrike= mutableStateOf(false)
+
+    override fun action(owner: HeroPlayCard,
+                        target: PlayCard,
+                        game: Game?): Boolean {
+        return if(whipStrike.value && target != owner){
+            when(owner.getPosition()){
+                Position.PLAYER -> game!!.cardToOpponentRow(target)
+                Position.OPPONENT -> game!!.cardToPlayerRow(target)
+                Position.CENTER -> {
+                    when(target.getPosition()){
+                        Position.OPPONENT -> game!!.cardToPlayerRow(target)
+                        Position.PLAYER -> game!!.cardToOpponentRow(target)
+                        Position.CENTER -> if(target.owner == game!!.player.pseudo) {
+                                                game.cardToPlayerRow(target)
+                                            } else {
+                                                game.cardToOpponentRow(target)
+                                            }
+                        else -> {}
+                    }
+                }
+                else -> {}
+            }
+            true
+        } else false
+    }
+
+    @Composable
+    override fun Button(modifier: Modifier,
+                        onClick: () -> Unit) {
+        Button(
+            modifier = modifier.size(Constants.STATS_BOX_WIDTH.dp),
+            onClick = { onClick()
+            },
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color.SpyBackgroundColor,
+            )
+        ) {}
+    }
+
+    override fun powerAuthorization() {
+        whipStrike.value = true
+    }
+
+    override fun reset() {
+        whipStrike.value = false
+    }
 }
 
 val powersList= mapOf<Int, KClass<out Power>>(1 to PrecisionStrikePower::class,2 to DistanceStrikePower::class,

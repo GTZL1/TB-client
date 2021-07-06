@@ -51,7 +51,7 @@ class Game(
     val opponentRowCards = mutableStateListOf<PlayCard>()
     val discardCards = mutableStateListOf<PlayCard>()
 
-    private val cardsAlreadyActed = mutableListOf<Int>()
+    val cardsAlreadyActed = mutableListOf<Int>()
 
     internal var cardsMovedFromHand = mutableStateOf(0)
 
@@ -285,9 +285,11 @@ class Game(
         val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id == targetId }
         if(attacker != target){
             try {
-                //heroes
+                //boolean for distance strike and whip strike powers
                 if(specialPower) (attacker as HeroPlayCard).heroCardType.power.powerAuthorization()
-                (attacker as HeroPlayCard).attack(target) { cardsAlreadyActed.remove(attackerId) }
+                //each hero has only one overload really implemented
+                (attacker as HeroPlayCard).attack(target, this)
+
             } catch (t: Throwable){
                 (attacker as UnitPlayCard).attack(target)
             }
@@ -341,7 +343,7 @@ class Game(
                 //healing power of heroes
                 (oldCard as HeroPlayCard).heroCardType.power.action(owner = oldCard as HeroPlayCard,
                                                                     target = oldCard as HeroPlayCard,
-                                                                    onAction = {cardsAlreadyActed.add(oldCard!!.id)})
+                                                                    game = this)
                 notifyAttack(card, card)
             } catch (t :Throwable) {}
         } else {
