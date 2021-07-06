@@ -167,8 +167,9 @@ class Game(
             oldCard=null
 
             try {
-                //double strike heroes
-                filterCardsOwner(player.pseudo).filter { playCard: PlayCard ->
+                //reset hero powers
+                listOf(filterCardsOwner(player.pseudo), filterCardsOwner(opponent.pseudo))
+                    .flatten().filter { playCard: PlayCard ->
                     playCard.cardType::class == HeroCardType::class
                 }.forEach { playCard: PlayCard -> (playCard as HeroPlayCard).heroCardType.power.reset() }
             } catch (t: Throwable){

@@ -58,7 +58,6 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
     override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean{
-        println("Distance strike")
         return if(distanceStrike.value &&
                 target != owner){
             target.takeDamage(owner.cardType.attack/2)
@@ -147,8 +146,8 @@ class WhipStrikePower: Power(6, "Whipstrike") {
                 Position.OPPONENT -> game!!.cardToPlayerRow(target)
                 Position.CENTER -> {
                     when(target.getPosition()){
-                        Position.OPPONENT -> game!!.cardToPlayerRow(target)
-                        Position.PLAYER -> game!!.cardToOpponentRow(target)
+                        Position.OPPONENT -> game!!.cardToCenterRow(target)
+                        Position.PLAYER -> game!!.cardToCenterRow(target)
                         Position.CENTER -> if(target.owner == game!!.player.pseudo) {
                                                 game.cardToPlayerRow(target)
                                             } else {
