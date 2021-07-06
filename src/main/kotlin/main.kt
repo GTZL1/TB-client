@@ -58,7 +58,7 @@ fun main(args: Array<String>): Unit {
             playerPseudo = username
         ) }
 
-        val websocket= remember {WebSocketHandler()}
+        val websocket = WebSocketHandler()
         when (val screen = screenState.value) {
             Screen.LOGIN -> {
                 login.LoginScreen()
