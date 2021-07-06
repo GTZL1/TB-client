@@ -51,14 +51,14 @@ fun main(args: Array<String>): Unit {
         val opponentName = remember { mutableStateOf("ikrie") }
         val victory = remember { mutableStateOf(false) }
         val screenState = remember { mutableStateOf(Screen.INTERMEDIATE) }
-        val login = Login(
+        val login = remember { Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.INTERMEDIATE },
             idSession = idSession,
             playerPseudo = username
-        )
+        ) }
 
-        val websocket=WebSocketHandler()
+        val websocket= remember {WebSocketHandler()}
         when (val screen = screenState.value) {
             Screen.LOGIN -> {
                 login.LoginScreen()
