@@ -40,6 +40,7 @@ class Game(
 
     private var oldCard: PlayCard? = null
     private lateinit var oldClicked: MutableState<Boolean>
+    private var powerAuthorization = mutableStateOf(false)
 
     internal var playerTurn = false
 
@@ -304,6 +305,7 @@ class Game(
     }
 
     internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard, specialPower: Boolean = false) {
+        if(specialPower) powerAuthorization.value=true
         clicked.value = true
         if ((oldCard!=null) && (card != oldCard)) {
             oldClicked.value = false
@@ -319,10 +321,14 @@ class Game(
                     try {
                         cardsAlreadyActed.add(oldCard!!.id)
                         applyAttack(
-                            attackerOwner = oldCard!!.owner, attackerId = oldCard!!.id,
-                            targetOwner = card.owner, targetId = card.id
+                            attackerOwner = oldCard!!.owner,
+                            attackerId = oldCard!!.id,
+                            targetOwner = card.owner,
+                            targetId = card.id,
+                            specialPower = powerAuthorization.value
                         )
-                        notifyAttack(oldCard!!, card, specialPower)
+                        notifyAttack(oldCard!!, card, powerAuthorization.value)
+                        powerAuthorization.value = false
                     } catch (t: Throwable) {
                     }
                 }

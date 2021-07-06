@@ -67,7 +67,8 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
         Button(
             modifier = modifier.size(Constants.STATS_BOX_WIDTH.dp),
             onClick = { //this.powerAuthorization()
-                onClick() },
+                onClick()
+                      },
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = Color.SpyBackgroundColor,
