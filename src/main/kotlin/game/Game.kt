@@ -2,21 +2,20 @@ package game
 
 import Constants
 import androidx.compose.runtime.*
+import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
+import game.cards.plays.SpyPlayCard
 import game.cards.plays.UnitPlayCard
 import game.cards.types.BaseCardType
+import game.cards.types.HeroCardType
 import game.player.Player
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import network.CardAttack
-import network.CardMovement
-import network.SimpleMessage
-import network.WebSocketHandler
+import network.*
 import org.json.JSONObject
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -37,8 +36,9 @@ class Game(
 ) {
     private val turnCallback = mutableListOf<TurnCallback>()
 
-    private lateinit var oldCard: PlayCard
+    private var oldCard: PlayCard? = null
     private lateinit var oldClicked: MutableState<Boolean>
+    private var powerAuthorization = mutableStateOf(false)
 
     internal var playerTurn = false
 
@@ -49,7 +49,7 @@ class Game(
     val opponentRowCards = mutableStateListOf<PlayCard>()
     val discardCards = mutableStateListOf<PlayCard>()
 
-    private val cardsAlreadyActed = mutableListOf<Int>()
+    val cardsAlreadyActed = mutableListOf<Int>()
 
     internal var cardsMovedFromHand = mutableStateOf(0)
 
@@ -75,6 +75,7 @@ class Game(
         playerRowCards.add(card)
         if (!isSpy && handCards.remove(card)) {
             cardsMovedFromHand.value += 1
+            tryIncinerationPower(card, opponent.pseudo)
         }
         centerRowCards.remove(card)
         card.changePosition(Position.PLAYER)
@@ -138,18 +139,31 @@ class Game(
         checkChangeTurn()
     }
 
-    private fun notifyAttack(attackerCard: PlayCard, targetCard: PlayCard) {
+    private fun notifyAttack(attackerCard: PlayCard, targetCard: PlayCard, specialPower: Boolean = false) {
         webSocketHandler.sendMessage(
             JSONObject(
                 CardAttack(
                     attackerOwner = attackerCard.owner,
                     attackerId = attackerCard.id,
                     targetOwner = targetCard.owner,
-                    targetId = targetCard.id
+                    targetId = targetCard.id,
+                    specialPower = specialPower
                 )
             )
         )
         checkChangeTurn()
+    }
+
+    internal fun notifyNewId(owner: String, oldId: Int, newId: Int) {
+        webSocketHandler.sendMessage(
+            JSONObject(
+                CardIdChange(
+                    owner = owner,
+                    oldId = oldId,
+                    newId = newId
+                )
+            )
+        )
     }
 
     internal fun changeTurn() {
@@ -160,6 +174,16 @@ class Game(
             playerTurn = !playerTurn
             cardsAlreadyActed.clear()
             cardsMovedFromHand.value = 0
+            oldCard=null
+
+            try {
+                //reset hero powers
+                listOf(filterCardsOwner(player.pseudo), filterCardsOwner(opponent.pseudo))
+                    .flatten().filter { playCard: PlayCard ->
+                    playCard.cardType::class == HeroCardType::class
+                }.forEach { playCard: PlayCard -> (playCard as HeroPlayCard).heroCardType.power.reset() }
+            } catch (t: Throwable){
+            }
 
             if (this::delayJob.isInitialized) {
                 runBlocking { delayJob.cancel() }
@@ -224,8 +248,18 @@ class Game(
                         attackerOwner = msg.getString("attackerOwner"),
                         attackerId = msg.getInt("attackerId"),
                         targetOwner = msg.getString("targetOwner"),
-                        targetId = msg.getInt("targetId")
+                        targetId = msg.getInt("targetId"),
+                        specialPower = msg.getBoolean("specialPower")
                     )
+                }
+                Constants.NEW_ID_MESSAGE -> {
+                    if(opponent.pseudo == msg.getString("owner")){
+                        (opponent.playDeck.getCards().first { playCard ->
+                            playCard.id == msg.getInt(
+                                "oldId"
+                            )
+                        } as SpyPlayCard).changeId(msg.getInt("newId"))
+                    }
                 }
             }
         }
@@ -238,6 +272,8 @@ class Game(
         } else {
             filterCardsOwner(owner).first { playCard -> playCard.id == id }
         }
+        //a fromDeck card is always owned by opponent
+        if(fromDeck) tryIncinerationPower(card, player.pseudo)
 
         when (position) {
             Position.PLAYER -> {
@@ -261,12 +297,27 @@ class Game(
         attackerOwner: String,
         attackerId: Int,
         targetOwner: String,
-        targetId: Int
+        targetId: Int,
+        specialPower: Boolean = false
     ) {
         val attacker =
             filterCardsOwner(attackerOwner).first { playCard -> playCard.id == attackerId }
         val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id == targetId }
-        (attacker as UnitPlayCard).attack(target)
+        if(attacker != target){
+            try {
+                //boolean for distance strike and whip strike powers
+                if(specialPower) (attacker as HeroPlayCard).heroCardType.power.powerAuthorization()
+                //each hero has only one overload really implemented
+                (attacker as HeroPlayCard).attack(target, this)
+
+            } catch (t: Throwable){
+                (attacker as UnitPlayCard).attack(target)
+            }
+        } else {
+            //healing power
+            (attacker as HeroPlayCard).attack(attacker, this)
+        }
+
         if (attacker.getHealth() <= 0) {
             cardToDiscard(attacker)
         }
@@ -275,29 +326,46 @@ class Game(
         }
     }
 
-    internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard) {
+    internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard, specialPower: Boolean = false) {
+        if(specialPower) powerAuthorization.value=true
         clicked.value = true
-        if ((this::oldCard.isInitialized) && (card != oldCard)) {
+        if ((oldCard!=null) && (card != oldCard)) {
             oldClicked.value = false
-            if (card.owner == oldCard.owner) {
+            if (card.owner == oldCard!!.owner ||
+                    oldCard!!.owner != player.pseudo) {
                 oldCard = card
                 oldClicked = clicked
-            } else if ((oldCard.owner == player.pseudo)
+            } else if ((oldCard!!.owner == player.pseudo)
             ) {
                 clicked.value = false
                 //attacker is oldCard
-                if (canAttack(oldCard, card)) {
+                if (canAttack(oldCard!!, card) || (oldCard!!.overrideDistanceAttack() && cardCanAct(oldCard!!))) {
                     try {
-                        cardsAlreadyActed.add(oldCard.id)
+                        cardsAlreadyActed.add(oldCard!!.id)
                         applyAttack(
-                            attackerOwner = oldCard.owner, attackerId = oldCard.id,
-                            targetOwner = card.owner, targetId = card.id
+                            attackerOwner = oldCard!!.owner,
+                            attackerId = oldCard!!.id,
+                            targetOwner = card.owner,
+                            targetId = card.id,
+                            specialPower = powerAuthorization.value
                         )
-                        notifyAttack(oldCard, card)
+                        notifyAttack(oldCard!!, card, powerAuthorization.value)
+                        powerAuthorization.value = false
                     } catch (t: Throwable) {
                     }
                 }
             }
+        } else if ((oldCard!=null) && (card == oldCard)
+            && cardCanAct(card = oldCard!!)) {
+                oldClicked.value=false
+            clicked.value=false
+            try {
+                //healing power of heroes
+                (oldCard as HeroPlayCard).heroCardType.power.action(owner = oldCard as HeroPlayCard,
+                                                                    target = oldCard as HeroPlayCard,
+                                                                    game = this)
+                notifyAttack(card, card)
+            } catch (t :Throwable) {}
         } else {
             oldCard = card
             oldClicked = clicked
@@ -343,6 +411,19 @@ class Game(
             }
             onEnding(opponent.pseudo, victory)
         }
+    }
+
+    private fun tryIncinerationPower(card: PlayCard, targetOwner: String) {
+        //incineration hero power
+        try {
+            (card as HeroPlayCard).heroCardType.power.action(
+                cards = filterCardsOwner(targetOwner).filter { playCard: PlayCard ->
+                    playCard.cardType::class != BaseCardType::class &&
+                    playCard.cardType::class != HeroCardType::class
+                },
+                onAction = {playCard: PlayCard -> cardToDiscard(playCard) }
+            )
+        } catch (t: Throwable) {}
     }
 }
 

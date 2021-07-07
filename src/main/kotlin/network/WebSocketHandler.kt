@@ -95,5 +95,13 @@ data class CardAttack(
     val attackerOwner: String,
     val attackerId: Int,
     val targetOwner: String,
-    val targetId: Int
+    val targetId: Int,
+    val specialPower: Boolean = false
+)
+
+data class CardIdChange(
+    val type: String = Constants.NEW_ID_MESSAGE,
+    val owner: String,
+    val oldId: Int,
+    val newId: Int
 )

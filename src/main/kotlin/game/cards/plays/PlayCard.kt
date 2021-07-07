@@ -2,11 +2,12 @@ package game.cards.plays
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
 import game.Position
 import game.cards.types.*
 
-abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
-    private val health = mutableStateOf(cardType.life)
+abstract class PlayCard(val cardType: CardType, var owner: String, var id: Int) {
+    protected val health = mutableStateOf(cardType.life)
     private var position=Position.DECK
 
     fun getHealth(): Int {
@@ -25,8 +26,15 @@ abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) 
         this.position=position
     }
 
+    open fun overrideDistanceAttack(): Boolean {
+        return false
+    }
+
+    @Composable
+    open fun CardButton(modifier: Modifier = Modifier,
+        onClick: () -> Unit = {}){}
+
     override fun equals(other: Any?): Boolean {
-        //if (this === other) return true
         if (other !is PlayCard) return false
 
         if (cardType != other.cardType) return false
