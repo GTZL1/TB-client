@@ -447,7 +447,7 @@ fun DisplayNonClickableCard(
             CardEtiquette(
                 modifier = Modifier.weight(1f),
                 card = card,
-                inDiscard = inDiscard
+                inDiscard = inDiscard,
             )
         }
     }
@@ -482,7 +482,7 @@ fun StatsBox(
 fun CardEtiquette(
     modifier: Modifier = Modifier,
     card: PlayCard,
-    inDiscard: Boolean = false
+    inDiscard: Boolean = false,
 ) {
     Box(
         modifier = modifier

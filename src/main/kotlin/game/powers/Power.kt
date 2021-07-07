@@ -1,14 +1,30 @@
 package game.powers
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.ButtonElevation
+import androidx.compose.material.IconButton
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.svgResource
 import game.Game
 import game.Position
 import game.cards.plays.HeroPlayCard
@@ -68,15 +84,16 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
     @Composable
     override fun Button(modifier: Modifier,
         onClick: () -> Unit) {
-        Button(
-            modifier = modifier.size(Constants.STATS_BOX_WIDTH.dp),
+        IconButton(
+            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
             onClick = { onClick()
                       },
-            shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = Color.SpyBackgroundColor,
-            )
-        ) {}
+           content = {
+                     Image(modifier = Modifier.rotate(-90f),
+                         painter = svgResource("icons/arrows_crossed.svg"),
+                        contentDescription = "Arrows crossed")
+           },
+        )
     }
 
     override fun powerAuthorization() {
@@ -165,15 +182,15 @@ class WhipStrikePower: Power(6, "Whipstrike") {
     @Composable
     override fun Button(modifier: Modifier,
                         onClick: () -> Unit) {
-        Button(
-            modifier = modifier.size(Constants.STATS_BOX_WIDTH.dp),
+        IconButton(
+            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
             onClick = { onClick()
             },
-            shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = Color.SpyBackgroundColor,
-            )
-        ) {}
+            content = {
+                Image(bitmap = imageResource("icons/curly-arrow.png"),
+                    contentDescription = "Arrows crossed")
+            },
+        )
     }
 
     override fun powerAuthorization() {
