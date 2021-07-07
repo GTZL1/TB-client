@@ -151,7 +151,7 @@ class Login(
         return JSONArray()
     }
 
-    fun generatePowerTypes(): ArrayList<Power> {
+    /*fun generatePowerTypes(): ArrayList<Power> {
         var powersList: ArrayList<Power> = ArrayList()
         val powers = powersRequest()
         for (x in 0 until powers.length()) {
@@ -163,12 +163,11 @@ class Login(
             )
         }
         return powersList
-    }
+    }*/
 
     fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
         val cardTypes = mutableListOf<CardType>()
         val cards = cardsRequest()
-        //val powers = generatePowerTypes()
 
         for (tc: Pair<String, KClass<out CardType>> in typesConstructs) {
             for (x in 0 until cards.getJSONArray(tc.first).length()) {

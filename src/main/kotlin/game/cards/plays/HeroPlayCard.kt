@@ -22,6 +22,10 @@ class HeroPlayCard(val heroCardType:  HeroCardType, player:String, id :Int): Uni
         this.health.value = (getHealth() + amount).coerceAtMost(heroCardType.life)
     }
 
+    override fun overrideDistanceAttack(): Boolean {
+        return heroCardType.power.overrideDistanceAttack()
+    }
+
     @Composable
     override fun CardButton(modifier: Modifier,
         onClick: () -> Unit){

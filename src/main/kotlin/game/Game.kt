@@ -4,6 +4,7 @@ import Constants
 import androidx.compose.runtime.*
 import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
+import game.cards.plays.SpyPlayCard
 import game.cards.plays.UnitPlayCard
 import game.cards.types.BaseCardType
 import game.cards.types.HeroCardType
@@ -13,10 +14,7 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import network.CardAttack
-import network.CardMovement
-import network.SimpleMessage
-import network.WebSocketHandler
+import network.*
 import org.json.JSONObject
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -156,6 +154,18 @@ class Game(
         checkChangeTurn()
     }
 
+    internal fun notifyNewId(owner: String, oldId: Int, newId: Int) {
+        webSocketHandler.sendMessage(
+            JSONObject(
+                CardIdChange(
+                    owner = owner,
+                    oldId = oldId,
+                    newId = newId
+                )
+            )
+        )
+    }
+
     internal fun changeTurn() {
         if (playerTurn) {
             webSocketHandler.sendMessage(
@@ -242,6 +252,15 @@ class Game(
                         specialPower = msg.getBoolean("specialPower")
                     )
                 }
+                Constants.NEW_ID_MESSAGE -> {
+                    if(opponent.pseudo == msg.getString("owner")){
+                        (opponent.playDeck.getCards().first { playCard ->
+                            playCard.id == msg.getInt(
+                                "oldId"
+                            )
+                        } as SpyPlayCard).changeId(msg.getInt("newId"))
+                    }
+                }
             }
         }
     }
@@ -296,7 +315,7 @@ class Game(
             }
         } else {
             //healing power
-            (attacker as HeroPlayCard).attack(attacker)
+            (attacker as HeroPlayCard).attack(attacker, this)
         }
 
         if (attacker.getHealth() <= 0) {
@@ -320,7 +339,7 @@ class Game(
             ) {
                 clicked.value = false
                 //attacker is oldCard
-                if (canAttack(oldCard!!, card)) {
+                if (canAttack(oldCard!!, card) || oldCard!!.overrideDistanceAttack()) {
                     try {
                         cardsAlreadyActed.add(oldCard!!.id)
                         applyAttack(

@@ -1,40 +1,24 @@
 package game.powers
 
-import androidx.compose.foundation.Canvas
+import Constants
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.material.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.unit.dp
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.ButtonElevation
-import androidx.compose.material.IconButton
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.composed
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.svgResource
+import androidx.compose.ui.unit.dp
 import game.Game
 import game.Position
 import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
-import game.notifyChangeTurn
-import theme.SpyBackgroundColor
 import kotlin.reflect.KClass
 
-//TODO make Power abstract
-open class Power(val id: Int, val name: String) {
+abstract class Power(val id: Int, val name: String) {
     open fun action(owner: HeroPlayCard,
                     target: PlayCard,
                     game: Game? = null): Boolean{
@@ -49,6 +33,10 @@ open class Power(val id: Int, val name: String) {
     open fun reset() {}
 
     open fun powerAuthorization(){}
+
+    open fun overrideDistanceAttack(): Boolean {
+        return false
+    }
 
     @Composable
     open fun Button(modifier: Modifier,
@@ -103,6 +91,10 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
     override fun reset() {
         distanceStrike.value = false
     }
+
+    override fun overrideDistanceAttack(): Boolean {
+        return true
+    }
 }
 
 class HealingPower: Power(3, "Healing") {
@@ -112,7 +104,7 @@ class HealingPower: Power(3, "Healing") {
         return if(target == owner &&
             owner.getHealth() < owner.cardType.life){
             owner.regainHealth(owner.cardType.life/2)
-            game!!.cardsAlreadyActed.add(owner!!.id)
+            game!!.cardsAlreadyActed.add(owner.id)
             true
         } else false
     }
@@ -159,8 +151,20 @@ class WhipStrikePower: Power(6, "Whipstrike") {
                         game: Game?): Boolean {
         return if(whipStrike.value && target != owner){
             when(owner.getPosition()){
-                Position.PLAYER -> game!!.cardToOpponentRow(target)
-                Position.OPPONENT -> game!!.cardToPlayerRow(target)
+                Position.PLAYER -> {
+                    when(target.getPosition()){
+                        Position.OPPONENT -> game!!.cardToCenterRow(target)
+                        Position.CENTER -> game!!.cardToOpponentRow(target)
+                        else -> {}
+                    }
+                }
+                Position.OPPONENT -> {
+                    when(target.getPosition()){
+                        Position.PLAYER -> game!!.cardToCenterRow(target)
+                        Position.CENTER -> game!!.cardToPlayerRow(target)
+                        else -> {}
+                    }
+                }
                 Position.CENTER -> {
                     when(target.getPosition()){
                         Position.OPPONENT -> game!!.cardToCenterRow(target)
@@ -199,6 +203,10 @@ class WhipStrikePower: Power(6, "Whipstrike") {
 
     override fun reset() {
         whipStrike.value = false
+    }
+
+    override fun overrideDistanceAttack(): Boolean {
+        return true
     }
 }
 

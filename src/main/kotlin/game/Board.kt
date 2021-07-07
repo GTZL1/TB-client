@@ -185,7 +185,12 @@ fun Board(game: Game) {
                                 } else {
                                     game.cardToOpponentRow(pc)
                                     (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
-                                    //game.opponent.playDeck.addCard(pc)
+
+                                    val newId= game.player.playDeck.nextId()
+                                    game.notifyNewId(game.player.pseudo, pc.id, newId)
+                                    pc.changeId(newId)
+
+                                    game.opponent.playDeck.addCard(pc)
                                     game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
                                         .forEach { pc: PlayCard ->
                                             game.handCards.add(

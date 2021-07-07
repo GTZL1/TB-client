@@ -6,7 +6,7 @@ import androidx.compose.ui.Modifier
 import game.Position
 import game.cards.types.*
 
-abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) {
+abstract class PlayCard(val cardType: CardType, var owner: String, var id: Int) {
     protected val health = mutableStateOf(cardType.life)
     private var position=Position.DECK
 
@@ -24,6 +24,10 @@ abstract class PlayCard(val cardType: CardType, var owner: String, val id: Int) 
 
     fun changePosition(position: Position){
         this.position=position
+    }
+
+    open fun overrideDistanceAttack(): Boolean {
+        return false
     }
 
     @Composable
