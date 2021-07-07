@@ -1,5 +1,6 @@
 package game
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -7,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import theme.buttonFont
 import theme.endingFont
@@ -25,8 +27,12 @@ fun IntermediateScreen(
         horizontalArrangement = Arrangement.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(modifier = Modifier.padding(bottom = 20.dp),
-                text = "Welcome on HEIG game, $username !",
+            Box(){
+                Image(bitmap = imageResource("LogoFancy.png"),
+                    contentDescription = "Game logo")
+            }
+            Text(modifier = Modifier.padding(vertical = 20.dp),
+                text = "Welcome in the Ultimate Pop-culture battle, $username !",
                 style = endingFont,
             )
             Button(modifier = Modifier.padding(bottom = 10.dp).height(50.dp).width(220.dp),
