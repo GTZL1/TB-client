@@ -339,7 +339,7 @@ class Game(
             ) {
                 clicked.value = false
                 //attacker is oldCard
-                if (canAttack(oldCard!!, card) || oldCard!!.overrideDistanceAttack()) {
+                if (canAttack(oldCard!!, card) || (oldCard!!.overrideDistanceAttack() && cardCanAct(oldCard!!))) {
                     try {
                         cardsAlreadyActed.add(oldCard!!.id)
                         applyAttack(
