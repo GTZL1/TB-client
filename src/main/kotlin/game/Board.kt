@@ -145,11 +145,11 @@ fun Board(game: Game) {
             // Player row
             GameRow(content = {
                 game.baseCards.forEach { pc: PlayCard ->
-                    DisplayCard(
+                    DisplayCard( //base is never clickable
                         card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
                         isPlayerTurn = notifyChangeTurn(game)
-                    ) //base is never clickable
+                    )
                 }
                 game.playerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
@@ -229,14 +229,14 @@ private fun DisplayDraggableCard(
     onDragEndUpTwoRank: () -> Unit = onDragEndUpOneRank,
     onDragEndDown: () -> Unit
 ) = key(
-    card,
-    game,
-    isMovableUp,
-    isMovableUpTwoRank,
-    isMovableDown,
-    toPlayer,
-    isPlayerTurn,
-    hasCardActed
+        card,
+        game,
+        isMovableUp,
+        isMovableUpTwoRank,
+        isMovableDown,
+        toPlayer,
+        isPlayerTurn,
+        hasCardActed
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -277,19 +277,6 @@ private fun DisplayDraggableCard(
             toPlayer = toPlayer,
             isPlayerTurn = notifyChangeTurn(game)
         )
-    }
-}
-
-private fun moveVehicle(
-    card: VehiclePlayCard, startY: Float, offsetY: Float,
-    isMovableUpLow: Boolean,
-    onDragEndUpLow: () -> Unit,
-    onDragEndUpHigh: () -> Unit
-) {
-    if (isMovableUpLow && (startY - offsetY < (Constants.CARD_DRAG_MARGIN + Constants.BIG_ROW_HEIGHT))) {
-        onDragEndUpLow()
-    } else {
-        onDragEndUpHigh()
     }
 }
 
