@@ -19,10 +19,11 @@ fun IntermediateScreen(
     modifier: Modifier = Modifier,
     username: String,
     onDeckScreen: () -> Unit,
-    onGameHistory: () -> Unit
+    onGameHistory: () -> Unit,
+    onQuitGame: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -44,11 +45,20 @@ fun IntermediateScreen(
                     style = buttonFont
                 )
             }
-            Button(modifier = Modifier.height(50.dp).width(220.dp),
+            Button(modifier = Modifier.padding(bottom = 10.dp).height(50.dp).width(220.dp),
                 onClick = {
                     onGameHistory()
                 }){
                 Text(text = "See game history",
+                    color = Color.White,
+                    style = buttonFont
+                )
+            }
+            Button(modifier = Modifier.height(50.dp).width(220.dp),
+                onClick = {
+                    onQuitGame()
+                }){
+                Text(text = "Quit game",
                     color = Color.White,
                     style = buttonFont
                 )

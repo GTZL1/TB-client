@@ -1,8 +1,10 @@
-import androidx.compose.desktop.Window
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.*
 import game.*
 import game.cards.types.*
 import game.decks.DeckGUI
@@ -23,7 +25,8 @@ import org.json.JSONObject
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
 
-fun main(args: Array<String>): Unit {
+@OptIn(ExperimentalComposeUiApi::class)
+fun main() = application {
     System.setProperty("skiko.renderApi", "OPENGL")
     val httpClient = HttpClient {
         install(WebSockets)
@@ -39,19 +42,27 @@ fun main(args: Array<String>): Unit {
         Pair("spy", SpyCardType::class),
         Pair("base", BaseCardType::class)
     )
-
+    val state = rememberWindowState(size = WindowSize(Constants.WINDOW_WIDTH.dp, Constants.WINDOW_HEIGHT.dp),
+                                    position = WindowPosition(x = 200.dp, y = 35.dp))
     lateinit var cardTypes: List<CardType>
-    Window(title = "HEIG game", size = IntSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT)) {
+    lateinit var login: Login
+    Window(
+        title = "uPCb !!",
+        state = state,
+        resizable = false,
+        onCloseRequest = { login.logout()
+                            state.isOpen = false }
+    ) {
         val game= remember { mutableStateOf<Game?>(null) }
         val playerDeck = remember { mutableStateOf<DeckType?>(null) }
         val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
         val gameHistory = remember { mutableStateOf<GameHistory?>(null) }
-        val idSession = remember { mutableStateOf(args[0].toInt()) }
-        val username = remember { mutableStateOf(args[1]) }
+        val idSession = remember { mutableStateOf(0) }
+        val username = remember { mutableStateOf("aloy") }
         val opponentName = remember { mutableStateOf("ikrie") }
         val victory = remember { mutableStateOf(false) }
-        val screenState = remember { mutableStateOf(Screen.INTERMEDIATE) }
-        val login = remember { Login(
+        val screenState = remember { mutableStateOf(Screen.LOGIN) }
+        login = remember { Login(
             httpClient = httpClient,
             onRightLogin = { screenState.value = Screen.INTERMEDIATE },
             idSession = idSession,
@@ -67,7 +78,9 @@ fun main(args: Array<String>): Unit {
                 IntermediateScreen(
                     username = username.value,
                     onDeckScreen = { screenState.value = Screen.DECK },
-                    onGameHistory = { screenState.value = Screen.HISTORY }
+                    onGameHistory = { screenState.value = Screen.HISTORY },
+                    onQuitGame = { login.logout()
+                                    state.isOpen = false }
                 )
             }
             Screen.HISTORY -> {

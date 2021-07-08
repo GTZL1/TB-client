@@ -97,6 +97,22 @@ class Login(
         }
     }
 
+    fun logout() {
+        try {
+            JSONObject(runBlocking {
+                httpClient.request<String> {
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/logout")
+                    headers {
+                        append("Content-Type", "application/json")
+                    }
+                    body = GameObjectsRequest(idSession = idSession.value)
+                    method = HttpMethod.Get
+                }
+            })
+        } catch (exception: ClientRequestException) {
+        }
+    }
+
     private fun cardsRequest(): JSONObject {
         try {
             val response = JSONObject(runBlocking {
