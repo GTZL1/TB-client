@@ -141,11 +141,18 @@ fun DeckScreen(deckGUI: DeckGUI,
                     style = buttonFont)
             }
             DeckChoiceMenu(deckGUI, deckGUI.decks, deckGUI.deck)
+            val length = remember { mutableStateOf(0) }
             TextField(
                 value = deckName.value,
                 onValueChange = { value ->
-                    deckName.value = value
-                    deckGUI.deck.value.name=value },
+                    var text = value
+                    text.forEach { c: Char ->
+                        if(!c.isLetterOrDigit() && !c.isWhitespace()) {
+                            text = text.replace(c, ' ', true)
+                        }
+                    }
+                    deckName.value = text
+                    deckGUI.deck.value.name=text },
                 textStyle = menuFont,
                 label = {
                     Text(

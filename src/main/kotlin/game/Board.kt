@@ -463,7 +463,12 @@ fun StatsBox(
         ) {
             Text(
                 text = card.getHealth().toString(),
-                style = cardFont
+                style = cardFont,
+                color = if(card.getHealth() < card.cardType.life) {
+                            Color.Red
+                        } else {
+                            Color.Black
+                        }
             )
             Text(text = card.cardType.attack.toString(), style = cardFont)
         }

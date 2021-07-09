@@ -24,6 +24,7 @@ import network.WebSocketHandler
 import org.json.JSONObject
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
+import kotlin.text.Regex.Companion.escape
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
@@ -58,7 +59,7 @@ fun main() = application {
         val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
         val gameHistory = remember { mutableStateOf<GameHistory?>(null) }
         val idSession = remember { mutableStateOf(0) }
-        val username = remember { mutableStateOf("") }
+        val username = remember { mutableStateOf("aloy") }
         val opponentName = remember { mutableStateOf("ikrie") }
         val victory = remember { mutableStateOf(false) }
         val screenState = remember { mutableStateOf(Screen.LOGIN) }
@@ -85,11 +86,10 @@ fun main() = application {
             }
             Screen.HISTORY -> {
                 LaunchedEffect(true) {
-                    val gH =GameHistory(
+                    gameHistory.value = GameHistory(
                         idSession = idSession.value,
                         httpClient = httpClient,
                         username = username.value)
-                    gameHistory.value=gH
                 }
                 val currentGameHistory = gameHistory.value
                 if(currentGameHistory!=null){
