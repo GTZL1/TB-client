@@ -74,12 +74,11 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
         onClick: () -> Unit) {
         IconButton(
             modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
-            onClick = { onClick()
-                      },
+            onClick = { onClick() },
            content = {
                      Image(modifier = Modifier.rotate(-90f),
-                         painter = svgResource("icons/arrows_crossed.svg"),
-                        contentDescription = "Arrows crossed")
+                         painter = svgResource("icons/distance strike.svg"),
+                        contentDescription = "Bow and arrow")
            },
         )
     }
@@ -108,6 +107,19 @@ class HealingPower: Power(3, "Healing") {
             true
         } else false
     }
+
+    @Composable
+    override fun Button(modifier: Modifier,
+                        onClick: () -> Unit) {
+        IconButton(
+            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
+            onClick = {},
+            content = {
+                Image(painter = svgResource("icons/healing.svg"),
+                    contentDescription = "Syringe")
+            },
+        )
+    }
 }
 
 class DoubleStrikePower: Power(4, "DoubleStrike") {
@@ -125,6 +137,19 @@ class DoubleStrikePower: Power(4, "DoubleStrike") {
         }
     }
 
+    @Composable
+    override fun Button(modifier: Modifier,
+                        onClick: () -> Unit) {
+        IconButton(
+            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
+            onClick = { onClick() },
+            content = {
+                Image(painter = svgResource("icons/double strike.svg"),
+                    contentDescription = "Two arrows")
+            },
+        )
+    }
+
     override fun reset() {
         doubleStrike.value = true
     }
@@ -140,6 +165,19 @@ class IncinerationPower: Power(5, "Incineration") {
             }
         }
         return false
+    }
+
+    @Composable
+    override fun Button(modifier: Modifier,
+                        onClick: () -> Unit) {
+        IconButton(
+            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
+            onClick = { },
+            content = {
+                Image(painter = svgResource("icons/incineration.svg"),
+                    contentDescription = "Vevey's flame")
+            },
+        )
     }
 }
 
