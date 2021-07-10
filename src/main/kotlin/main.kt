@@ -50,7 +50,7 @@ fun main() = application {
     Window(
         title = "uPCb !!",
         state = state,
-        resizable = false,
+        resizable = true,
         onCloseRequest = { login.logout()
                             state.isOpen = false }
     ) {

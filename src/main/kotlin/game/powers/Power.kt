@@ -226,8 +226,7 @@ class WhipStrikePower: Power(6, "Whipstrike") {
                         onClick: () -> Unit) {
         IconButton(
             modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
-            onClick = { onClick()
-            },
+            onClick = { onClick() },
             content = {
                 Image(bitmap = imageResource("icons/curly-arrow.png"),
                     contentDescription = "Arrows crossed")

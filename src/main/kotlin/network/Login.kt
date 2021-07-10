@@ -94,6 +94,7 @@ class Login(
                 onRightLogin()
             }
         } catch (exception: ClientRequestException) {
+            println(exception.message)
         }
     }
 
@@ -245,7 +246,8 @@ data class LoginRequest(
 
 data class LoginResponse(
     val granted: Boolean,
-    val idSession: Int
+    val idSession: Int,
+    val type: String = ""
 )
 
 data class GameObjectsRequest(

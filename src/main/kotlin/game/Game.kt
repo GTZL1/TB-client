@@ -372,6 +372,14 @@ class Game(
         }
     }
 
+    internal fun actionableCards(owner: String): List<String> {
+        val cards= mutableListOf<String>()
+        filterCardsOwner(owner).filter { playCard -> cardCanAct(playCard)
+                && playCard.cardType::class != BaseCardType::class}
+            .forEach { playCard -> cards.add(playCard.cardType.name) }
+        return cards
+    }
+
     private fun canAttack(attackerCard: PlayCard, targetCard: PlayCard): Boolean {
         return cardCanAct(attackerCard)
                 && abs(attackerCard.getPosition().ordinal - targetCard.getPosition().ordinal) <= 1

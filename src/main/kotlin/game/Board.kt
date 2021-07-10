@@ -24,10 +24,8 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
 import game.cards.plays.SpyPlayCard
-import game.cards.plays.VehiclePlayCard
 import game.cards.types.SpyCardType
 import game.cards.types.VehicleCardType
 import kotlinx.coroutines.GlobalScope
@@ -35,6 +33,7 @@ import kotlinx.coroutines.launch
 import theme.cardColors
 import theme.cardFont
 import theme.discardCardFont
+import theme.miniFont
 
 @Composable
 fun Board(game: Game) {
@@ -54,8 +53,8 @@ fun Board(game: Game) {
                 .width(Constants.CARD_WIDTH.dp)
                 .background(color = Color.Gray)
                 .padding(
-                    top = Constants.STATS_BOX_HEIGTH.dp,
-                    bottom = Constants.STATS_BOX_HEIGTH.dp
+                    top = Constants.STATS_BOX_HEIGHT.dp,
+                    bottom = Constants.STATS_BOX_HEIGHT.dp
                 ),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -101,9 +100,24 @@ fun Board(game: Game) {
             //Lower side of column
             Column(
                 modifier = Modifier.fillMaxWidth()
-                    .height((Constants.CARD_HEIGHT * 1.5).dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) { }
+                    .height((Constants.CARD_HEIGHT * 1.5).dp)
+                    .padding(start = 5.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                if(notifyChangeTurn(game)){
+                    Text(text = "Ready for action :",
+                        style = miniFont)
+                    game.actionableCards(game.player.pseudo).forEach { s ->
+                        Text(text = "- $s",
+                        style = miniFont)
+                    }
+                    Text(modifier = Modifier.padding(top = 10.dp),
+                        text = (game.player.playDeck.getBaseCards().size - game.cardsMovedFromHand.value).toString()
+                                + " cards still deployable",
+                        style = miniFont
+                    )
+                }
+            }
         }
 
         //Game board
@@ -452,7 +466,7 @@ fun StatsBox(
 ) {
     Box(
         modifier = modifier.width(Constants.STATS_BOX_WIDTH.dp)
-            .height(Constants.STATS_BOX_HEIGTH.dp)
+            .height(Constants.STATS_BOX_HEIGHT.dp)
             .clip(shape = Constants.statsBoxShape)
             .background(color = cardColors[card.cardType::class]!!)
     ) {

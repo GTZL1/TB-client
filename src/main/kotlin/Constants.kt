@@ -13,16 +13,18 @@ object Constants {
     const val NEW_ID_MESSAGE = "new id"
 
     const val MOVEMENT_DELAY : Long = 46000
+    private const val CARD_RATIO = 0.55
     const val CARD_HEIGHT = 180
-    const val CARD_WIDTH = 100
-    const val BIG_ROW_HEIGHT = 220
+    const val CARD_WIDTH = (CARD_HEIGHT* CARD_RATIO).toInt()
+    const val BIG_ROW_HEIGHT = CARD_HEIGHT+40
     const val SMALL_ROW_HEIGHT = CARD_HEIGHT+16
 
     const val CARD_DRAG_MARGIN = (CARD_HEIGHT * 0.35).toInt()
     private const val MAX_CARDS_ON_ROW = NB_CARDS_HAND
     const val SPACE_BETWEEN_CARDS = 10
-    const val STATS_BOX_HEIGTH = 45
-    const val STATS_BOX_WIDTH = 30
+    private const val STATS_BOX_RATIO = 0.66
+    const val STATS_BOX_HEIGHT = CARD_HEIGHT / 4
+    const val STATS_BOX_WIDTH = (STATS_BOX_HEIGHT* STATS_BOX_RATIO).toInt()
 
     const val PLAYER_LABEL = "You are "
     const val OPPONENT_LABEL = "You're fighting "
@@ -33,7 +35,7 @@ object Constants {
     const val WINDOW_WIDTH =
         ((MAX_CARDS_ON_ROW + 1) * (CARD_WIDTH + SPACE_BETWEEN_CARDS) //board rows
                 + CARD_WIDTH) //information column
-    const val WINDOW_HEIGHT = 1010
+    const val WINDOW_HEIGHT = 950
     const val CENTER_ROW_CAPACITY = 6
     const val PLAYER_ROW_CAPACITY = 3
 
