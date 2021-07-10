@@ -2,10 +2,7 @@ package game
 
 import Constants
 import androidx.compose.runtime.*
-import game.cards.plays.HeroPlayCard
-import game.cards.plays.PlayCard
-import game.cards.plays.SpyPlayCard
-import game.cards.plays.UnitPlayCard
+import game.cards.plays.*
 import game.cards.types.BaseCardType
 import game.cards.types.HeroCardType
 import game.player.Player
@@ -44,7 +41,8 @@ class Game(
 
     val handCards = mutableStateListOf<PlayCard>()
     val playerRowCards = mutableStateListOf<PlayCard>()
-    val baseCards = mutableStateListOf<PlayCard>()
+    val playerBaseCards = mutableStateListOf<PlayCard>()
+    val opponentBaseCards = mutableStateListOf<PlayCard>()
     val centerRowCards = mutableStateListOf<PlayCard>()
     val opponentRowCards = mutableStateListOf<PlayCard>()
     val discardCards = mutableStateListOf<PlayCard>()
@@ -62,12 +60,12 @@ class Game(
             handCards.last().changePosition(Position.HAND)
         }
         player.playDeck.getBaseCards().forEach { pc: PlayCard ->
-            baseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
-            baseCards.last().changePosition(Position.PLAYER)
+            playerBaseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            playerBaseCards.last().changePosition(Position.PLAYER)
         }
         opponent.playDeck.getBaseCards().forEach { pc: PlayCard ->
-            opponentRowCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
-            opponentRowCards.last().changePosition(Position.OPPONENT)
+            opponentBaseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            opponentBaseCards.last().changePosition(Position.OPPONENT)
         }
     }
 
@@ -93,12 +91,19 @@ class Game(
         cardsAlreadyActed.add(card.id)
     }
 
-    fun cardToDiscard(card: PlayCard) {
+    private fun cardToDiscard(card: PlayCard) {
         discardCards.add(card)
         playerRowCards.remove(card)
         centerRowCards.remove(card)
         opponentRowCards.remove(card)
-        baseCards.remove(card)
+        playerBaseCards.remove(card)
+        if(opponentBaseCards.remove(card)){
+            //draw 2 cards when an opponent base is destroyed
+            player.playDeck.drawMultipleCards(2).forEach { pc: PlayCard ->
+                handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+                handCards.last().changePosition(Position.HAND)
+            }
+        }
 
         cardsAlreadyActed.remove(card.id) //necessary to the auto turn change
         checkEnding()
@@ -205,7 +210,7 @@ class Game(
     private fun checkChangeTurn() {
         delay.value = Constants.MOVEMENT_DELAY
         if (playerTurn && ((cardsMovedFromHand.value == (player.playDeck.getBaseCards().size)) || handCards.isEmpty())
-            && (cardsAlreadyActed.size == (filterCardsOwner(player.pseudo).size - baseCards.size))
+            && (cardsAlreadyActed.size == (filterCardsOwner(player.pseudo).size - playerBaseCards.size))
         ) {
             changeTurn()
         }
@@ -387,19 +392,19 @@ class Game(
     }
 
     private fun filterCardsOwner(owner: String): List<PlayCard> {
-        return listOf(centerRowCards, playerRowCards, opponentRowCards, baseCards).flatten()
+        return listOf(centerRowCards, playerRowCards, opponentRowCards, playerBaseCards, opponentBaseCards).flatten()
             .filter { playCard: PlayCard ->
                 playCard.owner == owner
             }.toList()
     }
 
     private fun checkEnding() {
-        if (baseCards.isEmpty() ||
+        if (playerBaseCards.isEmpty() ||
             filterCardsOwner(opponent.pseudo).filter { playCard: PlayCard ->
                 playCard.cardType::class == BaseCardType::class
             }.isEmpty()
         ) {
-            val victory= !baseCards.isEmpty()
+            val victory= !playerBaseCards.isEmpty()
             try {
                 runBlocking {
                     httpClient.request<String> {

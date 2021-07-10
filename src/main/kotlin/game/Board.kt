@@ -113,7 +113,7 @@ fun Board(game: Game) {
                     }
                     Text(modifier = Modifier.padding(top = 10.dp),
                         text = (game.player.playDeck.getBaseCards().size - game.cardsMovedFromHand.value).toString()
-                                + " cards still deployable",
+                                + " card(s) still deployable",
                         style = miniFont
                     )
                 }
@@ -132,6 +132,14 @@ fun Board(game: Game) {
                 labelText = (Constants.OPPONENT_LABEL + game.opponent.pseudo + " !"),
                 top = true,
                 gameRowContent = {
+                    game.opponentBaseCards.forEach { pc: PlayCard ->
+                        DisplayCard( //base is never clickable
+                            card = pc,
+                            game = game,
+                            toPlayer = (pc.owner == game.player.pseudo),
+                            isPlayerTurn = notifyChangeTurn(game)
+                        )
+                    }
                     game.opponentRowCards.forEach { pc ->
                         DisplayCard(
                             card = pc, game = game,
@@ -158,7 +166,7 @@ fun Board(game: Game) {
             })
             // Player row
             GameRow(content = {
-                game.baseCards.forEach { pc: PlayCard ->
+                game.playerBaseCards.forEach { pc: PlayCard ->
                     DisplayCard( //base is never clickable
                         card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
