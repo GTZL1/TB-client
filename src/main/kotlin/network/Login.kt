@@ -168,20 +168,6 @@ class Login(
         return JSONArray()
     }
 
-    /*fun generatePowerTypes(): ArrayList<Power> {
-        var powersList: ArrayList<Power> = ArrayList()
-        val powers = powersRequest()
-        for (x in 0 until powers.length()) {
-            powersList.add(
-                Power(
-                    powers.getJSONObject(x).getInt("idPower"),
-                    powers.getJSONObject(x).getString("name")
-                )
-            )
-        }
-        return powersList
-    }*/
-
     fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
         val cardTypes = mutableListOf<CardType>()
         val cards = cardsRequest()
@@ -197,10 +183,6 @@ class Login(
                             card.getInt("attackPoints"),
                             card.getInt("maxNumberInDeck"),
                             powersList[card.getInt("idxPower")]!!.constructors.first().call()
-                            /*Power(
-                                powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.id,
-                                powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.name
-                            )*/
                         )
                     } else {
                         val constructor=tc.second.constructors.first()

@@ -342,6 +342,7 @@ class Game(
                 if (canAttack(oldCard!!, card) || (oldCard!!.overrideDistanceAttack() && cardCanAct(oldCard!!))) {
                     try {
                         cardsAlreadyActed.add(oldCard!!.id)
+                        println("Game: ${powerAuthorization.value}")
                         applyAttack(
                             attackerOwner = oldCard!!.owner,
                             attackerId = oldCard!!.id,
