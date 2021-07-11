@@ -275,9 +275,7 @@ class Game(
                 Constants.NEW_ID_MESSAGE -> {
                     if(opponent.pseudo == msg.getString("owner")){
                         (opponent.playDeck.getCards().first { playCard ->
-                            playCard.id == msg.getInt(
-                                "oldId"
-                            )
+                            playCard.id == msg.getInt("oldId")
                         } as SpyPlayCard).changeId(msg.getInt("newId"))
                     }
                 }

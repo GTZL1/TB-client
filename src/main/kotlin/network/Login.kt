@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
@@ -19,10 +20,13 @@ import game.powers.powersList
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
+import theme.miniFont
+import theme.quantityFont
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findParameterByName
 
@@ -42,6 +46,7 @@ class Login(
             horizontalArrangement = Arrangement.Center
         ) {
             val password = remember { mutableStateOf(("")) }
+            val errorText = remember { mutableStateOf("")}
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TextField(
@@ -57,6 +62,9 @@ class Login(
                     label = { Text("Password") },
                     visualTransformation = PasswordVisualTransformation()
                 )
+                Text(text = errorText.value,
+                    style = quantityFont,
+                    color = Color.Red)
                 Button(modifier = modifier.padding(top = 20.dp),
                     onClick = {
                         sendLoginForm(
@@ -64,7 +72,8 @@ class Login(
                             password = password.value,
                             onRightLogin = onRightLogin,
                             idSession = idSession,
-                            playerPseudo = playerPseudo
+                            playerPseudo = playerPseudo,
+                            errorText = errorText,
                         )
                     }) {
                     Text(text = "Login")
@@ -74,8 +83,12 @@ class Login(
     }
 
     private fun sendLoginForm(
-        username: String, password: String, onRightLogin: (() -> Unit),
-        idSession: MutableState<Int>, playerPseudo: MutableState<String>,
+        username: String,
+        password: String,
+        onRightLogin: (() -> Unit),
+        idSession: MutableState<Int>,
+        playerPseudo: MutableState<String>,
+        errorText: MutableState<String>
     ) {
         try {
             val response = runBlocking {
@@ -94,7 +107,7 @@ class Login(
                 onRightLogin()
             }
         } catch (exception: ClientRequestException) {
-            println(exception.message)
+            errorText.value = runBlocking { exception.response.readText() }
         }
     }
 
