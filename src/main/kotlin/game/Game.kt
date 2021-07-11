@@ -80,6 +80,11 @@ class Game(
         cardsAlreadyActed.add(card.id)
     }
 
+    fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false, position: Position, fromDeck: Boolean = false) {
+        cardToPlayerRow(card, isSpy)
+        notifyMovement(card, position, fromDeck)
+    }
+
     fun cardToCenterRow(card: PlayCard) {
         centerRowCards.add(card)
         playerRowCards.remove(card)
@@ -89,6 +94,25 @@ class Game(
         opponentRowCards.remove(card)
         card.changePosition(Position.CENTER)
         cardsAlreadyActed.add(card.id)
+    }
+
+    fun cardToCenterRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
+        cardToCenterRow(card)
+        notifyMovement(card, position, fromDeck)
+    }
+
+    fun cardToOpponentRow(card: PlayCard) {
+        opponentRowCards.add(card)
+        centerRowCards.remove(card)
+        if (handCards.remove(card)) {
+            cardsMovedFromHand.value += 1
+        }
+        card.changePosition(Position.OPPONENT)
+    }
+
+    fun cardToOpponentRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
+        cardToOpponentRow(card)
+        notifyMovement(card, position, fromDeck)
     }
 
     private fun cardToDiscard(card: PlayCard) {
@@ -107,15 +131,6 @@ class Game(
 
         if(card.owner==player.pseudo) cardsAlreadyActed.remove(card.id) //necessary to the auto turn change
         checkEnding()
-    }
-
-    fun cardToOpponentRow(card: PlayCard) {
-        opponentRowCards.add(card)
-        centerRowCards.remove(card)
-        if (handCards.remove(card)) {
-            cardsMovedFromHand.value += 1
-        }
-        card.changePosition(Position.OPPONENT)
     }
 
     fun cardCanAct(card: PlayCard): Boolean {

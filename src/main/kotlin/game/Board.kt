@@ -159,9 +159,10 @@ fun Board(game: Game) {
                                 && (pc.owner == game.player.pseudo)),
                         onDragEndUpOneRank = {},
                         onDragEndDown = {
-                            game.cardToPlayerRow(pc)
-                            game.notifyMovement(pc, Position.PLAYER)
-                        })
+                            game.cardToPlayerRow(card = pc,
+                                                position = Position.PLAYER)
+                        }
+                    )
                 }
             })
             // Player row
@@ -179,8 +180,8 @@ fun Board(game: Game) {
                         isMovableUp = game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
                         isMovableDown = false,
                         onDragEndUpOneRank = {
-                            game.cardToCenterRow(pc)
-                            game.notifyMovement(pc, Position.CENTER)
+                            game.cardToCenterRow(card = pc,
+                                                position = Position.CENTER)
                         },
                         onDragEndDown = {})
                 }
@@ -202,12 +203,11 @@ fun Board(game: Game) {
                             isMovableDown = false,
                             onDragEndUpOneRank = {
                                 if (pc.cardType::class != SpyCardType::class) {
-                                    game.cardToPlayerRow(pc)
-                                    game.notifyMovement(pc, Position.PLAYER, true)
+                                    game.cardToPlayerRow(card = pc,
+                                                        position = Position.PLAYER,
+                                                        fromDeck = true)
                                 } else {
-                                    game.cardToOpponentRow(pc)
                                     (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
-
                                     val newId= game.player.playDeck.nextId()
                                     game.notifyNewId(game.player.pseudo, pc.id, newId)
                                     pc.changeId(newId)
@@ -222,12 +222,15 @@ fun Board(game: Game) {
                                                 )
                                             )
                                         }
-                                    game.notifyMovement(pc, Position.SPY, true)
+                                    game.cardToOpponentRow(card = pc,
+                                                            position = Position.SPY,
+                                                            fromDeck = true)
                                 }
                             },
                             onDragEndUpTwoRank = {
-                                game.cardToCenterRow(pc)
-                                game.notifyMovement(pc, Position.CENTER, true)
+                                game.cardToCenterRow(card = pc,
+                                                    position = Position.CENTER,
+                                                    fromDeck = true)
                             },
                             onDragEndDown = {})
                     }
