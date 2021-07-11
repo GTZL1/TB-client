@@ -105,7 +105,7 @@ class Game(
             }
         }
 
-        cardsAlreadyActed.remove(card.id) //necessary to the auto turn change
+        if(card.owner==player.pseudo) cardsAlreadyActed.remove(card.id) //necessary to the auto turn change
         checkEnding()
     }
 
