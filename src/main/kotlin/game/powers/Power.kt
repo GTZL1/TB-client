@@ -62,7 +62,6 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
     override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean{
-        println("Power: ${distanceStrike.value}")
         return if(distanceStrike.value &&
                 target != owner){
             target.takeDamage(owner.cardType.attack/2)

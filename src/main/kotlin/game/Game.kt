@@ -360,7 +360,6 @@ class Game(
                 if (canAttack(oldCard!!, card) || (oldCard!!.overrideDistanceAttack() && cardCanAct(oldCard!!))) {
                     try {
                         cardsAlreadyActed.add(oldCard!!.id)
-                        println("Game: ${powerAuthorization.value}")
                         applyAttack(
                             attackerOwner = oldCard!!.owner,
                             attackerId = oldCard!!.id,
@@ -411,13 +410,13 @@ class Game(
             }.toList()
     }
 
-    private fun checkEnding() {
+    private fun checkEnding(defeat: Boolean = false) {
         if (playerBaseCards.isEmpty() ||
             filterCardsOwner(opponent.pseudo).filter { playCard: PlayCard ->
                 playCard.cardType::class == BaseCardType::class
-            }.isEmpty()
-        ) {
-            val victory= !playerBaseCards.isEmpty()
+            }.isEmpty() ||
+            defeat) {
+            val victory= if(defeat) false else (!playerBaseCards.isEmpty())
             try {
                 runBlocking {
                     httpClient.request<String> {
@@ -435,9 +434,14 @@ class Game(
                     }
                 }
             } catch (exception: ClientRequestException) {
+                println(exception.message)
             }
             onEnding(opponent.pseudo, victory)
         }
+    }
+
+    fun sendDefeat(){
+        checkEnding(true)
     }
 
     private fun tryIncinerationPower(card: PlayCard, targetOwner: String) {

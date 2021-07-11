@@ -27,7 +27,7 @@ import kotlin.reflect.KClass
 import kotlin.text.Regex.Companion.escape
 
 @OptIn(ExperimentalComposeUiApi::class)
-fun main() = application {
+fun main() {
     System.setProperty("skiko.renderApi", "OPENGL")
     val httpClient = HttpClient {
         install(WebSockets)
@@ -43,128 +43,159 @@ fun main() = application {
         Pair("spy", SpyCardType::class),
         Pair("base", BaseCardType::class)
     )
-    val state = rememberWindowState(size = WindowSize(Constants.WINDOW_WIDTH.dp, Constants.WINDOW_HEIGHT.dp),
-                                    position = WindowPosition(x = 200.dp, y = 35.dp))
+
     lateinit var cardTypes: List<CardType>
     lateinit var login: Login
-    Window(
-        title = "uPCb !!",
-        state = state,
-        resizable = true,
-        onCloseRequest = { login.logout()
-                            state.isOpen = false }
-    ) {
-        val game= remember { mutableStateOf<Game?>(null) }
-        val playerDeck = remember { mutableStateOf<DeckType?>(null) }
-        val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
-        val gameHistory = remember { mutableStateOf<GameHistory?>(null) }
-        val idSession = remember { mutableStateOf(0) }
-        val username = remember { mutableStateOf("aloy") }
-        val opponentName = remember { mutableStateOf("ikrie") }
-        val victory = remember { mutableStateOf(false) }
-        val screenState = remember { mutableStateOf(Screen.LOGIN) }
-        login = remember { Login(
-            httpClient = httpClient,
-            onRightLogin = { screenState.value = Screen.INTERMEDIATE },
-            idSession = idSession,
-            playerPseudo = username
-        ) }
 
-        val websocket = WebSocketHandler()
-        when (val screen = screenState.value) {
-            Screen.LOGIN -> {
-                login.LoginScreen()
+    application {
+        val state = rememberWindowState(
+            size = WindowSize(Constants.WINDOW_WIDTH.dp, Constants.WINDOW_HEIGHT.dp),
+            position = WindowPosition(x = 200.dp, y = 35.dp)
+        )
+        val screenState = remember { mutableStateOf(Screen.LOGIN) }
+        val game = remember { mutableStateOf<Game?>(null) }
+        Window(
+            title = "uPCb !!",
+            state = state,
+            resizable = true,
+            onCloseRequest = {
+                if(screenState.value == Screen.BOARD) {
+                    game.value!!.sendDefeat()
+                }
+                login.logout()
+                state.isOpen = false
             }
-            Screen.INTERMEDIATE -> {
-                IntermediateScreen(
-                    username = username.value,
-                    onDeckScreen = { screenState.value = Screen.DECK },
-                    onGameHistory = { screenState.value = Screen.HISTORY },
-                    onQuitGame = { login.logout()
-                                    state.isOpen = false }
+        ) {
+            val playerDeck = remember { mutableStateOf<DeckType?>(null) }
+            val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
+            val gameHistory = remember { mutableStateOf<GameHistory?>(null) }
+            val idSession = remember { mutableStateOf(0) }
+            val username = remember { mutableStateOf("aloy") }
+            val opponentName = remember { mutableStateOf("ikrie") }
+            val victory = remember { mutableStateOf(false) }
+
+            login = remember {
+                Login(
+                    httpClient = httpClient,
+                    onRightLogin = { screenState.value = Screen.INTERMEDIATE },
+                    idSession = idSession,
+                    playerPseudo = username
                 )
             }
-            Screen.HISTORY -> {
-                LaunchedEffect(true) {
-                    gameHistory.value = GameHistory(
-                        idSession = idSession.value,
-                        httpClient = httpClient,
-                        username = username.value)
+
+            val websocket = WebSocketHandler()
+            when (screenState.value) {
+                Screen.LOGIN -> {
+                    login.LoginScreen()
                 }
-                val currentGameHistory = gameHistory.value
-                if(currentGameHistory!=null){
-                    HistoryScreen(
-                        gameHistory = remember { currentGameHistory },
-                        onBack = {screenState.value = Screen.INTERMEDIATE}
-                    )
-                }
-            }
-            Screen.DECK ->{
-                LaunchedEffect(true) {
-                    cardTypes=login.generateCardTypes(cardClasses)
-                    val dG=DeckGUI(idSession = idSession,
-                        httpClient = httpClient,
-                        cardTypes = cardTypes,
-                        decksList = login.generateDeck(cardTypes))
-                    deckGUI.value = dG
-                }
-                val currentDeckGUI= deckGUI.value
-                if(currentDeckGUI!=null) {
-                    DeckScreen(deckGUI = remember { currentDeckGUI }, onSelect = {
-                            deck: DeckType ->
-                        playerDeck.value=deck
-                        screenState.value = Screen.BOARD
-                    },
-                    onBack = {screenState.value = Screen.INTERMEDIATE})
-                }
-            }
-            Screen.BOARD -> {
-                LaunchedEffect(true) { launch{websocket.initialize { run{
-                    game.value=null
-                    screenState.value = Screen.DECK
-                }} }
-                    val player=Player(
-                        pseudo = username.value,
-                        deckType = playerDeck.value!!
-                    )
-                    websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
-                    websocket.receiveOne()
-                    websocket.sendMessage(JSONObject(PlayerInitialization(username = username.value, deckType = player.deckType.serialize())))
-                    val opponentDeck = websocket.receiveOne()
-                    val g = Game(
-                        date = LocalDateTime.now(),
-                        webSocketHandler = websocket,
-                        httpClient = httpClient,
-                        idSession = idSession,
-                        player = player,
-                        opponent = Player(
-                            pseudo = opponentDeck.getString("username"),
-                            deckType = login.generateDeck(
-                                cardTypes,
-                                opponentDeck.getJSONObject("deckType")
-                            )
-                        ),
-                        onEnding = { oppName : String, vic: Boolean ->
-                            opponentName.value=oppName
-                            victory.value= vic
-                            game.value=null
-                            screenState.value = Screen.ENDING
+                Screen.INTERMEDIATE -> {
+                    IntermediateScreen(
+                        username = username.value,
+                        onDeckScreen = { screenState.value = Screen.DECK },
+                        onGameHistory = { screenState.value = Screen.HISTORY },
+                        onQuitGame = {
+                            login.logout()
+                            state.isOpen = false
                         }
                     )
-                    g.determineFirst()
-                    game.value=g
                 }
-                val currentGame=game.value
-                if(currentGame!=null){
-                    Board(currentGame)
+                Screen.HISTORY -> {
+                    LaunchedEffect(true) {
+                        gameHistory.value = GameHistory(
+                            idSession = idSession.value,
+                            httpClient = httpClient,
+                            username = username.value
+                        )
+                    }
+                    val currentGameHistory = gameHistory.value
+                    if (currentGameHistory != null) {
+                        HistoryScreen(
+                            gameHistory = remember { currentGameHistory },
+                            onBack = { screenState.value = Screen.INTERMEDIATE }
+                        )
+                    }
                 }
-            }
-            Screen.ENDING -> {
-                EndingScreen(playerName = username.value,
-                opponentName = opponentName.value,
-                victory = victory.value,
-                onIntermediateScreen = {screenState.value = Screen.INTERMEDIATE},
-                onGameAgain = {screenState.value = Screen.BOARD})
+                Screen.DECK -> {
+                    LaunchedEffect(true) {
+                        cardTypes = login.generateCardTypes(cardClasses)
+                        val dG = DeckGUI(
+                            idSession = idSession,
+                            httpClient = httpClient,
+                            cardTypes = cardTypes,
+                            decksList = login.generateDeck(cardTypes)
+                        )
+                        deckGUI.value = dG
+                    }
+                    val currentDeckGUI = deckGUI.value
+                    if (currentDeckGUI != null) {
+                        DeckScreen(deckGUI = remember { currentDeckGUI },
+                            onSelect = { deck: DeckType ->
+                                playerDeck.value = deck
+                                screenState.value = Screen.BOARD
+                            },
+                            onBack = { screenState.value = Screen.INTERMEDIATE })
+                    }
+                }
+                Screen.BOARD -> {
+                    LaunchedEffect(true) {
+                        launch {
+                            websocket.initialize {
+                                run {
+                                    game.value = null
+                                    screenState.value = Screen.DECK
+                                }
+                            }
+                        }
+                        val player = Player(
+                            pseudo = username.value,
+                            deckType = playerDeck.value!!
+                        )
+                        websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
+                        websocket.receiveOne()
+                        websocket.sendMessage(
+                            JSONObject(
+                                PlayerInitialization(
+                                    username = username.value,
+                                    deckType = player.deckType.serialize()
+                                )
+                            )
+                        )
+                        val opponentDeck = websocket.receiveOne()
+                        val g = Game(
+                            date = LocalDateTime.now(),
+                            webSocketHandler = websocket,
+                            httpClient = httpClient,
+                            idSession = idSession,
+                            player = player,
+                            opponent = Player(
+                                pseudo = opponentDeck.getString("username"),
+                                deckType = login.generateDeck(
+                                    cardTypes,
+                                    opponentDeck.getJSONObject("deckType")
+                                )
+                            ),
+                            onEnding = { oppName: String, vic: Boolean ->
+                                opponentName.value = oppName
+                                victory.value = vic
+                                game.value = null
+                                screenState.value = Screen.ENDING
+                            }
+                        )
+                        g.determineFirst()
+                        game.value = g
+                    }
+                    val currentGame = game.value
+                    if (currentGame != null) {
+                        Board(currentGame)
+                    }
+                }
+                Screen.ENDING -> {
+                    EndingScreen(playerName = username.value,
+                        opponentName = opponentName.value,
+                        victory = victory.value,
+                        onIntermediateScreen = { screenState.value = Screen.INTERMEDIATE },
+                        onGameAgain = { screenState.value = Screen.BOARD })
+                }
             }
         }
     }
