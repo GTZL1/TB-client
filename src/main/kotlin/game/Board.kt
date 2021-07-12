@@ -24,10 +24,8 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
 import game.cards.plays.SpyPlayCard
-import game.cards.plays.VehiclePlayCard
 import game.cards.types.SpyCardType
 import game.cards.types.VehicleCardType
 import kotlinx.coroutines.GlobalScope
@@ -35,6 +33,7 @@ import kotlinx.coroutines.launch
 import theme.cardColors
 import theme.cardFont
 import theme.discardCardFont
+import theme.miniFont
 
 @Composable
 fun Board(game: Game) {
@@ -54,8 +53,8 @@ fun Board(game: Game) {
                 .width(Constants.CARD_WIDTH.dp)
                 .background(color = Color.Gray)
                 .padding(
-                    top = Constants.STATS_BOX_HEIGTH.dp,
-                    bottom = Constants.STATS_BOX_HEIGTH.dp
+                    top = Constants.STATS_BOX_HEIGHT.dp,
+                    bottom = Constants.STATS_BOX_HEIGHT.dp
                 ),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -101,9 +100,24 @@ fun Board(game: Game) {
             //Lower side of column
             Column(
                 modifier = Modifier.fillMaxWidth()
-                    .height((Constants.CARD_HEIGHT * 1.5).dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) { }
+                    .height((Constants.CARD_HEIGHT * 1.5).dp)
+                    .padding(start = 5.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                if(notifyChangeTurn(game)){
+                    Text(text = "Ready for action :",
+                        style = miniFont)
+                    game.actionableCards(game.player.pseudo).forEach { s ->
+                        Text(text = "- $s",
+                        style = miniFont)
+                    }
+                    Text(modifier = Modifier.padding(top = 10.dp),
+                        text = (game.player.playDeck.getBaseCards().size - game.cardsMovedFromHand.value).toString()
+                                + " card(s) still deployable",
+                        style = miniFont
+                    )
+                }
+            }
         }
 
         //Game board
@@ -118,6 +132,14 @@ fun Board(game: Game) {
                 labelText = (Constants.OPPONENT_LABEL + game.opponent.pseudo + " !"),
                 top = true,
                 gameRowContent = {
+                    game.opponentBaseCards.forEach { pc: PlayCard ->
+                        DisplayCard( //base is never clickable
+                            card = pc,
+                            game = game,
+                            toPlayer = (pc.owner == game.player.pseudo),
+                            isPlayerTurn = notifyChangeTurn(game)
+                        )
+                    }
                     game.opponentRowCards.forEach { pc ->
                         DisplayCard(
                             card = pc, game = game,
@@ -137,19 +159,20 @@ fun Board(game: Game) {
                                 && (pc.owner == game.player.pseudo)),
                         onDragEndUpOneRank = {},
                         onDragEndDown = {
-                            game.cardToPlayerRow(pc)
-                            game.notifyMovement(pc, Position.PLAYER)
-                        })
+                            game.cardToPlayerRow(card = pc,
+                                                position = Position.PLAYER)
+                        }
+                    )
                 }
             })
             // Player row
             GameRow(content = {
-                game.baseCards.forEach { pc: PlayCard ->
-                    DisplayCard(
+                game.playerBaseCards.forEach { pc: PlayCard ->
+                    DisplayCard( //base is never clickable
                         card = pc, game = game,
                         toPlayer = (pc.owner == game.player.pseudo),
                         isPlayerTurn = notifyChangeTurn(game)
-                    ) //base is never clickable
+                    )
                 }
                 game.playerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
@@ -157,8 +180,8 @@ fun Board(game: Game) {
                         isMovableUp = game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
                         isMovableDown = false,
                         onDragEndUpOneRank = {
-                            game.cardToCenterRow(pc)
-                            game.notifyMovement(pc, Position.CENTER)
+                            game.cardToCenterRow(card = pc,
+                                                position = Position.CENTER)
                         },
                         onDragEndDown = {})
                 }
@@ -180,12 +203,11 @@ fun Board(game: Game) {
                             isMovableDown = false,
                             onDragEndUpOneRank = {
                                 if (pc.cardType::class != SpyCardType::class) {
-                                    game.cardToPlayerRow(pc)
-                                    game.notifyMovement(pc, Position.PLAYER, true)
+                                    game.cardToPlayerRow(card = pc,
+                                                        position = Position.PLAYER,
+                                                        fromDeck = true)
                                 } else {
-                                    game.cardToOpponentRow(pc)
                                     (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
-
                                     val newId= game.player.playDeck.nextId()
                                     game.notifyNewId(game.player.pseudo, pc.id, newId)
                                     pc.changeId(newId)
@@ -200,12 +222,15 @@ fun Board(game: Game) {
                                                 )
                                             )
                                         }
-                                    game.notifyMovement(pc, Position.SPY, true)
+                                    game.cardToOpponentRow(card = pc,
+                                                            position = Position.SPY,
+                                                            fromDeck = true)
                                 }
                             },
                             onDragEndUpTwoRank = {
-                                game.cardToCenterRow(pc)
-                                game.notifyMovement(pc, Position.CENTER, true)
+                                game.cardToCenterRow(card = pc,
+                                                    position = Position.CENTER,
+                                                    fromDeck = true)
                             },
                             onDragEndDown = {})
                     }
@@ -229,14 +254,14 @@ private fun DisplayDraggableCard(
     onDragEndUpTwoRank: () -> Unit = onDragEndUpOneRank,
     onDragEndDown: () -> Unit
 ) = key(
-    card,
-    game,
-    isMovableUp,
-    isMovableUpTwoRank,
-    isMovableDown,
-    toPlayer,
-    isPlayerTurn,
-    hasCardActed
+        card,
+        game,
+        isMovableUp,
+        isMovableUpTwoRank,
+        isMovableDown,
+        toPlayer,
+        isPlayerTurn,
+        hasCardActed
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -277,19 +302,6 @@ private fun DisplayDraggableCard(
             toPlayer = toPlayer,
             isPlayerTurn = notifyChangeTurn(game)
         )
-    }
-}
-
-private fun moveVehicle(
-    card: VehiclePlayCard, startY: Float, offsetY: Float,
-    isMovableUpLow: Boolean,
-    onDragEndUpLow: () -> Unit,
-    onDragEndUpHigh: () -> Unit
-) {
-    if (isMovableUpLow && (startY - offsetY < (Constants.CARD_DRAG_MARGIN + Constants.BIG_ROW_HEIGHT))) {
-        onDragEndUpLow()
-    } else {
-        onDragEndUpHigh()
     }
 }
 
@@ -465,7 +477,7 @@ fun StatsBox(
 ) {
     Box(
         modifier = modifier.width(Constants.STATS_BOX_WIDTH.dp)
-            .height(Constants.STATS_BOX_HEIGTH.dp)
+            .height(Constants.STATS_BOX_HEIGHT.dp)
             .clip(shape = Constants.statsBoxShape)
             .background(color = cardColors[card.cardType::class]!!)
     ) {
@@ -476,7 +488,12 @@ fun StatsBox(
         ) {
             Text(
                 text = card.getHealth().toString(),
-                style = cardFont
+                style = cardFont,
+                color = if(card.getHealth() < card.cardType.life) {
+                            Color.Red
+                        } else {
+                            Color.Black
+                        }
             )
             Text(text = card.cardType.attack.toString(), style = cardFont)
         }

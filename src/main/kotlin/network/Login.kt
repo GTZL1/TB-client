@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
@@ -19,10 +20,13 @@ import game.powers.powersList
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
+import theme.miniFont
+import theme.quantityFont
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findParameterByName
 
@@ -42,6 +46,7 @@ class Login(
             horizontalArrangement = Arrangement.Center
         ) {
             val password = remember { mutableStateOf(("")) }
+            val errorText = remember { mutableStateOf("")}
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TextField(
@@ -57,6 +62,9 @@ class Login(
                     label = { Text("Password") },
                     visualTransformation = PasswordVisualTransformation()
                 )
+                Text(text = errorText.value,
+                    style = quantityFont,
+                    color = Color.Red)
                 Button(modifier = modifier.padding(top = 20.dp),
                     onClick = {
                         sendLoginForm(
@@ -64,7 +72,8 @@ class Login(
                             password = password.value,
                             onRightLogin = onRightLogin,
                             idSession = idSession,
-                            playerPseudo = playerPseudo
+                            playerPseudo = playerPseudo,
+                            errorText = errorText,
                         )
                     }) {
                     Text(text = "Login")
@@ -74,8 +83,12 @@ class Login(
     }
 
     private fun sendLoginForm(
-        username: String, password: String, onRightLogin: (() -> Unit),
-        idSession: MutableState<Int>, playerPseudo: MutableState<String>,
+        username: String,
+        password: String,
+        onRightLogin: (() -> Unit),
+        idSession: MutableState<Int>,
+        playerPseudo: MutableState<String>,
+        errorText: MutableState<String>
     ) {
         try {
             val response = runBlocking {
@@ -93,6 +106,23 @@ class Login(
                 playerPseudo.value = username
                 onRightLogin()
             }
+        } catch (exception: ClientRequestException) {
+            errorText.value = runBlocking { exception.response.readText() }
+        }
+    }
+
+    fun logout() {
+        try {
+            JSONObject(runBlocking {
+                httpClient.request<String> {
+                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/logout")
+                    headers {
+                        append("Content-Type", "application/json")
+                    }
+                    body = GameObjectsRequest(idSession = idSession.value)
+                    method = HttpMethod.Get
+                }
+            })
         } catch (exception: ClientRequestException) {
         }
     }
@@ -151,20 +181,6 @@ class Login(
         return JSONArray()
     }
 
-    /*fun generatePowerTypes(): ArrayList<Power> {
-        var powersList: ArrayList<Power> = ArrayList()
-        val powers = powersRequest()
-        for (x in 0 until powers.length()) {
-            powersList.add(
-                Power(
-                    powers.getJSONObject(x).getInt("idPower"),
-                    powers.getJSONObject(x).getString("name")
-                )
-            )
-        }
-        return powersList
-    }*/
-
     fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
         val cardTypes = mutableListOf<CardType>()
         val cards = cardsRequest()
@@ -180,10 +196,6 @@ class Login(
                             card.getInt("attackPoints"),
                             card.getInt("maxNumberInDeck"),
                             powersList[card.getInt("idxPower")]!!.constructors.first().call()
-                            /*Power(
-                                powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.id,
-                                powers.find { power: Power -> power.id == card.getInt("idxPower") }!!.name
-                            )*/
                         )
                     } else {
                         val constructor=tc.second.constructors.first()
@@ -229,7 +241,8 @@ data class LoginRequest(
 
 data class LoginResponse(
     val granted: Boolean,
-    val idSession: Int
+    val idSession: Int,
+    val type: String = ""
 )
 
 data class GameObjectsRequest(

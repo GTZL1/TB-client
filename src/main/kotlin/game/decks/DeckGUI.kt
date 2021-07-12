@@ -92,7 +92,7 @@ class DeckGUI(
                 }
             }
             decks.remove(deck.value)
-            deck.value = decks.first()
+            changeDeck(decks.first(), true)
         } catch (exception: ClientRequestException) {
         }
     }
@@ -106,8 +106,8 @@ class DeckGUI(
         changeDeck(decks.last())
     }
 
-    internal fun changeDeck(newDeckType: DeckType) {
-        saveDeckLocally()
+    internal fun changeDeck(newDeckType: DeckType, afterDeletion: Boolean = false) {
+        if(!afterDeletion) saveDeckLocally()
         deck.value=newDeckType
         cardsDeck.clear()
         cardsDeck.putAll(deck.value.cardTypes)
@@ -144,8 +144,14 @@ fun DeckScreen(deckGUI: DeckGUI,
             TextField(
                 value = deckName.value,
                 onValueChange = { value ->
-                    deckName.value = value
-                    deckGUI.deck.value.name=value },
+                    var text = value
+                    text.forEach { c: Char ->
+                        if(!c.isLetterOrDigit() && !c.isWhitespace()) {
+                            text = text.replace(c, ' ', true)
+                        }
+                    }
+                    deckName.value = text
+                    deckGUI.deck.value.name=text },
                 textStyle = menuFont,
                 label = {
                     Text(
@@ -199,7 +205,7 @@ fun DeckScreen(deckGUI: DeckGUI,
                     style = buttonFont)
             }
         }
-        Row(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f)
+        Row(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.72f)
         ) {
             LazyVerticalGrid(
                 cells = GridCells.Adaptive((Constants.CARD_WIDTH + 40).dp),
@@ -216,8 +222,10 @@ fun DeckScreen(deckGUI: DeckGUI,
                 }
             }
         }
-        BaseCardsRow(deck = deckGUI.deck.value, baseCards = deckGUI.baseCards,
-                cardDecks = deckGUI.cardsDeck)
+        BaseCardsRow(modifier = Modifier.defaultMinSize(minHeight = (Constants.CARD_HEIGHT+40).dp),
+                    deck = deckGUI.deck.value,
+                    baseCards = deckGUI.baseCards,
+                    cardDecks = deckGUI.cardsDeck)
     }
 }
 
@@ -329,12 +337,13 @@ private fun QuantitySetter(cardDecks: MutableMap<CardType, Short>,
 
 @Composable
 private fun BaseCardsRow(
+    modifier: Modifier = Modifier,
     deck: DeckType,
     cardDecks: MutableMap<CardType, Short>,
     baseCards: List<CardType>) = key(deck, cardDecks){
-    Row(modifier = Modifier.fillMaxWidth(),
+    Row(modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center){
-        val currentBase = remember { mutableStateOf<CardType>(
+        val currentBase = remember { mutableStateOf(
             if(cardDecks.filter { (card, _) -> baseCards.contains(card) }.isEmpty()) {
                 baseCards.first()
             } else {
