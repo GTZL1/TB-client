@@ -236,7 +236,8 @@ class Login(
 
 data class LoginRequest(
     val username: String,
-    val password: String
+    val password: String,
+    val version: Double = Constants.CLIENT_VERSION
 )
 
 data class LoginResponse(
