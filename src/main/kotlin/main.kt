@@ -156,7 +156,7 @@ fun main() {
                             JSONObject(
                                 PlayerInitialization(
                                     username = username.value,
-                                    deckType = player.deckType.serialize()
+                                    deckType = player.deckType.serializeBases()
                                 )
                             )
                         )
@@ -166,6 +166,7 @@ fun main() {
                             webSocketHandler = websocket,
                             httpClient = httpClient,
                             idSession = idSession,
+                            cardTypes = cardTypes,
                             player = player,
                             opponent = Player(
                                 pseudo = opponentDeck.getString("username"),

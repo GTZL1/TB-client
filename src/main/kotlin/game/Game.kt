@@ -4,6 +4,7 @@ import Constants
 import androidx.compose.runtime.*
 import game.cards.plays.*
 import game.cards.types.BaseCardType
+import game.cards.types.CardType
 import game.cards.types.HeroCardType
 import game.player.Player
 import io.ktor.client.*
@@ -27,6 +28,7 @@ class Game(
     private val webSocketHandler: WebSocketHandler,
     private val httpClient: HttpClient,
     private val idSession: MutableState<Int>,
+    private val cardTypes: List<CardType>,
     val player: Player,
     val opponent: Player,
     private val onEnding: (String, Boolean) -> Unit
@@ -54,14 +56,18 @@ class Game(
     internal var delay = mutableStateOf(Constants.MOVEMENT_DELAY)
     lateinit var delayJob: Job
 
-    init {
+    private fun initialization() {
         player.playDeck.drawHand().forEach { pc: PlayCard ->
             handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
             handCards.last().changePosition(Position.HAND)
         }
+        var startId=0
         player.playDeck.getBaseCards().forEach { pc: PlayCard ->
-            playerBaseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            val newCard = pc.cardType.generatePlayCard(pc.owner, pc.id)
+            playerBaseCards.add(newCard)
             playerBaseCards.last().changePosition(Position.PLAYER)
+            newCard.changeId(player.nextId())
+            notifyNewId(player.pseudo, startId++, newCard.id)
         }
         opponent.playDeck.getBaseCards().forEach { pc: PlayCard ->
             opponentBaseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
@@ -145,12 +151,13 @@ class Game(
         turnCallback.remove(callback)
     }
 
-    internal fun notifyMovement(card: PlayCard, position: Position, fromDeck: Boolean = false) {
+    private fun notifyMovement(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         webSocketHandler.sendMessage(
             JSONObject(
                 CardMovement(
                     owner = card.owner,
                     id = card.id,
+                    cardTypeName = card.cardType.name,
                     position = position,
                     fromDeck = fromDeck
                 )
@@ -219,6 +226,8 @@ class Game(
         val msg = webSocketHandler.receiveOne()
         playerTurn = (num < msg.getString("type"))
 
+        initialization()
+
         checkTimerTurn()
     }
 
@@ -250,9 +259,11 @@ class Game(
             when (msg.getString("type")) {
                 Constants.CARD_MOVEMENT -> {
                     applyMovement(
-                        msg.getString("owner"), msg.getInt("id"),
-                        Position.valueOf(msg.getString("position")),
-                        msg.getBoolean("fromDeck")
+                        owner = msg.getString("owner"),
+                        id = msg.getInt("id"),
+                        cardTypeName = msg.getString("cardTypeName"),
+                        position = Position.valueOf(msg.getString("position")),
+                        fromDeck = msg.getBoolean("fromDeck")
                     )
                 }
                 Constants.CHANGE_TURN -> {
@@ -274,19 +285,17 @@ class Game(
                 }
                 Constants.NEW_ID_MESSAGE -> {
                     if(opponent.pseudo == msg.getString("owner")){
-                        (opponent.playDeck.getCards().first { playCard ->
-                            playCard.id == msg.getInt("oldId")
-                        } as SpyPlayCard).changeId(msg.getInt("newId"))
+                        filterCardsOwner(opponent.pseudo).first { playCard ->
+                            playCard.id == msg.getInt("oldId") }.changeId(msg.getInt("newId"))
                     }
                 }
             }
         }
     }
 
-    private fun applyMovement(owner: String, id: Int, position: Position, fromDeck: Boolean) {
+    private fun applyMovement(owner: String, id: Int, cardTypeName: String, position: Position, fromDeck: Boolean) {
         val card = if (fromDeck) {
-            (opponent.playDeck.getCards()
-                .first { pc: PlayCard -> pc.id == id }).cardType.generatePlayCard(owner, id)
+            cardTypes.first { cardType -> cardType.name == cardTypeName }.generatePlayCard(owner, id)
         } else {
             filterCardsOwner(owner).first { playCard -> playCard.id == id }
         }
@@ -349,6 +358,7 @@ class Game(
         clicked.value = true
         if ((oldCard!=null) && (card != oldCard)) {
             oldClicked.value = false
+            //ignore if first card belongs to opponent of if player click on 2 of his cards
             if (card.owner == oldCard!!.owner ||
                     oldCard!!.owner != player.pseudo) {
                 oldCard = card
@@ -370,6 +380,7 @@ class Game(
                         notifyAttack(oldCard!!, card, powerAuthorization.value)
                         powerAuthorization.value = false
                     } catch (t: Throwable) {
+                        println(t.message)
                     }
                 }
             }
