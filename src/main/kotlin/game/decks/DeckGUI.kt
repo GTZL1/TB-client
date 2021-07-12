@@ -92,7 +92,7 @@ class DeckGUI(
                 }
             }
             decks.remove(deck.value)
-            deck.value = decks.first()
+            changeDeck(decks.first(), true)
         } catch (exception: ClientRequestException) {
         }
     }
@@ -106,8 +106,8 @@ class DeckGUI(
         changeDeck(decks.last())
     }
 
-    internal fun changeDeck(newDeckType: DeckType) {
-        saveDeckLocally()
+    internal fun changeDeck(newDeckType: DeckType, afterDeletion: Boolean = false) {
+        if(!afterDeletion) saveDeckLocally()
         deck.value=newDeckType
         cardsDeck.clear()
         cardsDeck.putAll(deck.value.cardTypes)
