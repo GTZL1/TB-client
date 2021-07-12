@@ -208,9 +208,9 @@ fun Board(game: Game) {
                                                         fromDeck = true)
                                 } else {
                                     (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
-                                    val newId= game.player.playDeck.nextId()
-                                    game.notifyNewId(game.player.pseudo, pc.id, newId)
-                                    pc.changeId(newId)
+                                    //val newId= game.player.playDeck.nextId()
+                                    //game.notifyNewId(game.player.pseudo, pc.id, newId)
+                                    pc.changeId(game.opponent.nextId())
 
                                     game.opponent.playDeck.addCard(pc)
                                     game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
@@ -401,7 +401,7 @@ fun DisplayCard(
         width = width,
         height = height,
         inDiscard = inDiscard,
-        onButtonClick = { playCard: PlayCard ->
+        onHeroButtonClick = { playCard: PlayCard ->
             game.handleClick(clicked, playCard, true)
         }
     )
@@ -417,7 +417,7 @@ fun DisplayNonClickableCard(
     width: Int = Constants.CARD_WIDTH,
     height: Int = Constants.CARD_HEIGHT,
     inDiscard: Boolean = false,
-    onButtonClick: (PlayCard) -> Unit = {}
+    onHeroButtonClick: (PlayCard) -> Unit = {}
 ) = key(card, toPlayer, clicked, hover, inDiscard) {
     Box(
         modifier = modifier
@@ -458,7 +458,7 @@ fun DisplayNonClickableCard(
                     )
                     //Distance strike and whip strike hero powers
                     card.CardButton(modifier = Modifier.align(Alignment.BottomCenter),
-                        onClick = {onButtonClick(card)})
+                        onClick = {onHeroButtonClick(card)})
                 }
             }
             CardEtiquette(

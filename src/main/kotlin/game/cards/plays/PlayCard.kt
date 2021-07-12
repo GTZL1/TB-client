@@ -26,6 +26,10 @@ abstract class PlayCard(val cardType: CardType, var owner: String, var id: Int) 
         this.position=position
     }
 
+    fun changeId(newId: Int){
+        id=newId
+    }
+
     open fun overrideDistanceAttack(): Boolean {
         return false
     }

@@ -6,8 +6,4 @@ class SpyPlayCard(cardType: CardType, player:String, id:Int): UnitPlayCard(cardT
     fun changeOwner(newPlayer:String){
         owner=newPlayer
     }
-
-    fun changeId(newId: Int){
-        id=newId
-    }
 }

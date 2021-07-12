@@ -87,6 +87,7 @@ data class CardMovement(
     val type: String=Constants.CARD_MOVEMENT,
     val owner: String,
     val id: Int,
+    val cardTypeName: String,
     val position: Position,
     val fromDeck: Boolean
 )
@@ -98,7 +99,6 @@ data class CardAttack(
     val targetId: Int,
     val specialPower: Boolean = false
 )
-
 data class CardIdChange(
     val type: String = Constants.NEW_ID_MESSAGE,
     val owner: String,
