@@ -112,7 +112,7 @@ fun Board(game: Game) {
                         style = miniFont)
                     }
                     Text(modifier = Modifier.padding(top = 10.dp),
-                        text = (game.player.playDeck.getBaseCards().size - game.cardsMovedFromHand.value).toString()
+                        text = maxOf(game.handCards.size,(game.player.playDeck.getBaseCards().size - game.cardsMovedFromHand.value)).toString()
                                 + " card(s) still deployable",
                         style = miniFont
                     )
