@@ -75,7 +75,7 @@ class Game(
         }
     }
 
-    fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false) {
+    suspend fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false) {
         playerRowCards.add(card)
         if (!isSpy && handCards.remove(card)) {
             cardsMovedFromHand.value += 1
@@ -86,7 +86,7 @@ class Game(
         cardsAlreadyActed.add(card.id)
     }
 
-    fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false, position: Position, fromDeck: Boolean = false) {
+    suspend fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false, position: Position, fromDeck: Boolean = false) {
         cardToPlayerRow(card, isSpy)
         notifyMovement(card, position, fromDeck)
     }
@@ -121,7 +121,7 @@ class Game(
         notifyMovement(card, position, fromDeck)
     }
 
-    private fun cardToDiscard(card: PlayCard) {
+    private suspend fun cardToDiscard(card: PlayCard) {
         discardCards.add(card)
         playerRowCards.remove(card)
         centerRowCards.remove(card)
@@ -213,7 +213,7 @@ class Game(
             }
 
             if (this::delayJob.isInitialized) {
-                runBlocking { delayJob.cancel() }
+                delayJob.cancel()
             }
 
             turnCallback.forEach { it.onChangeTurn() }
@@ -240,7 +240,12 @@ class Game(
         }
     }
 
-    private fun checkTimerTurn() {
+    private suspend fun example() {
+        coroutineScope { launch {  } }
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private suspend fun checkTimerTurn() {
         delayJob = GlobalScope.launch {
             delay.value = Constants.MOVEMENT_DELAY
             while (delay.value > 0 && playerTurn) {
@@ -293,7 +298,7 @@ class Game(
         }
     }
 
-    private fun applyMovement(owner: String, id: Int, cardTypeName: String, position: Position, fromDeck: Boolean) {
+    private suspend fun applyMovement(owner: String, id: Int, cardTypeName: String, position: Position, fromDeck: Boolean) {
         val card = if (fromDeck) {
             cardTypes.first { cardType -> cardType.name == cardTypeName }.generatePlayCard(owner, id)
         } else {
@@ -320,7 +325,7 @@ class Game(
         }
     }
 
-    private fun applyAttack(
+    private suspend fun applyAttack(
         attackerOwner: String,
         attackerId: Int,
         targetOwner: String,
@@ -353,7 +358,7 @@ class Game(
         }
     }
 
-    internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard, specialPower: Boolean = false) {
+    internal suspend fun handleClick(clicked: MutableState<Boolean>, card: PlayCard, specialPower: Boolean = false) {
         if(specialPower) powerAuthorization.value=true
         clicked.value = true
         if ((oldCard!=null) && (card != oldCard)) {
@@ -421,7 +426,7 @@ class Game(
             }.toList()
     }
 
-    private fun checkEnding(defeat: Boolean = false) {
+    private suspend fun checkEnding(defeat: Boolean = false) {
         if (playerBaseCards.isEmpty() ||
             filterCardsOwner(opponent.pseudo).filter { playCard: PlayCard ->
                 playCard.cardType::class == BaseCardType::class
@@ -429,7 +434,7 @@ class Game(
             defeat) {
             val victory= if(defeat) false else (!playerBaseCards.isEmpty())
             try {
-                runBlocking {
+
                     httpClient.request<String> {
                         url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/game")
                         headers {
@@ -442,7 +447,6 @@ class Game(
                             looser = if(victory) opponent.pseudo else player.pseudo
                         ))
                         method = HttpMethod.Post
-                    }
                 }
             } catch (exception: ClientRequestException) {
                 println(exception.message)
@@ -451,11 +455,11 @@ class Game(
         }
     }
 
-    fun sendDefeat(){
+    suspend fun sendDefeat(){
         checkEnding(true)
     }
 
-    private fun tryIncinerationPower(card: PlayCard, targetOwner: String) {
+    private suspend fun tryIncinerationPower(card: PlayCard, targetOwner: String) {
         //incineration hero power
         try {
             (card as HeroPlayCard).heroCardType.power.action(

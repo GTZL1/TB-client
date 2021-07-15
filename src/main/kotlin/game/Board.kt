@@ -29,6 +29,7 @@ import game.cards.plays.SpyPlayCard
 import game.cards.types.SpyCardType
 import game.cards.types.VehicleCardType
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import theme.cardColors
 import theme.cardFont
@@ -40,11 +41,10 @@ fun Board(game: Game) {
     val playerRowCapacity =
         game.player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
 
-    DisposableEffect(Unit) {
-        GlobalScope.launch { game.receiveMessages() }
-        onDispose { }
+    LaunchedEffect(true) {
+        game.receiveMessages()
     }
-
+    val scope = rememberCoroutineScope()
     //Window content
     Row() {
         //Infos on the side
@@ -112,7 +112,7 @@ fun Board(game: Game) {
                         style = miniFont)
                     }
                     Text(modifier = Modifier.padding(top = 10.dp),
-                        text = maxOf(game.handCards.size,(game.player.playDeck.getBaseCards().size - game.cardsMovedFromHand.value)).toString()
+                        text = minOf(game.handCards.size,(game.player.playDeck.getBaseCards().size - game.cardsMovedFromHand.value)).toString()
                                 + " card(s) still deployable",
                         style = miniFont
                     )
@@ -159,8 +159,8 @@ fun Board(game: Game) {
                                 && (pc.owner == game.player.pseudo)),
                         onDragEndUpOneRank = {},
                         onDragEndDown = {
-                            game.cardToPlayerRow(card = pc,
-                                                position = Position.PLAYER)
+                            scope.launch { game.cardToPlayerRow(card = pc,
+                                                position = Position.PLAYER)}
                         }
                     )
                 }
@@ -203,9 +203,13 @@ fun Board(game: Game) {
                             isMovableDown = false,
                             onDragEndUpOneRank = {
                                 if (pc.cardType::class != SpyCardType::class) {
-                                    game.cardToPlayerRow(card = pc,
-                                                        position = Position.PLAYER,
-                                                        fromDeck = true)
+                                    scope.launch{
+                                        game.cardToPlayerRow(
+                                            card = pc,
+                                            position = Position.PLAYER,
+                                            fromDeck = true
+                                        )
+                                    }
                                 } else {
                                     (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
                                     //val newId= game.player.playDeck.nextId()
@@ -381,6 +385,7 @@ fun DisplayCard(
 ) = key(card, game, toPlayer, isPlayerTurn, inDiscard) {
     val clicked = remember { mutableStateOf(false) }
     val hover = remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     DisplayNonClickableCard(
         modifier = modifier
             .pointerMoveFilter(onEnter = {
@@ -392,7 +397,7 @@ fun DisplayCard(
                     false
                 })
             .clickable(enabled = isPlayerTurn, onClick = {
-                game.handleClick(clicked, card)
+                scope.launch { game.handleClick(clicked, card)}
             }),
         card = card,
         toPlayer = toPlayer,
@@ -402,7 +407,7 @@ fun DisplayCard(
         height = height,
         inDiscard = inDiscard,
         onHeroButtonClick = { playCard: PlayCard ->
-            game.handleClick(clicked, playCard, true)
+            scope.launch{ game.handleClick(clicked, playCard, true) }
         }
     )
 }

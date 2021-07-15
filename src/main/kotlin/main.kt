@@ -1,6 +1,7 @@
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -54,13 +55,14 @@ fun main() {
         )
         val screenState = remember { mutableStateOf(Screen.LOGIN) }
         val game = remember { mutableStateOf<Game?>(null) }
+        val scope = rememberCoroutineScope()
         Window(
             title = "uPCb !!",
             state = state,
             resizable = true,
             onCloseRequest = {
                 if(screenState.value == Screen.BOARD) {
-                    game.value!!.sendDefeat()
+                    scope.launch{ game.value!!.sendDefeat() }
                 }
                 login.logout()
                 state.isOpen = false

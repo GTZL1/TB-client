@@ -4,10 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,6 +19,8 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -40,6 +39,7 @@ class Login(
     fun LoginScreen(
         modifier: Modifier = Modifier,
     ) {
+        val scope = rememberCoroutineScope()
         Row(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
@@ -67,14 +67,14 @@ class Login(
                     color = Color.Red)
                 Button(modifier = modifier.padding(top = 20.dp),
                     onClick = {
-                        sendLoginForm(
+                        scope.launch { sendLoginForm(
                             username = playerPseudo.value,
                             password = password.value,
                             onRightLogin = onRightLogin,
                             idSession = idSession,
                             playerPseudo = playerPseudo,
                             errorText = errorText,
-                        )
+                        ) }
                     }) {
                     Text(text = "Login")
                 }
@@ -82,7 +82,7 @@ class Login(
         }
     }
 
-    private fun sendLoginForm(
+    private suspend fun sendLoginForm(
         username: String,
         password: String,
         onRightLogin: (() -> Unit),
@@ -91,7 +91,7 @@ class Login(
         errorText: MutableState<String>
     ) {
         try {
-            val response = runBlocking {
+            val response = //runBlocking {
                 httpClient.request<LoginResponse> {
                     url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/login")
                     headers {
@@ -100,7 +100,7 @@ class Login(
                     body = LoginRequest(username, password)
                     method = HttpMethod.Get
                 }
-            }
+            //}
             if (response.granted) {
                 idSession.value = response.idSession
                 playerPseudo.value = username
@@ -127,9 +127,9 @@ class Login(
         }
     }
 
-    private fun cardsRequest(): JSONObject {
+    private suspend fun cardsRequest(): JSONObject {
         try {
-            val response = JSONObject(runBlocking {
+            val response = JSONObject(
                 httpClient.request<String> {
                     url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/cards")
                     headers {
@@ -138,7 +138,7 @@ class Login(
                     body = GameObjectsRequest(idSession.value)
                     method = HttpMethod.Get
                 }
-            })
+            )
             return response
         } catch (exception: ClientRequestException) {
         }
@@ -181,7 +181,7 @@ class Login(
         return JSONArray()
     }
 
-    fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
+    suspend fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
         val cardTypes = mutableListOf<CardType>()
         val cards = cardsRequest()
 
