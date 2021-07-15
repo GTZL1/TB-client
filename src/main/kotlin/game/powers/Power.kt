@@ -122,7 +122,7 @@ class IncinerationPower: Power(5, "Incineration") {
 }
 
 class WhipStrikePower: Power(6, "Whipstrike") {
-    override val buttonIcon = "curly-arrow.svg"
+    override val buttonIcon = "whip strike.svg"
     private val whipStrike= mutableStateOf(false)
 
     override fun action(owner: HeroPlayCard,
@@ -161,7 +161,6 @@ class WhipStrikePower: Power(6, "Whipstrike") {
             true
         } else false
     }
-
 
     override fun powerAuthorization() {
         whipStrike.value = true
