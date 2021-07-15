@@ -19,14 +19,14 @@ import game.cards.plays.PlayCard
 import kotlin.reflect.KClass
 
 abstract class Power(val id: Int, val name: String) {
-    open suspend fun action(owner: HeroPlayCard,
+    open fun action(owner: HeroPlayCard,
                     target: PlayCard,
                     game: Game? = null): Boolean{
         return false
     }
 
-    open suspend fun action(cards: List<PlayCard>,
-                    onAction: suspend (PlayCard) -> Unit): Boolean{
+    open fun action(cards: List<PlayCard>,
+                    onAction: (PlayCard) -> Unit): Boolean{
         return false
     }
 
@@ -45,7 +45,7 @@ abstract class Power(val id: Int, val name: String) {
 }
 
 class PrecisionStrikePower: Power(1, "PrecisionStrike") {
-    override suspend fun action(owner: HeroPlayCard,
+    override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean {
         return if(target != owner &&
@@ -59,7 +59,7 @@ class PrecisionStrikePower: Power(1, "PrecisionStrike") {
 class DistanceStrikePower: Power(2, "DistanceStrike") {
     private val distanceStrike= mutableStateOf(false)
 
-    override suspend fun action(owner: HeroPlayCard,
+    override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean{
         return if(distanceStrike.value &&
@@ -97,7 +97,7 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
 }
 
 class HealingPower: Power(3, "Healing") {
-    override suspend fun action(owner: HeroPlayCard,
+    override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean{
         return if(target == owner &&
@@ -124,7 +124,7 @@ class HealingPower: Power(3, "Healing") {
 
 class DoubleStrikePower: Power(4, "DoubleStrike") {
     private val doubleStrike= mutableStateOf(true)
-    override suspend fun action(owner: HeroPlayCard,
+    override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean{
         return if(target != owner && doubleStrike.value){
@@ -156,8 +156,8 @@ class DoubleStrikePower: Power(4, "DoubleStrike") {
 }
 
 class IncinerationPower: Power(5, "Incineration") {
-    override suspend fun action(cards: List<PlayCard>,
-                        onAction: suspend (PlayCard) -> Unit): Boolean {
+    override fun action(cards: List<PlayCard>,
+                        onAction: (PlayCard) -> Unit): Boolean {
         if(cards.isNotEmpty()){
             val max = cards.maxByOrNull { playCard: PlayCard -> playCard.cardType.attack }!!.cardType.attack
             cards.forEach { playCard: PlayCard ->
@@ -184,7 +184,7 @@ class IncinerationPower: Power(5, "Incineration") {
 class WhipStrikePower: Power(6, "Whipstrike") {
     private val whipStrike= mutableStateOf(false)
 
-    override suspend fun action(owner: HeroPlayCard,
+    override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean {
         return if(whipStrike.value && target != owner){

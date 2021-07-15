@@ -88,8 +88,7 @@ class Login(
         errorText: MutableState<String>
     ) {
         try {
-            val response = //runBlocking {
-                httpClient.request<LoginResponse> {
+            val response = httpClient.request<LoginResponse> {
                     url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/login")
                     headers {
                         append("Content-Type", "application/json")
@@ -97,7 +96,6 @@ class Login(
                     body = LoginRequest(username, password)
                     method = HttpMethod.Get
                 }
-            //}
             if (response.granted) {
                 idSession.value = response.idSession
                 playerPseudo.value = username

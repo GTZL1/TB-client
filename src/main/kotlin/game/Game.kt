@@ -75,7 +75,7 @@ class Game(
         }
     }
 
-    suspend fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false) {
+    fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false) {
         playerRowCards.add(card)
         if (!isSpy && handCards.remove(card)) {
             cardsMovedFromHand.value += 1
@@ -86,7 +86,7 @@ class Game(
         cardsAlreadyActed.add(card.id)
     }
 
-    suspend fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false, position: Position, fromDeck: Boolean = false) {
+    fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false, position: Position, fromDeck: Boolean = false) {
         cardToPlayerRow(card, isSpy)
         notifyMovement(card, position, fromDeck)
     }
@@ -121,7 +121,7 @@ class Game(
         notifyMovement(card, position, fromDeck)
     }
 
-    private suspend fun cardToDiscard(card: PlayCard) {
+    private fun cardToDiscard(card: PlayCard) {
         discardCards.add(card)
         playerRowCards.remove(card)
         centerRowCards.remove(card)
@@ -240,18 +240,17 @@ class Game(
         }
     }
 
-    private suspend fun checkTimerTurn() {
-        coroutineScope {
-            delayJob = launch {
-                delay.value = Constants.MOVEMENT_DELAY
-                while (delay.value > 0 && playerTurn) {
-                    delay(1000)
-                    delay.value -= 1000
-                }
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun checkTimerTurn() {
+        delayJob = GlobalScope.launch {
+            delay.value = Constants.MOVEMENT_DELAY
+            while (delay.value > 0 && playerTurn) {
+                delay(1000)
+                delay.value -= 1000
+            }
 
-                if (playerTurn) {
-                    changeTurn()
-                }
+            if (playerTurn) {
+                changeTurn()
             }
         }
     }
@@ -295,7 +294,7 @@ class Game(
         }
     }
 
-    private suspend fun applyMovement(owner: String, id: Int, cardTypeName: String, position: Position, fromDeck: Boolean) {
+    private fun applyMovement(owner: String, id: Int, cardTypeName: String, position: Position, fromDeck: Boolean) {
         val card = if (fromDeck) {
             cardTypes.first { cardType -> cardType.name == cardTypeName }.generatePlayCard(owner, id)
         } else {
@@ -322,7 +321,7 @@ class Game(
         }
     }
 
-    private suspend fun applyAttack(
+    private fun applyAttack(
         attackerOwner: String,
         attackerId: Int,
         targetOwner: String,
@@ -355,7 +354,7 @@ class Game(
         }
     }
 
-    internal suspend fun handleClick(clicked: MutableState<Boolean>, card: PlayCard, specialPower: Boolean = false) {
+    internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard, specialPower: Boolean = false) {
         if(specialPower) powerAuthorization.value=true
         clicked.value = true
         if ((oldCard!=null) && (card != oldCard)) {
@@ -423,7 +422,7 @@ class Game(
             }.toList()
     }
 
-    private suspend fun checkEnding(defeat: Boolean = false) {
+    private fun checkEnding(defeat: Boolean = false) {
         if (playerBaseCards.isEmpty() ||
             filterCardsOwner(opponent.pseudo).filter { playCard: PlayCard ->
                 playCard.cardType::class == BaseCardType::class
@@ -431,19 +430,22 @@ class Game(
             defeat) {
             val victory= if(defeat) false else (!playerBaseCards.isEmpty())
             try {
-
+                runBlocking{
                     httpClient.request<String> {
-                        url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/game")
+                        url(System.getenv("TB_SERVER_URL") + ":" + System.getenv("TB_SERVER_PORT") + "/game")
                         headers {
                             append("Content-Type", "application/json")
                         }
-                        body = JSONObject(GameIssue(
-                            idSession = idSession.value,
-                            date = date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                            winner = if(victory) player.pseudo else opponent.pseudo,
-                            looser = if(victory) opponent.pseudo else player.pseudo
-                        ))
+                        body = JSONObject(
+                            GameIssue(
+                                idSession = idSession.value,
+                                date = date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                                winner = if (victory) player.pseudo else opponent.pseudo,
+                                looser = if (victory) opponent.pseudo else player.pseudo
+                            )
+                        )
                         method = HttpMethod.Post
+                    }
                 }
             } catch (exception: ClientRequestException) {
                 println(exception.message)
@@ -452,11 +454,11 @@ class Game(
         }
     }
 
-    suspend fun sendDefeat(){
+    fun sendDefeat(){
         checkEnding(true)
     }
 
-    private suspend fun tryIncinerationPower(card: PlayCard, targetOwner: String) {
+    private fun tryIncinerationPower(card: PlayCard, targetOwner: String) {
         //incineration hero power
         try {
             (card as HeroPlayCard).heroCardType.power.action(

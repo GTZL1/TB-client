@@ -53,14 +53,13 @@ fun main() {
         )
         val screenState = remember { mutableStateOf(Screen.LOGIN) }
         val game = remember { mutableStateOf<Game?>(null) }
-        val scope = rememberCoroutineScope()
         Window(
             title = "uPCb !!",
             state = state,
             resizable = true,
             onCloseRequest = {
                 if(screenState.value == Screen.BOARD) {
-                    scope.launch { game.value!!.sendDefeat() }
+                    game.value!!.sendDefeat()
                 }
                 login.logout()
                 state.isOpen = false

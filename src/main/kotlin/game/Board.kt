@@ -44,7 +44,6 @@ fun Board(game: Game) {
     LaunchedEffect(true) {
         game.receiveMessages()
     }
-    val scope = rememberCoroutineScope()
     //Window content
     Row() {
         //Infos on the side
@@ -159,8 +158,8 @@ fun Board(game: Game) {
                                 && (pc.owner == game.player.pseudo)),
                         onDragEndUpOneRank = {},
                         onDragEndDown = {
-                            scope.launch { game.cardToPlayerRow(card = pc,
-                                                position = Position.PLAYER)}
+                            game.cardToPlayerRow(card = pc,
+                                                position = Position.PLAYER)
                         }
                     )
                 }
@@ -203,13 +202,11 @@ fun Board(game: Game) {
                             isMovableDown = false,
                             onDragEndUpOneRank = {
                                 if (pc.cardType::class != SpyCardType::class) {
-                                    scope.launch{
-                                        game.cardToPlayerRow(
-                                            card = pc,
-                                            position = Position.PLAYER,
-                                            fromDeck = true
-                                        )
-                                    }
+                                    game.cardToPlayerRow(
+                                        card = pc,
+                                        position = Position.PLAYER,
+                                        fromDeck = true
+                                    )
                                 } else {
                                     (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
                                     //val newId= game.player.playDeck.nextId()
