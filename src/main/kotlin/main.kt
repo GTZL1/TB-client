@@ -3,7 +3,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import game.*
@@ -25,7 +24,6 @@ import network.WebSocketHandler
 import org.json.JSONObject
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
-import kotlin.text.Regex.Companion.escape
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
@@ -62,7 +60,7 @@ fun main() {
             resizable = true,
             onCloseRequest = {
                 if(screenState.value == Screen.BOARD) {
-                    scope.launch{ game.value!!.sendDefeat() }
+                    scope.launch { game.value!!.sendDefeat() }
                 }
                 login.logout()
                 state.isOpen = false
@@ -124,7 +122,7 @@ fun main() {
                             idSession = idSession,
                             httpClient = httpClient,
                             cardTypes = cardTypes,
-                            decksList = login.generateDeck(cardTypes)
+                            decksList = login.generateDecks(cardTypes)
                         )
                         deckGUI.value = dG
                     }

@@ -12,19 +12,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
 import game.decks.DeckType
-import game.powers.Power
 import game.powers.powersList
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
-import theme.miniFont
 import theme.quantityFont
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findParameterByName
@@ -145,36 +142,18 @@ class Login(
         return JSONObject()
     }
 
-    private fun powersRequest(): JSONArray {
+    private suspend fun decksRequest(): JSONArray {
         try {
-            val response = JSONArray(runBlocking {
-                httpClient.request<String> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/powers")
-                    headers {
-                        append("Content-Type", "application/json")
+            val response = JSONArray(
+                    httpClient.request<String> {
+                        url(System.getenv("TB_SERVER_URL") + ":" + System.getenv("TB_SERVER_PORT") + "/decks")
+                        headers {
+                            append("Content-Type", "application/json")
+                        }
+                        body = GameObjectsRequest(idSession.value)
+                        method = HttpMethod.Get
                     }
-                    body = GameObjectsRequest(idSession.value)
-                    method = HttpMethod.Get
-                }
-            })
-            return response
-        } catch (exception: ClientRequestException) {
-        }
-        return JSONArray()
-    }
-
-    private fun decksRequest(): JSONArray {
-        try {
-            val response = JSONArray(runBlocking<String> {
-                httpClient.request {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/decks")
-                    headers {
-                        append("Content-Type", "application/json")
-                    }
-                    body = GameObjectsRequest(idSession.value)
-                    method = HttpMethod.Get
-                }
-            })
+                )
             return response
         } catch (exception: ClientRequestException) {
         }
@@ -211,7 +190,8 @@ class Login(
         return cardTypes
     }
 
-    fun generateDeck(cardTypes: List<CardType>, playerDecks: JSONArray = decksRequest()): List<DeckType> {
+    suspend fun generateDecks(cardTypes: List<CardType>, decksList: JSONArray? = null): List<DeckType> {
+        val playerDecks = decksList ?: decksRequest()
         val decks= mutableListOf<DeckType>()
 
         for(y in 0 until playerDecks.length()){

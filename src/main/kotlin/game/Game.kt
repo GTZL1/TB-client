@@ -240,21 +240,18 @@ class Game(
         }
     }
 
-    private suspend fun example() {
-        coroutineScope { launch {  } }
-    }
-
-    @OptIn(DelicateCoroutinesApi::class)
     private suspend fun checkTimerTurn() {
-        delayJob = GlobalScope.launch {
-            delay.value = Constants.MOVEMENT_DELAY
-            while (delay.value > 0 && playerTurn) {
-                delay(1000)
-                delay.value -= 1000
-            }
+        coroutineScope {
+            delayJob = launch {
+                delay.value = Constants.MOVEMENT_DELAY
+                while (delay.value > 0 && playerTurn) {
+                    delay(1000)
+                    delay.value -= 1000
+                }
 
-            if (playerTurn) {
-                changeTurn()
+                if (playerTurn) {
+                    changeTurn()
+                }
             }
         }
     }
