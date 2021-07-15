@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.svgResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -28,9 +30,6 @@ import game.cards.plays.PlayCard
 import game.cards.plays.SpyPlayCard
 import game.cards.types.SpyCardType
 import game.cards.types.VehicleCardType
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import theme.cardColors
 import theme.cardFont
 import theme.discardCardFont
@@ -382,7 +381,6 @@ fun DisplayCard(
 ) = key(card, game, toPlayer, isPlayerTurn, inDiscard) {
     val clicked = remember { mutableStateOf(false) }
     val hover = remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     DisplayNonClickableCard(
         modifier = modifier
             .pointerMoveFilter(onEnter = {
@@ -394,7 +392,7 @@ fun DisplayCard(
                     false
                 })
             .clickable(enabled = isPlayerTurn, onClick = {
-                scope.launch { game.handleClick(clicked, card)}
+                game.handleClick(clicked, card)
             }),
         card = card,
         toPlayer = toPlayer,
@@ -404,7 +402,7 @@ fun DisplayCard(
         height = height,
         inDiscard = inDiscard,
         onHeroButtonClick = { playCard: PlayCard ->
-            scope.launch{ game.handleClick(clicked, playCard, true) }
+            game.handleClick(clicked, playCard, true)
         }
     )
 }
@@ -458,9 +456,19 @@ fun DisplayNonClickableCard(
                             ),
                         card = card,
                     )
-                    //Distance strike and whip strike hero powers
-                    card.CardButton(modifier = Modifier.align(Alignment.BottomCenter),
-                        onClick = {onHeroButtonClick(card)})
+                    //Distance and whip strike powers
+                    if(card.buttonIconSvg != null){
+                        IconButton(
+                            modifier = modifier.padding(0.dp)
+                                                .size(Constants.STATS_BOX_WIDTH.dp)
+                                                .align(Alignment.BottomCenter),
+                            onClick = { onHeroButtonClick(card) },
+                            content = {
+                                Image(painter = svgResource("icons/"+card.buttonIconSvg!!),
+                                    contentDescription = "Power logo")
+                            },
+                        )
+                    }
                 }
             }
             CardEtiquette(
