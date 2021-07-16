@@ -25,7 +25,8 @@ import theme.buttonFont
 class GameHistory(
     private val idSession: Int,
     private val httpClient: HttpClient,
-    val username: String
+    val username: String,
+    private val onBack: () -> Unit
 ) {
     internal fun getGamesHistory(): ArrayList<GameRecord> {
         val games= ArrayList<GameRecord>()
@@ -55,12 +56,15 @@ class GameHistory(
         }
         return games
     }
+
+    fun onBackClick() {
+        this.onBack()
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HistoryScreen(gameHistory: GameHistory,
-               onBack: () -> Unit)
+fun HistoryScreen(gameHistory: GameHistory, )
 {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -76,7 +80,7 @@ fun HistoryScreen(gameHistory: GameHistory,
 
             Button(modifier = Modifier.height(50.dp).width(160.dp),
                 onClick = {
-                    onBack()
+                    gameHistory.onBackClick()
                 }) {
                 Text(
                     text = "Back to menu",

@@ -103,14 +103,14 @@ fun main() {
                         gameHistory.value = GameHistory(
                             idSession = idSession.value,
                             httpClient = httpClient,
-                            username = username.value
+                            username = username.value,
+                            onBack = { screenState.value = Screen.INTERMEDIATE }
                         )
                     }
                     val currentGameHistory = gameHistory.value
                     if (currentGameHistory != null) {
                         HistoryScreen(
                             gameHistory = remember { currentGameHistory },
-                            onBack = { screenState.value = Screen.INTERMEDIATE }
                         )
                     }
                 }
