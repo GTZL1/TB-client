@@ -25,6 +25,8 @@ dependencies {
     implementation("io.ktor:ktor-serialization:1.6.0")
     implementation("io.ktor:ktor-client-gson:1.6.0")
     implementation("org.json:json:20210307")
+    testImplementation ("org.mockito.kotlin:mockito-kotlin:3.2.0")
+
 }
 
 tasks.withType<KotlinCompile>() {
