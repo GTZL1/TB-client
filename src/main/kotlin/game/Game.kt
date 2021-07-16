@@ -53,6 +53,9 @@ class Game(
 
     internal var cardsMovedFromHand = mutableStateOf(0)
 
+    val playerRowCapacity =
+        player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
+
     internal var delay = mutableStateOf(Constants.MOVEMENT_DELAY)
     lateinit var delayJob: Job
 
@@ -189,7 +192,7 @@ class Game(
         checkChangeTurn()
     }
 
-    internal fun notifyNewId(owner: String, oldId: Int, newId: Int) {
+    private fun notifyNewId(owner: String, oldId: Int, newId: Int) {
         webSocketHandler.sendMessage(
             JSONObject(
                 CardIdChange(
@@ -418,6 +421,28 @@ class Game(
         return cards
     }
 
+    internal fun cardBelongsToOwner(card: PlayCard, owner: String = player.pseudo): Boolean {
+        return card.owner == owner
+    }
+
+    internal fun movableToCenterRow(): Boolean {
+        return centerRowCards.size < Constants.CENTER_ROW_CAPACITY
+    }
+
+    internal fun movableToPlayerRow(): Boolean {
+        return playerRowCards.size < playerRowCapacity
+    }
+
+    internal fun movableFromHand(destinationRow: Position): Boolean {
+        return when(destinationRow){
+            Position.PLAYER -> (cardsMovedFromHand.value < player.playDeck.getBaseCards().size)
+                    && movableToPlayerRow()
+            Position.CENTER -> (cardsMovedFromHand.value < player.playDeck.getBaseCards().size)
+                    && movableToCenterRow()
+            else -> false
+        }
+    }
+
     private fun canAttack(attackerCard: PlayCard, targetCard: PlayCard): Boolean {
         return cardCanAct(attackerCard)
                 && abs(attackerCard.getPosition().ordinal - targetCard.getPosition().ordinal) <= 1
@@ -426,7 +451,7 @@ class Game(
     private fun filterCardsOwner(owner: String): List<PlayCard> {
         return listOf(centerRowCards, playerRowCards, opponentRowCards, playerBaseCards, opponentBaseCards).flatten()
             .filter { playCard: PlayCard ->
-                playCard.owner == owner
+                cardBelongsToOwner(playCard, owner)
             }.toList()
     }
 

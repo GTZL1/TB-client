@@ -134,14 +134,14 @@ fun Board(game: Game) {
                         DisplayCard( //base is never clickable
                             card = pc,
                             game = game,
-                            toPlayer = (pc.owner == game.player.pseudo),
+                            toPlayer = game.cardBelongsToOwner(pc),
                             isPlayerTurn = notifyChangeTurn(game)
                         )
                     }
                     game.opponentRowCards.forEach { pc ->
                         DisplayCard(
                             card = pc, game = game,
-                            toPlayer = (pc.owner == game.player.pseudo),
+                            toPlayer = game.cardBelongsToOwner(pc),
                             isPlayerTurn = notifyChangeTurn(game)
                         )
                     }
@@ -151,10 +151,10 @@ fun Board(game: Game) {
             GameRow(content = {
                 game.centerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
-                        toPlayer = (pc.owner == game.player.pseudo),
+                        toPlayer = game.cardBelongsToOwner(pc),
                         isMovableUp = false,
-                        isMovableDown = ((game.playerRowCards.size < playerRowCapacity)
-                                && (pc.owner == game.player.pseudo)),
+                        isMovableDown = (game.movableToPlayerRow()
+                                && game.cardBelongsToOwner(pc)),
                         onDragEndUpOneRank = {},
                         onDragEndDown = {
                             game.cardToPlayerRow(card = pc,
@@ -168,14 +168,14 @@ fun Board(game: Game) {
                 game.playerBaseCards.forEach { pc: PlayCard ->
                     DisplayCard( //base is never clickable
                         card = pc, game = game,
-                        toPlayer = (pc.owner == game.player.pseudo),
+                        toPlayer = game.cardBelongsToOwner(pc),
                         isPlayerTurn = notifyChangeTurn(game)
                     )
                 }
                 game.playerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
-                        toPlayer = (pc.owner == game.player.pseudo),
-                        isMovableUp = game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
+                        toPlayer = game.cardBelongsToOwner(pc),
+                        isMovableUp = game.movableToCenterRow(),
                         isMovableDown = false,
                         onDragEndUpOneRank = {
                             game.cardToCenterRow(card = pc,
@@ -192,11 +192,9 @@ fun Board(game: Game) {
                 gameRowContent = {
                     game.handCards.forEach { pc ->
                         DisplayDraggableCard(card = pc, game = game,
-                            toPlayer = (pc.owner == game.player.pseudo),
-                            isMovableUp = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
-                                    && (game.playerRowCards.size < playerRowCapacity),
-                            isMovableUpTwoRank = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
-                                    && (game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
+                            toPlayer = game.cardBelongsToOwner(pc),
+                            isMovableUp = game.movableFromHand(Position.PLAYER),
+                            isMovableUpTwoRank = game.movableFromHand(Position.CENTER)
                                     && (pc.cardType::class == VehicleCardType::class),
                             isMovableDown = false,
                             onDragEndUpOneRank = {
