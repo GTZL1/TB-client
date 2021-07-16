@@ -2,10 +2,11 @@ import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.ui.unit.dp
 
 object Constants {
-    const val CLIENT_VERSION = 1.1
+    const val CLIENT_VERSION = "1.1"
 
     const val NB_CARDS_HAND = 12
     const val NEW_CARDS_SPY = 2
+    const val NEW_CARDS_BASE_DESTROYED = 2
 
     const val CONNECTION_INIT_MESSAGE = "Hello there"
     const val CARD_MOVEMENT = "movement"

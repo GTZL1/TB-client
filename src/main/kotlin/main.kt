@@ -1,8 +1,8 @@
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import game.*
@@ -24,7 +24,6 @@ import network.WebSocketHandler
 import org.json.JSONObject
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
-import kotlin.text.Regex.Companion.escape
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
@@ -104,14 +103,14 @@ fun main() {
                         gameHistory.value = GameHistory(
                             idSession = idSession.value,
                             httpClient = httpClient,
-                            username = username.value
+                            username = username.value,
+                            onBack = { screenState.value = Screen.INTERMEDIATE }
                         )
                     }
                     val currentGameHistory = gameHistory.value
                     if (currentGameHistory != null) {
                         HistoryScreen(
                             gameHistory = remember { currentGameHistory },
-                            onBack = { screenState.value = Screen.INTERMEDIATE }
                         )
                     }
                 }
@@ -122,7 +121,7 @@ fun main() {
                             idSession = idSession,
                             httpClient = httpClient,
                             cardTypes = cardTypes,
-                            decksList = login.generateDeck(cardTypes)
+                            decksList = login.generateDecks(cardTypes)
                         )
                         deckGUI.value = dG
                     }

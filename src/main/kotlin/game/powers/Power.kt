@@ -1,17 +1,6 @@
 package game.powers
 
-import Constants
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.IconButton
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.res.imageResource
-import androidx.compose.ui.res.svgResource
-import androidx.compose.ui.unit.dp
 import game.Game
 import game.Position
 import game.cards.plays.HeroPlayCard
@@ -19,6 +8,7 @@ import game.cards.plays.PlayCard
 import kotlin.reflect.KClass
 
 abstract class Power(val id: Int, val name: String) {
+    open val buttonIcon: String? = null
     open fun action(owner: HeroPlayCard,
                     target: PlayCard,
                     game: Game? = null): Boolean{
@@ -37,11 +27,6 @@ abstract class Power(val id: Int, val name: String) {
     open fun overrideDistanceAttack(): Boolean {
         return false
     }
-
-    @Composable
-    open fun Button(modifier: Modifier,
-        onClick: () -> Unit = {}){
-    }
 }
 
 class PrecisionStrikePower: Power(1, "PrecisionStrike") {
@@ -57,6 +42,7 @@ class PrecisionStrikePower: Power(1, "PrecisionStrike") {
 }
 
 class DistanceStrikePower: Power(2, "DistanceStrike") {
+    override val buttonIcon = "distance strike.svg"
     private val distanceStrike= mutableStateOf(false)
 
     override fun action(owner: HeroPlayCard,
@@ -67,20 +53,6 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
             target.takeDamage(owner.cardType.attack/2)
             true
         } else false
-    }
-
-    @Composable
-    override fun Button(modifier: Modifier,
-        onClick: () -> Unit) {
-        IconButton(
-            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
-            onClick = { onClick() },
-           content = {
-                     Image(modifier = Modifier.rotate(-90f),
-                         painter = svgResource("icons/distance strike.svg"),
-                        contentDescription = "Bow and arrow")
-           },
-        )
     }
 
     override fun powerAuthorization() {
@@ -97,6 +69,7 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
 }
 
 class HealingPower: Power(3, "Healing") {
+    override val buttonIcon = "healing.svg"
     override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean{
@@ -108,21 +81,10 @@ class HealingPower: Power(3, "Healing") {
         } else false
     }
 
-    @Composable
-    override fun Button(modifier: Modifier,
-                        onClick: () -> Unit) {
-        IconButton(
-            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
-            onClick = {},
-            content = {
-                Image(painter = svgResource("icons/healing.svg"),
-                    contentDescription = "Syringe")
-            },
-        )
-    }
 }
 
 class DoubleStrikePower: Power(4, "DoubleStrike") {
+    override val buttonIcon = "double strike.svg"
     private val doubleStrike= mutableStateOf(true)
     override fun action(owner: HeroPlayCard,
                         target: PlayCard,
@@ -137,25 +99,13 @@ class DoubleStrikePower: Power(4, "DoubleStrike") {
         }
     }
 
-    @Composable
-    override fun Button(modifier: Modifier,
-                        onClick: () -> Unit) {
-        IconButton(
-            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
-            onClick = { onClick() },
-            content = {
-                Image(painter = svgResource("icons/double strike.svg"),
-                    contentDescription = "Two arrows")
-            },
-        )
-    }
-
     override fun reset() {
         doubleStrike.value = true
     }
 }
 
 class IncinerationPower: Power(5, "Incineration") {
+    override val buttonIcon = "incineration.svg"
     override fun action(cards: List<PlayCard>,
                         onAction: (PlayCard) -> Unit): Boolean {
         if(cards.isNotEmpty()){
@@ -166,22 +116,10 @@ class IncinerationPower: Power(5, "Incineration") {
         }
         return false
     }
-
-    @Composable
-    override fun Button(modifier: Modifier,
-                        onClick: () -> Unit) {
-        IconButton(
-            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
-            onClick = { },
-            content = {
-                Image(painter = svgResource("icons/incineration.svg"),
-                    contentDescription = "Vevey's flame")
-            },
-        )
-    }
 }
 
 class WhipStrikePower: Power(6, "Whipstrike") {
+    override val buttonIcon = "whip strike.svg"
     private val whipStrike= mutableStateOf(false)
 
     override fun action(owner: HeroPlayCard,
@@ -219,19 +157,6 @@ class WhipStrikePower: Power(6, "Whipstrike") {
             }
             true
         } else false
-    }
-
-    @Composable
-    override fun Button(modifier: Modifier,
-                        onClick: () -> Unit) {
-        IconButton(
-            modifier = modifier.padding(0.dp).size(Constants.STATS_BOX_WIDTH.dp),
-            onClick = { onClick() },
-            content = {
-                Image(bitmap = imageResource("icons/curly-arrow.png"),
-                    contentDescription = "Arrows crossed")
-            },
-        )
     }
 
     override fun powerAuthorization() {

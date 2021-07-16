@@ -6,6 +6,7 @@ import game.Game
 import game.cards.types.HeroCardType
 
 class HeroPlayCard(val heroCardType:  HeroCardType, player:String, id :Int): UnitPlayCard(heroCardType, player, id = id) {
+    override val buttonIconSvg: String? = heroCardType.power.buttonIcon;
     override fun attack(target: PlayCard) {
         if(!heroCardType.power.action(owner = this, target = target) && this != target) {
             super.attack(target)
@@ -24,11 +25,5 @@ class HeroPlayCard(val heroCardType:  HeroCardType, player:String, id :Int): Uni
 
     override fun overrideDistanceAttack(): Boolean {
         return heroCardType.power.overrideDistanceAttack()
-    }
-
-    @Composable
-    override fun CardButton(modifier: Modifier,
-        onClick: () -> Unit){
-        heroCardType.power.Button(modifier, onClick)
     }
 }

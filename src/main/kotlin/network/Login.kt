@@ -4,10 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,17 +12,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import game.cards.types.CardType
 import game.decks.DeckType
-import game.powers.Power
 import game.powers.powersList
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
-import theme.miniFont
 import theme.quantityFont
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findParameterByName
@@ -40,6 +36,7 @@ class Login(
     fun LoginScreen(
         modifier: Modifier = Modifier,
     ) {
+        val scope = rememberCoroutineScope()
         Row(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
@@ -67,14 +64,14 @@ class Login(
                     color = Color.Red)
                 Button(modifier = modifier.padding(top = 20.dp),
                     onClick = {
-                        sendLoginForm(
+                        scope.launch { sendLoginForm(
                             username = playerPseudo.value,
                             password = password.value,
                             onRightLogin = onRightLogin,
                             idSession = idSession,
                             playerPseudo = playerPseudo,
                             errorText = errorText,
-                        )
+                        ) }
                     }) {
                     Text(text = "Login")
                 }
@@ -82,7 +79,7 @@ class Login(
         }
     }
 
-    private fun sendLoginForm(
+    private suspend fun sendLoginForm(
         username: String,
         password: String,
         onRightLogin: (() -> Unit),
@@ -91,8 +88,7 @@ class Login(
         errorText: MutableState<String>
     ) {
         try {
-            val response = runBlocking {
-                httpClient.request<LoginResponse> {
+            val response = httpClient.request<LoginResponse> {
                     url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/login")
                     headers {
                         append("Content-Type", "application/json")
@@ -100,7 +96,6 @@ class Login(
                     body = LoginRequest(username, password)
                     method = HttpMethod.Get
                 }
-            }
             if (response.granted) {
                 idSession.value = response.idSession
                 playerPseudo.value = username
@@ -127,9 +122,9 @@ class Login(
         }
     }
 
-    private fun cardsRequest(): JSONObject {
+    private suspend fun cardsRequest(): JSONObject {
         try {
-            val response = JSONObject(runBlocking {
+            val response = JSONObject(
                 httpClient.request<String> {
                     url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/cards")
                     headers {
@@ -138,50 +133,32 @@ class Login(
                     body = GameObjectsRequest(idSession.value)
                     method = HttpMethod.Get
                 }
-            })
+            )
             return response
         } catch (exception: ClientRequestException) {
         }
         return JSONObject()
     }
 
-    private fun powersRequest(): JSONArray {
+    private suspend fun decksRequest(): JSONArray {
         try {
-            val response = JSONArray(runBlocking {
-                httpClient.request<String> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/powers")
-                    headers {
-                        append("Content-Type", "application/json")
+            val response = JSONArray(
+                    httpClient.request<String> {
+                        url(System.getenv("TB_SERVER_URL") + ":" + System.getenv("TB_SERVER_PORT") + "/decks")
+                        headers {
+                            append("Content-Type", "application/json")
+                        }
+                        body = GameObjectsRequest(idSession.value)
+                        method = HttpMethod.Get
                     }
-                    body = GameObjectsRequest(idSession.value)
-                    method = HttpMethod.Get
-                }
-            })
+                )
             return response
         } catch (exception: ClientRequestException) {
         }
         return JSONArray()
     }
 
-    private fun decksRequest(): JSONArray {
-        try {
-            val response = JSONArray(runBlocking<String> {
-                httpClient.request {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/decks")
-                    headers {
-                        append("Content-Type", "application/json")
-                    }
-                    body = GameObjectsRequest(idSession.value)
-                    method = HttpMethod.Get
-                }
-            })
-            return response
-        } catch (exception: ClientRequestException) {
-        }
-        return JSONArray()
-    }
-
-    fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
+    suspend fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
         val cardTypes = mutableListOf<CardType>()
         val cards = cardsRequest()
 
@@ -211,7 +188,8 @@ class Login(
         return cardTypes
     }
 
-    fun generateDeck(cardTypes: List<CardType>, playerDecks: JSONArray = decksRequest()): List<DeckType> {
+    suspend fun generateDecks(cardTypes: List<CardType>, decksList: JSONArray? = null): List<DeckType> {
+        val playerDecks = decksList ?: decksRequest()
         val decks= mutableListOf<DeckType>()
 
         for(y in 0 until playerDecks.length()){
@@ -237,7 +215,7 @@ class Login(
 data class LoginRequest(
     val username: String,
     val password: String,
-    val version: Double = Constants.CLIENT_VERSION
+    val version: String = Constants.CLIENT_VERSION
 )
 
 data class LoginResponse(

@@ -53,6 +53,9 @@ class Game(
 
     internal var cardsMovedFromHand = mutableStateOf(0)
 
+    val playerRowCapacity =
+        player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
+
     internal var delay = mutableStateOf(Constants.MOVEMENT_DELAY)
     lateinit var delayJob: Job
 
@@ -129,14 +132,22 @@ class Game(
         playerBaseCards.remove(card)
         if(opponentBaseCards.remove(card)){
             //draw 2 cards when an opponent base is destroyed
-            player.playDeck.drawMultipleCards(2).forEach { pc: PlayCard ->
-                handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
-                handCards.last().changePosition(Position.HAND)
-            }
+            drawCards(Constants.NEW_CARDS_BASE_DESTROYED)
         }
 
         if(card.owner==player.pseudo) cardsAlreadyActed.remove(card.id) //necessary to the auto turn change
         checkEnding()
+    }
+
+    internal fun playSpyCard(card: SpyPlayCard) {
+        card.changeOwner(opponent.pseudo)
+        card.changeId(opponent.nextId())
+
+        drawCards(Constants.NEW_CARDS_SPY)
+
+        cardToOpponentRow(card = card,
+            position = Position.SPY,
+            fromDeck = true)
     }
 
     fun cardCanAct(card: PlayCard): Boolean {
@@ -181,7 +192,7 @@ class Game(
         checkChangeTurn()
     }
 
-    internal fun notifyNewId(owner: String, oldId: Int, newId: Int) {
+    private fun notifyNewId(owner: String, oldId: Int, newId: Int) {
         webSocketHandler.sendMessage(
             JSONObject(
                 CardIdChange(
@@ -213,7 +224,7 @@ class Game(
             }
 
             if (this::delayJob.isInitialized) {
-                runBlocking { delayJob.cancel() }
+                delayJob.cancel()
             }
 
             turnCallback.forEach { it.onChangeTurn() }
@@ -240,6 +251,7 @@ class Game(
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun checkTimerTurn() {
         delayJob = GlobalScope.launch {
             delay.value = Constants.MOVEMENT_DELAY
@@ -409,6 +421,28 @@ class Game(
         return cards
     }
 
+    internal fun cardBelongsToOwner(card: PlayCard, owner: String = player.pseudo): Boolean {
+        return card.owner == owner
+    }
+
+    internal fun movableToCenterRow(): Boolean {
+        return centerRowCards.size < Constants.CENTER_ROW_CAPACITY
+    }
+
+    internal fun movableToPlayerRow(): Boolean {
+        return playerRowCards.size < playerRowCapacity
+    }
+
+    internal fun movableFromHand(destinationRow: Position): Boolean {
+        return when(destinationRow){
+            Position.PLAYER -> (cardsMovedFromHand.value < player.playDeck.getBaseCards().size)
+                    && movableToPlayerRow()
+            Position.CENTER -> (cardsMovedFromHand.value < player.playDeck.getBaseCards().size)
+                    && movableToCenterRow()
+            else -> false
+        }
+    }
+
     private fun canAttack(attackerCard: PlayCard, targetCard: PlayCard): Boolean {
         return cardCanAct(attackerCard)
                 && abs(attackerCard.getPosition().ordinal - targetCard.getPosition().ordinal) <= 1
@@ -417,8 +451,15 @@ class Game(
     private fun filterCardsOwner(owner: String): List<PlayCard> {
         return listOf(centerRowCards, playerRowCards, opponentRowCards, playerBaseCards, opponentBaseCards).flatten()
             .filter { playCard: PlayCard ->
-                playCard.owner == owner
+                cardBelongsToOwner(playCard, owner)
             }.toList()
+    }
+
+    private fun drawCards(nbCards: Int) {
+        player.playDeck.drawMultipleCards(nbCards).forEach { pc: PlayCard ->
+            handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            handCards.last().changePosition(Position.HAND)
+        }
     }
 
     private fun checkEnding(defeat: Boolean = false) {
@@ -429,18 +470,20 @@ class Game(
             defeat) {
             val victory= if(defeat) false else (!playerBaseCards.isEmpty())
             try {
-                runBlocking {
+                runBlocking{
                     httpClient.request<String> {
-                        url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/game")
+                        url(System.getenv("TB_SERVER_URL") + ":" + System.getenv("TB_SERVER_PORT") + "/game")
                         headers {
                             append("Content-Type", "application/json")
                         }
-                        body = JSONObject(GameIssue(
-                            idSession = idSession.value,
-                            date = date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                            winner = if(victory) player.pseudo else opponent.pseudo,
-                            looser = if(victory) opponent.pseudo else player.pseudo
-                        ))
+                        body = JSONObject(
+                            GameIssue(
+                                idSession = idSession.value,
+                                date = date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                                winner = if (victory) player.pseudo else opponent.pseudo,
+                                looser = if (victory) opponent.pseudo else player.pseudo
+                            )
+                        )
                         method = HttpMethod.Post
                     }
                 }

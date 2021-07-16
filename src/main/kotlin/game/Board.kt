@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.svgResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -28,8 +30,6 @@ import game.cards.plays.PlayCard
 import game.cards.plays.SpyPlayCard
 import game.cards.types.SpyCardType
 import game.cards.types.VehicleCardType
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import theme.cardColors
 import theme.cardFont
 import theme.discardCardFont
@@ -40,11 +40,9 @@ fun Board(game: Game) {
     val playerRowCapacity =
         game.player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
 
-    DisposableEffect(Unit) {
-        GlobalScope.launch { game.receiveMessages() }
-        onDispose { }
+    LaunchedEffect(true) {
+        game.receiveMessages()
     }
-
     //Window content
     Row() {
         //Infos on the side
@@ -112,7 +110,7 @@ fun Board(game: Game) {
                         style = miniFont)
                     }
                     Text(modifier = Modifier.padding(top = 10.dp),
-                        text = maxOf(game.handCards.size,(game.player.playDeck.getBaseCards().size - game.cardsMovedFromHand.value)).toString()
+                        text = minOf(game.handCards.size,(game.player.playDeck.getBaseCards().size - game.cardsMovedFromHand.value)).toString()
                                 + " card(s) still deployable",
                         style = miniFont
                     )
@@ -136,14 +134,14 @@ fun Board(game: Game) {
                         DisplayCard( //base is never clickable
                             card = pc,
                             game = game,
-                            toPlayer = (pc.owner == game.player.pseudo),
+                            toPlayer = game.cardBelongsToOwner(pc),
                             isPlayerTurn = notifyChangeTurn(game)
                         )
                     }
                     game.opponentRowCards.forEach { pc ->
                         DisplayCard(
                             card = pc, game = game,
-                            toPlayer = (pc.owner == game.player.pseudo),
+                            toPlayer = game.cardBelongsToOwner(pc),
                             isPlayerTurn = notifyChangeTurn(game)
                         )
                     }
@@ -153,10 +151,10 @@ fun Board(game: Game) {
             GameRow(content = {
                 game.centerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
-                        toPlayer = (pc.owner == game.player.pseudo),
+                        toPlayer = game.cardBelongsToOwner(pc),
                         isMovableUp = false,
-                        isMovableDown = ((game.playerRowCards.size < playerRowCapacity)
-                                && (pc.owner == game.player.pseudo)),
+                        isMovableDown = (game.movableToPlayerRow()
+                                && game.cardBelongsToOwner(pc)),
                         onDragEndUpOneRank = {},
                         onDragEndDown = {
                             game.cardToPlayerRow(card = pc,
@@ -170,14 +168,14 @@ fun Board(game: Game) {
                 game.playerBaseCards.forEach { pc: PlayCard ->
                     DisplayCard( //base is never clickable
                         card = pc, game = game,
-                        toPlayer = (pc.owner == game.player.pseudo),
+                        toPlayer = game.cardBelongsToOwner(pc),
                         isPlayerTurn = notifyChangeTurn(game)
                     )
                 }
                 game.playerRowCards.forEach { pc ->
                     DisplayDraggableCard(card = pc, game = game,
-                        toPlayer = (pc.owner == game.player.pseudo),
-                        isMovableUp = game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY,
+                        toPlayer = game.cardBelongsToOwner(pc),
+                        isMovableUp = game.movableToCenterRow(),
                         isMovableDown = false,
                         onDragEndUpOneRank = {
                             game.cardToCenterRow(card = pc,
@@ -194,37 +192,20 @@ fun Board(game: Game) {
                 gameRowContent = {
                     game.handCards.forEach { pc ->
                         DisplayDraggableCard(card = pc, game = game,
-                            toPlayer = (pc.owner == game.player.pseudo),
-                            isMovableUp = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
-                                    && (game.playerRowCards.size < playerRowCapacity),
-                            isMovableUpTwoRank = (game.cardsMovedFromHand.value < game.player.playDeck.getBaseCards().size)
-                                    && (game.centerRowCards.size < Constants.CENTER_ROW_CAPACITY)
+                            toPlayer = game.cardBelongsToOwner(pc),
+                            isMovableUp = game.movableFromHand(Position.PLAYER),
+                            isMovableUpTwoRank = game.movableFromHand(Position.CENTER)
                                     && (pc.cardType::class == VehicleCardType::class),
                             isMovableDown = false,
                             onDragEndUpOneRank = {
                                 if (pc.cardType::class != SpyCardType::class) {
-                                    game.cardToPlayerRow(card = pc,
-                                                        position = Position.PLAYER,
-                                                        fromDeck = true)
+                                    game.cardToPlayerRow(
+                                        card = pc,
+                                        position = Position.PLAYER,
+                                        fromDeck = true
+                                    )
                                 } else {
-                                    (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
-                                    //val newId= game.player.playDeck.nextId()
-                                    //game.notifyNewId(game.player.pseudo, pc.id, newId)
-                                    pc.changeId(game.opponent.nextId())
-
-                                    game.opponent.playDeck.addCard(pc)
-                                    game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
-                                        .forEach { pc: PlayCard ->
-                                            game.handCards.add(
-                                                pc.cardType.generatePlayCard(
-                                                    pc.owner,
-                                                    pc.id
-                                                )
-                                            )
-                                        }
-                                    game.cardToOpponentRow(card = pc,
-                                                            position = Position.SPY,
-                                                            fromDeck = true)
+                                    game.playSpyCard(card = pc as SpyPlayCard)
                                 }
                             },
                             onDragEndUpTwoRank = {
@@ -456,9 +437,19 @@ fun DisplayNonClickableCard(
                             ),
                         card = card,
                     )
-                    //Distance strike and whip strike hero powers
-                    card.CardButton(modifier = Modifier.align(Alignment.BottomCenter),
-                        onClick = {onHeroButtonClick(card)})
+                    //Distance and whip strike powers
+                    if(card.buttonIconSvg != null){
+                        IconButton(
+                            modifier = modifier.padding(0.dp)
+                                                .size(Constants.STATS_BOX_WIDTH.dp)
+                                                .align(Alignment.BottomCenter),
+                            onClick = { onHeroButtonClick(card) },
+                            content = {
+                                Image(painter = svgResource("icons/"+card.buttonIconSvg!!),
+                                    contentDescription = "Power logo")
+                            },
+                        )
+                    }
                 }
             }
             CardEtiquette(
