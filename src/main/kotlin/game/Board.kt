@@ -207,24 +207,7 @@ fun Board(game: Game) {
                                         fromDeck = true
                                     )
                                 } else {
-                                    (pc as SpyPlayCard).changeOwner(game.opponent.pseudo)
-                                    //val newId= game.player.playDeck.nextId()
-                                    //game.notifyNewId(game.player.pseudo, pc.id, newId)
-                                    pc.changeId(game.opponent.nextId())
-
-                                    game.opponent.playDeck.addCard(pc)
-                                    game.player.playDeck.drawMultipleCards(Constants.NEW_CARDS_SPY)
-                                        .forEach { pc: PlayCard ->
-                                            game.handCards.add(
-                                                pc.cardType.generatePlayCard(
-                                                    pc.owner,
-                                                    pc.id
-                                                )
-                                            )
-                                        }
-                                    game.cardToOpponentRow(card = pc,
-                                                            position = Position.SPY,
-                                                            fromDeck = true)
+                                    game.playSpyCard(card = pc as SpyPlayCard)
                                 }
                             },
                             onDragEndUpTwoRank = {

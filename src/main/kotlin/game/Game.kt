@@ -129,14 +129,22 @@ class Game(
         playerBaseCards.remove(card)
         if(opponentBaseCards.remove(card)){
             //draw 2 cards when an opponent base is destroyed
-            player.playDeck.drawMultipleCards(2).forEach { pc: PlayCard ->
-                handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
-                handCards.last().changePosition(Position.HAND)
-            }
+            drawCards(Constants.NEW_CARDS_BASE_DESTROYED)
         }
 
         if(card.owner==player.pseudo) cardsAlreadyActed.remove(card.id) //necessary to the auto turn change
         checkEnding()
+    }
+
+    internal fun playSpyCard(card: SpyPlayCard) {
+        card.changeOwner(opponent.pseudo)
+        card.changeId(opponent.nextId())
+
+        drawCards(Constants.NEW_CARDS_SPY)
+
+        cardToOpponentRow(card = card,
+            position = Position.SPY,
+            fromDeck = true)
     }
 
     fun cardCanAct(card: PlayCard): Boolean {
@@ -420,6 +428,13 @@ class Game(
             .filter { playCard: PlayCard ->
                 playCard.owner == owner
             }.toList()
+    }
+
+    private fun drawCards(nbCards: Int) {
+        player.playDeck.drawMultipleCards(nbCards).forEach { pc: PlayCard ->
+            handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            handCards.last().changePosition(Position.HAND)
+        }
     }
 
     private fun checkEnding(defeat: Boolean = false) {

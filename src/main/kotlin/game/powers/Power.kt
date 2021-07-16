@@ -55,7 +55,6 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
         } else false
     }
 
-
     override fun powerAuthorization() {
         distanceStrike.value = true
     }
@@ -100,7 +99,6 @@ class DoubleStrikePower: Power(4, "DoubleStrike") {
         }
     }
 
-
     override fun reset() {
         doubleStrike.value = true
     }
@@ -118,7 +116,6 @@ class IncinerationPower: Power(5, "Incineration") {
         }
         return false
     }
-
 }
 
 class WhipStrikePower: Power(6, "Whipstrike") {

@@ -1,10 +1,8 @@
 package game.cards.plays
 
-import androidx.compose.runtime.*
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Modifier
 import game.Position
-import game.cards.types.*
+import game.cards.types.CardType
 
 abstract class PlayCard(val cardType: CardType, var owner: String, var id: Int) {
     protected val health = mutableStateOf(cardType.life)
