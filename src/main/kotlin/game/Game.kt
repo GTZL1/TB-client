@@ -238,6 +238,7 @@ class Game(
         cardsMovedFromHand.value = 0
         checkChangeTurn()
         checkTimerTurn()
+
         turnCallback.forEach { it.onChangeTurn() }
     }
 
@@ -246,7 +247,7 @@ class Game(
         webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
         val msg = webSocketHandler.receiveOne()
         playerTurn = (num < msg.getString("type"))
-        playerTurn = false
+
         initialization()
 
         checkTimerTurn()

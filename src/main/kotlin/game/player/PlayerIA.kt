@@ -1,7 +1,6 @@
 package game.player
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.*
 import game.Game
 import game.Position
 import game.cards.plays.PlayCard
@@ -9,7 +8,8 @@ import game.cards.types.CardType
 import game.decks.DeckType
 import game.notifyChangeTurn
 
-class PlayerIA(cardTypes: List<CardType>) : Player(pseudo = "ANNA",
+class PlayerIA(cardTypes: List<CardType>) : Player(
+    pseudo = "ANNA",
     deckType = DeckType(
         id = -1,
         name = "default",
@@ -25,16 +25,19 @@ class PlayerIA(cardTypes: List<CardType>) : Player(pseudo = "ANNA",
     }
 
     @Composable
-    fun play(game: Game, ){
-        if(!notifyChangeTurn(game = game)){
-            while (game.movableFromHand(Position.OPPONENT) && handCards.isNotEmpty()) {
-                println(game.movableFromHand(Position.OPPONENT))
-                val cardToPlay= cardSelector(handCards)
-                game.cardToOpponentRow(cardToPlay)
-                handCards.remove(cardToPlay)
+    fun play(game: Game) {
+        val fromHand = remember { mutableStateOf(true) }
+        LaunchedEffect(notifyChangeTurn(game)){
+            fromHand.value=game.movableFromHand(Position.OPPONENT)
+            if (!game.playerTurn) {
+                while (fromHand.value && handCards.isNotEmpty()) {
+                    val cardToPlay = cardSelector(handCards)
+                    game.cardToOpponentRow(cardToPlay)
+                    handCards.remove(cardToPlay)
+                    fromHand.value = game.movableFromHand(Position.OPPONENT)
+                }
+                game.startPlayerTurn()
             }
-
-            game.startPlayerTurn()
         }
     }
 

@@ -183,8 +183,8 @@ fun main() {
                     }
                     val currentGame = game.value
                     if (currentGame != null) {
-                        (currentGame.opponent as PlayerIA).play(currentGame)
                         Board(currentGame)
+                        (currentGame.opponent as PlayerIA).play(currentGame)
                     }
                 }
                 Screen.ENDING -> {
