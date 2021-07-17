@@ -246,9 +246,9 @@ class Game(
         webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
         val msg = webSocketHandler.receiveOne()
         playerTurn = (num < msg.getString("type"))
-
+        playerTurn = false
         initialization()
-        println(playerTurn)
+
         checkTimerTurn()
     }
 
@@ -477,8 +477,7 @@ class Game(
         if (playerBaseCards.isEmpty() ||
             filterCardsOwner(opponent.pseudo).filter { playCard: PlayCard ->
                 playCard.cardType::class == BaseCardType::class
-            }.isEmpty() ||
-            defeat) {
+            }.isEmpty() || defeat) {
             val victory= if(defeat) false else (!playerBaseCards.isEmpty())
             try {
                 runBlocking{

@@ -9,7 +9,7 @@ import game.cards.types.CardType
 import game.decks.DeckType
 import game.notifyChangeTurn
 
-class PlayerIA(cardTypes: List<CardType>) : Player(pseudo = "JARVIS",
+class PlayerIA(cardTypes: List<CardType>) : Player(pseudo = "ANNA",
     deckType = DeckType(
         id = -1,
         name = "default",
@@ -28,6 +28,7 @@ class PlayerIA(cardTypes: List<CardType>) : Player(pseudo = "JARVIS",
     fun play(game: Game, ){
         if(!notifyChangeTurn(game = game)){
             while (game.movableFromHand(Position.OPPONENT) && handCards.isNotEmpty()) {
+                println(game.movableFromHand(Position.OPPONENT))
                 val cardToPlay= cardSelector(handCards)
                 game.cardToOpponentRow(cardToPlay)
                 handCards.remove(cardToPlay)
