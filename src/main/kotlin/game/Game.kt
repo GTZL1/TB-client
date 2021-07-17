@@ -53,7 +53,7 @@ class Game(
 
     internal var cardsMovedFromHand = mutableStateOf(0)
 
-    val playerRowCapacity =
+    private val playerRowCapacity =
         player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
 
     internal var delay = mutableStateOf(Constants.MOVEMENT_DELAY)
@@ -204,7 +204,7 @@ class Game(
         )
     }
 
-    internal fun changeTurn() {
+    internal fun endPlayerTurn() {
         if (playerTurn) {
             webSocketHandler.sendMessage(
                 JSONObject(SimpleMessage(Constants.CHANGE_TURN))
@@ -221,14 +221,23 @@ class Game(
                     playCard.cardType::class == HeroCardType::class
                 }.forEach { playCard: PlayCard -> (playCard as HeroPlayCard).heroCardType.power.reset() }
             } catch (t: Throwable){
+                println(t.message)
             }
 
             if (this::delayJob.isInitialized) {
                 delayJob.cancel()
             }
-
             turnCallback.forEach { it.onChangeTurn() }
         }
+    }
+
+    internal fun startPlayerTurn() {
+        playerTurn = !playerTurn
+        cardsAlreadyActed.clear()
+        cardsMovedFromHand.value = 0
+        checkChangeTurn()
+        checkTimerTurn()
+        turnCallback.forEach { it.onChangeTurn() }
     }
 
     suspend fun determineFirst() {
@@ -238,7 +247,7 @@ class Game(
         playerTurn = (num < msg.getString("type"))
 
         initialization()
-
+        println(playerTurn)
         checkTimerTurn()
     }
 
@@ -247,7 +256,7 @@ class Game(
         if (playerTurn && ((cardsMovedFromHand.value == (player.playDeck.getBaseCards().size)) || handCards.isEmpty())
             && (cardsAlreadyActed.size == (filterCardsOwner(player.pseudo).size - playerBaseCards.size))
         ) {
-            changeTurn()
+            endPlayerTurn()
         }
     }
 
@@ -261,7 +270,7 @@ class Game(
             }
 
             if (playerTurn) {
-                changeTurn()
+                endPlayerTurn()
             }
         }
     }
@@ -279,12 +288,7 @@ class Game(
                     )
                 }
                 Constants.CHANGE_TURN -> {
-                    playerTurn = !playerTurn
-                    cardsAlreadyActed.clear()
-                    cardsMovedFromHand.value = 0
-                    checkChangeTurn()
-                    checkTimerTurn()
-                    turnCallback.forEach { it.onChangeTurn() }
+                    startPlayerTurn()
                 }
                 Constants.CARD_ATTACK -> {
                     applyAttack(

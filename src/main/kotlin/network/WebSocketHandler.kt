@@ -14,13 +14,13 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class WebSocketHandler {
-    val websocketHttpClient = HttpClient {
+    private val websocketHttpClient = HttpClient {
         install(WebSockets)
         install(JsonFeature) {
             serializer = GsonSerializer()
         }
     }
-    val msgToSend = Channel<JSONObject>(Channel.UNLIMITED)
+    private val msgToSend = Channel<JSONObject>(Channel.UNLIMITED)
     val msgReceived = Channel<JSONObject>(Channel.UNLIMITED)
 
     suspend fun initialize(onConnectionEstablished: () -> Unit) = coroutineScope<Unit> {

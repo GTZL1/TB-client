@@ -11,6 +11,7 @@ import game.decks.DeckGUI
 import game.decks.DeckScreen
 import game.decks.DeckType
 import game.player.Player
+import game.player.PlayerIA
 import game.screens.GameHistory
 import game.screens.HistoryScreen
 import io.ktor.client.*
@@ -169,13 +170,7 @@ fun main() {
                             idSession = idSession,
                             cardTypes = cardTypes,
                             player = player,
-                            opponent = Player(
-                                pseudo = opponentDeck.getString("username"),
-                                deckType = login.generateDeck(
-                                    cardTypes,
-                                    opponentDeck.getJSONObject("deckType")
-                                )
-                            ),
+                            opponent = PlayerIA(cardTypes),
                             onEnding = { oppName: String, vic: Boolean ->
                                 opponentName.value = oppName
                                 victory.value = vic
@@ -188,6 +183,7 @@ fun main() {
                     }
                     val currentGame = game.value
                     if (currentGame != null) {
+                        (currentGame.opponent as PlayerIA).play(currentGame)
                         Board(currentGame)
                     }
                 }
