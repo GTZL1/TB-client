@@ -1,10 +1,10 @@
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
+import io.mockk.*;
 import game.*
 import game.cards.types.*
 import game.decks.DeckGUI
@@ -17,6 +17,7 @@ import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import network.Login
 import network.PlayerInitialization
 import network.SimpleMessage
@@ -82,7 +83,8 @@ fun main() {
                 )
             }
 
-            val websocket = WebSocketHandler()
+            val websocket = mockk<WebSocketHandler>(relaxUnitFun = true)
+            coEvery { websocket.receiveOne() } returns JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE))
             when (screenState.value) {
                 Screen.LOGIN -> {
                     login.LoginScreen()

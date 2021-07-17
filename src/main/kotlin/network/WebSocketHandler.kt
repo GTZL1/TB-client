@@ -52,7 +52,7 @@ class WebSocketHandler {
         try {
             for (message in incoming) {
                 message as? Frame.Text ?: continue
-                if(message.readText().equals(Constants.EXIT_MESSAGE)){
+                if(message.readText() == Constants.EXIT_MESSAGE){
                     sendMessage(JSONObject(SimpleMessage(message.readText())))
                 } else {
                     msgReceived.send(JSONObject(message.readText()))
