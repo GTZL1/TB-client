@@ -2,8 +2,6 @@ package game.player
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import game.Game
 import game.Position
 import game.cards.plays.PlayCard
@@ -28,12 +26,18 @@ class PlayerIA(cardTypes: List<CardType>) : Player(pseudo = "JARVIS",
 
     @Composable
     fun play(game: Game, ){
-        val turn = notifyChangeTurn(game)
-        //println(turn.value)
-        if(!turn){
-            game.cardToOpponentRow(handCards.maxByOrNull { playCard: PlayCard -> playCard.cardType.attack }!!)
+        if(!notifyChangeTurn(game = game)){
+            while (game.movableFromHand(Position.OPPONENT) && handCards.isNotEmpty()) {
+                val cardToPlay= cardSelector(handCards)
+                game.cardToOpponentRow(cardToPlay)
+                handCards.remove(cardToPlay)
+            }
+
             game.startPlayerTurn()
         }
-        //println(turn.value)
+    }
+
+    private fun cardSelector(cards: List<PlayCard>): PlayCard {
+        return cards.maxByOrNull { playCard: PlayCard -> playCard.cardType.attack }!!
     }
 }

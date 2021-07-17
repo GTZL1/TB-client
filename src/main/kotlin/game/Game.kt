@@ -113,7 +113,8 @@ class Game(
     fun cardToOpponentRow(card: PlayCard) {
         opponentRowCards.add(card)
         centerRowCards.remove(card)
-        if (handCards.remove(card)) {
+        //second condition used only when fighting IA
+        if (handCards.remove(card) || (card.owner==opponent.pseudo)) {
             cardsMovedFromHand.value += 1
         }
         card.changePosition(Position.OPPONENT)
@@ -437,12 +438,18 @@ class Game(
         return playerRowCards.size < playerRowCapacity
     }
 
+    internal fun movableToOpponentRow(): Boolean {
+        return opponentRowCards.size < opponent.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
+    }
+
     internal fun movableFromHand(destinationRow: Position): Boolean {
         return when(destinationRow){
             Position.PLAYER -> (cardsMovedFromHand.value < player.playDeck.getBaseCards().size)
                     && movableToPlayerRow()
             Position.CENTER -> (cardsMovedFromHand.value < player.playDeck.getBaseCards().size)
                     && movableToCenterRow()
+            Position.OPPONENT -> (cardsMovedFromHand.value < opponent.playDeck.getBaseCards().size)
+                    && movableToOpponentRow()
             else -> false
         }
     }
