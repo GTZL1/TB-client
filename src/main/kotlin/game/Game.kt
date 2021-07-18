@@ -120,6 +120,9 @@ class Game(
             cardsMovedFromHand.value += 1
         }
         card.changePosition(Position.OPPONENT)
+        if(playIA) {
+            cardsAlreadyActed.add(card.id)
+        }
     }
 
     fun cardToOpponentRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
@@ -445,7 +448,7 @@ class Game(
         return playerRowCards.size < playerRowCapacity
     }
 
-    internal fun movableToOpponentRow(): Boolean {
+    private fun movableToOpponentRow(): Boolean {
         return opponentRowCards.size < opponent.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
     }
 

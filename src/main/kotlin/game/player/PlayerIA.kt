@@ -9,6 +9,7 @@ import game.cards.types.HeroCardType
 import game.cards.types.VehicleCardType
 import game.decks.DeckType
 import game.notifyChangeTurn
+import io.mockk.InternalPlatformDsl.toStr
 
 class PlayerIA(cardTypes: List<CardType>) : Player(
     pseudo = "ANNA",
@@ -29,34 +30,46 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
     @Composable
     fun play(game: Game) {
         val fromHand = remember { mutableStateOf(true) }
+        val toCenter= remember { mutableStateOf(true) }
         LaunchedEffect(notifyChangeTurn(game)){
             fromHand.value=game.movableFromHand(Position.OPPONENT)
+            toCenter.value=game.movableToCenterRow()
             if (!game.playerTurn) {
-                while (fromHand.value && handCards.isNotEmpty()) {
-                    val vehicles = vehicles(handCards)
-                    while(vehicles.isNotEmpty() && fromHand.value){
-                        val cardToPlay = vehicles.removeFirst()
-                        game.cardToCenterRow(cardToPlay)
-                        handCards.remove(cardToPlay)
-                        fromHand.value = game.movableFromHand(Position.OPPONENT)
-                    }
-                    println(fromHand.value)
-                    val heroes = heroes(handCards)
-                    while(heroes.isNotEmpty() && fromHand.value){
-                        val cardToPlay = heroes.removeFirst()
-                        game.cardToOpponentRow(cardToPlay)
-                        handCards.remove(cardToPlay)
-                        fromHand.value = game.movableFromHand(Position.OPPONENT)
-                    }
-                    if(fromHand.value) {
-                        val cardToPlay = powerfulCards(handCards)
-                        game.cardToOpponentRow(cardToPlay)
-                        handCards.remove(cardToPlay)
-                    }
-                    fromHand.value = game.movableFromHand(Position.OPPONENT)
+                playCardFromHand(game, fromHand)
+
+                while(toCenter.value && playerRowCards(game).isNotEmpty()) {
+                    val cardToPlay = powerfulCards(playerRowCards(game))
+                    game.cardToCenterRow(cardToPlay)
+                    toCenter.value = game.movableToCenterRow()
                 }
+
                 game.startPlayerTurn()
             }
+        }
+    }
+
+    private fun playCardFromHand(game: Game, fromHand: MutableState<Boolean>) {
+        while (fromHand.value && handCards.isNotEmpty()) {
+            val vehicles = vehicles(handCards)
+            while(vehicles.isNotEmpty() && fromHand.value){
+                val cardToPlay = vehicles.removeFirst()
+                game.cardToCenterRow(cardToPlay)
+                handCards.remove(cardToPlay)
+                fromHand.value = game.movableFromHand(Position.OPPONENT)
+            }
+            val heroes = heroes(handCards)
+            while(heroes.isNotEmpty() && fromHand.value){
+                val cardToPlay = heroes.removeFirst()
+                game.cardToOpponentRow(cardToPlay)
+                handCards.remove(cardToPlay)
+                fromHand.value = game.movableFromHand(Position.OPPONENT)
+            }
+            if(fromHand.value) {
+                val cardToPlay = powerfulCards(handCards)
+                game.cardToOpponentRow(cardToPlay)
+                handCards.remove(cardToPlay)
+            }
+            fromHand.value = game.movableFromHand(Position.OPPONENT)
         }
     }
 
@@ -78,6 +91,15 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
         } catch (exception: NoSuchElementException) {
             mutableListOf()
         }
+    }
+
+    private fun playerRowCards(game: Game): List<PlayCard> {
+        return game.opponentRowCards.filter { playCard: PlayCard -> game.cardCanAct(playCard) &&
+            playCard.owner==this.pseudo }
+    }
+
+    private fun centerRowCards(game: Game): List<PlayCard> {
+        return game.centerRowCards.filter { playCard: PlayCard -> playCard.owner==this.pseudo }
     }
 }
 
