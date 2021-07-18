@@ -47,7 +47,8 @@ class DeckGUI(
     private val idSession: MutableState<Int>,
     private val httpClient: HttpClient,
     val cardTypes: List<CardType>,
-    decksList: List<DeckType>
+    decksList: List<DeckType>,
+    val playIA: MutableState<Boolean>
 ) {
     val decks = mutableStateListOf<DeckType>().apply { addAll(decksList) }
     val deck = mutableStateOf(decks.first())
@@ -207,12 +208,15 @@ fun DeckScreen(deckGUI: DeckGUI,
                         style = buttonFont
                     )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically,
+                Row(modifier = Modifier,
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center){
                     Text(text = "Play against IA ?",
                         style = miniFont)
-                    Switch(checked = false,
-                            onCheckedChange = {})
+                    Switch(checked = deckGUI.playIA.value,
+                            onCheckedChange = {checked: Boolean ->
+                                deckGUI.playIA.value = checked
+                            })
                 }
             }
         }

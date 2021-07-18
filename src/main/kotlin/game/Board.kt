@@ -36,9 +36,10 @@ import theme.discardCardFont
 import theme.miniFont
 
 @Composable
-fun Board(game: Game) {
-    LaunchedEffect(true) {
-        //game.receiveMessages()
+fun Board(game: Game,
+        playIA: Boolean) {
+    LaunchedEffect(playIA) {
+        if(!playIA) game.receiveMessages()
     }
 
     //Window content

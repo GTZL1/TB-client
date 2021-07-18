@@ -18,6 +18,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.math.abs
+import kotlin.random.Random
 
 interface TurnCallback {
     fun onChangeTurn()
@@ -31,6 +32,7 @@ class Game(
     private val cardTypes: List<CardType>,
     val player: Player,
     val opponent: Player,
+    private val playIA: Boolean = false,
     private val onEnding: (String, Boolean) -> Unit
 ) {
     private val turnCallback = mutableListOf<TurnCallback>()
@@ -243,10 +245,14 @@ class Game(
     }
 
     suspend fun determineFirst() {
-        val num = UUID.randomUUID().toString()
-        webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
-        val msg = webSocketHandler.receiveOne()
-        playerTurn = (num < msg.getString("type"))
+        playerTurn = if(!playIA){
+            val num = UUID.randomUUID().toString()
+            webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
+            val msg = webSocketHandler.receiveOne()
+            (num < msg.getString("type"))
+        } else {
+            Random.nextBoolean()
+        }
 
         initialization()
 
