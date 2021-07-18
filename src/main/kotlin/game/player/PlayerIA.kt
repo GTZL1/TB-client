@@ -28,7 +28,7 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
     }
 
     @Composable
-    fun play(game: Game) {
+    fun play(game: Game) = key(game){
         val fromHand = remember { mutableStateOf(true) }
         val toCenter= remember { mutableStateOf(true) }
         LaunchedEffect(notifyChangeTurn(game)){
@@ -41,6 +41,14 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
                     val cardToPlay = powerfulCards(playerRowCards(game))
                     game.cardToCenterRow(cardToPlay)
                     toCenter.value = game.movableToCenterRow()
+                }
+
+                while (centerRowCards(game).isNotEmpty() && game.playerBaseCards.isNotEmpty()) {
+                    val cardToPlay = powerfulCards(centerRowCards(game))
+                    game.applyAttack(attackerOwner = this@PlayerIA.pseudo,
+                                    attackerId = cardToPlay.id,
+                                    targetOwner = game.player.pseudo,
+                                    targetId = game.playerBaseCards.first().id)
                 }
 
                 game.startPlayerTurn()
@@ -93,13 +101,14 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
         }
     }
 
-    private fun playerRowCards(game: Game): List<PlayCard> {
+    private fun playerRowCards(game: Game, owner: String= this.pseudo): List<PlayCard> {
         return game.opponentRowCards.filter { playCard: PlayCard -> game.cardCanAct(playCard) &&
-            playCard.owner==this.pseudo }
+            playCard.owner==owner }
     }
 
-    private fun centerRowCards(game: Game): List<PlayCard> {
-        return game.centerRowCards.filter { playCard: PlayCard -> playCard.owner==this.pseudo }
+    private fun centerRowCards(game: Game, owner: String = this.pseudo): List<PlayCard> {
+        return game.centerRowCards.filter { playCard: PlayCard -> game.cardCanAct(playCard) &&
+            playCard.owner==owner }
     }
 }
 

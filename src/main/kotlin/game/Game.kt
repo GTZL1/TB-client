@@ -347,13 +347,14 @@ class Game(
         }
     }
 
-    private fun applyAttack(
+    internal fun applyAttack(
         attackerOwner: String,
         attackerId: Int,
         targetOwner: String,
         targetId: Int,
         specialPower: Boolean = false
     ) {
+        cardsAlreadyActed.add(attackerId)
         val attacker =
             filterCardsOwner(attackerOwner).first { playCard -> playCard.id == attackerId }
         val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id == targetId }
@@ -396,7 +397,6 @@ class Game(
                 //attacker is oldCard
                 if (canAttack(oldCard!!, card) || (oldCard!!.overrideDistanceAttack() && cardCanAct(oldCard!!))) {
                     try {
-                        cardsAlreadyActed.add(oldCard!!.id)
                         applyAttack(
                             attackerOwner = oldCard!!.owner,
                             attackerId = oldCard!!.id,
