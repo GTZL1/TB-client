@@ -99,7 +99,7 @@ class Game(
     fun cardToCenterRow(card: PlayCard) {
         centerRowCards.add(card)
         playerRowCards.remove(card)
-        if (handCards.remove(card)) {
+        if (handCards.remove(card) || ((card.owner == opponent.pseudo) && card.getPosition()==Position.HAND)) {
             cardsMovedFromHand.value += 1
         }
         opponentRowCards.remove(card)
@@ -116,7 +116,7 @@ class Game(
         opponentRowCards.add(card)
         centerRowCards.remove(card)
         //second condition used only when fighting IA
-        if (handCards.remove(card) || (card.owner==opponent.pseudo)) {
+        if (handCards.remove(card) || ((card.owner == opponent.pseudo) && card.getPosition()==Position.HAND)) {
             cardsMovedFromHand.value += 1
         }
         card.changePosition(Position.OPPONENT)

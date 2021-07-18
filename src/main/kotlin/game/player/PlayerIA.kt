@@ -5,6 +5,7 @@ import game.Game
 import game.Position
 import game.cards.plays.PlayCard
 import game.cards.types.CardType
+import game.cards.types.HeroCardType
 import game.cards.types.VehicleCardType
 import game.decks.DeckType
 import game.notifyChangeTurn
@@ -39,9 +40,20 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
                         handCards.remove(cardToPlay)
                         fromHand.value = game.movableFromHand(Position.OPPONENT)
                     }
-                    
-
-
+                    println(fromHand.value)
+                    val heroes = heroes(handCards)
+                    while(heroes.isNotEmpty() && fromHand.value){
+                        val cardToPlay = heroes.removeFirst()
+                        game.cardToOpponentRow(cardToPlay)
+                        handCards.remove(cardToPlay)
+                        fromHand.value = game.movableFromHand(Position.OPPONENT)
+                    }
+                    if(fromHand.value) {
+                        val cardToPlay = powerfulCards(handCards)
+                        game.cardToOpponentRow(cardToPlay)
+                        handCards.remove(cardToPlay)
+                    }
+                    fromHand.value = game.movableFromHand(Position.OPPONENT)
                 }
                 game.startPlayerTurn()
             }
@@ -55,6 +67,14 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
     private fun vehicles(cards: List<PlayCard>): MutableList<PlayCard> {
         return try {
             cards.filter { playCard: PlayCard -> playCard.cardType::class == VehicleCardType::class }.toMutableList()
+        } catch (exception: NoSuchElementException) {
+            mutableListOf()
+        }
+    }
+
+    private fun heroes(cards: List<PlayCard>): MutableList<PlayCard> {
+        return try {
+            cards.filter { playCard: PlayCard -> playCard.cardType::class == HeroCardType::class }.toMutableList()
         } catch (exception: NoSuchElementException) {
             mutableListOf()
         }
