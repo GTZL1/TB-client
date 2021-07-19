@@ -9,7 +9,6 @@ import game.cards.types.HeroCardType
 import game.cards.types.VehicleCardType
 import game.decks.DeckType
 import game.notifyChangeTurn
-import io.mockk.InternalPlatformDsl.toStr
 
 class PlayerIA(cardTypes: List<CardType>) : Player(
     pseudo = "ANNA",
@@ -37,14 +36,23 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
             if (!game.playerTurn) {
                 playCardFromHand(game, fromHand)
 
+                //move to center row movable cards
                 while(toCenter.value && playerRowCards(game).isNotEmpty()) {
-                    val cardToPlay = powerfulCards(playerRowCards(game))
+                    val cardToPlay = powerfulCard(playerRowCards(game))
                     game.cardToCenterRow(cardToPlay)
                     toCenter.value = game.movableToCenterRow()
                 }
+                //attack with remainings
+                while (playerRowCards(game).isNotEmpty() && centerRowCards(game, game.player.pseudo).isNotEmpty()) {
+                    val cardToPlay = powerfulCard(playerRowCards(game))
+                    game.applyAttack(attackerOwner = this@PlayerIA.pseudo,
+                                    attackerId = cardToPlay.id,
+                                    targetOwner = game.player.pseudo,
+                                    targetId = powerfulCard(centerRowCards(game, game.player.pseudo)).id)
+                }
 
                 while (centerRowCards(game).isNotEmpty() && game.playerBaseCards.isNotEmpty()) {
-                    val cardToPlay = powerfulCards(centerRowCards(game))
+                    val cardToPlay = powerfulCard(centerRowCards(game))
                     game.applyAttack(attackerOwner = this@PlayerIA.pseudo,
                                     attackerId = cardToPlay.id,
                                     targetOwner = game.player.pseudo,
@@ -73,7 +81,7 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
                 fromHand.value = game.movableFromHand(Position.OPPONENT)
             }
             if(fromHand.value) {
-                val cardToPlay = powerfulCards(handCards)
+                val cardToPlay = powerfulCard(handCards)
                 game.cardToOpponentRow(cardToPlay)
                 handCards.remove(cardToPlay)
             }
@@ -81,7 +89,7 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
         }
     }
 
-    private fun powerfulCards(cards: List<PlayCard>): PlayCard {
+    private fun powerfulCard(cards: List<PlayCard>): PlayCard {
         return cards.maxByOrNull { playCard: PlayCard -> playCard.cardType.attack }!!
     }
 
@@ -101,14 +109,13 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
         }
     }
 
-    private fun playerRowCards(game: Game, owner: String= this.pseudo): List<PlayCard> {
-        return game.opponentRowCards.filter { playCard: PlayCard -> game.cardCanAct(playCard) &&
-            playCard.owner==owner }
+    private fun playerRowCards(game: Game): List<PlayCard> {
+        return game.opponentRowCards.filter { playCard: PlayCard -> game.cardCanAct(playCard) }
     }
 
     private fun centerRowCards(game: Game, owner: String = this.pseudo): List<PlayCard> {
-        return game.centerRowCards.filter { playCard: PlayCard -> game.cardCanAct(playCard) &&
-            playCard.owner==owner }
+        return game.centerRowCards.filter { playCard: PlayCard ->
+                     if (playCard.owner==this.pseudo) game.cardCanAct(playCard) else playCard.owner == owner }
     }
 }
 
@@ -119,7 +126,7 @@ private fun createIADeck(cardTypes: MutableList<CardType>): Map<CardType, Short>
     val deck = powerfulCards.associateWith { cardType: CardType -> cardType.maxNumberInDeck.toShort() }.toMutableMap()
     deck += baseCards.associateWith { cardType: CardType -> cardType.maxNumberInDeck.toShort() }
 
-    while((deck.map{ (_, qty) -> qty}.sum() < Constants.MINIMAL_DECK_QUANTITY) && otherCards.isNotEmpty()){
+    while((deck.map{ (_, qty) -> qty}.sum() < Constants.MINIMAL_DECK_QUANTITY+ 4) && otherCards.isNotEmpty()){
         val card= otherCards.removeFirst()
         deck[card] = card.maxNumberInDeck.toShort()
     }
