@@ -7,7 +7,7 @@ import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
 import kotlin.reflect.KClass
 
-abstract class Power(val id: Int, val name: String) {
+abstract class Power(val id: Int,) {
     open val buttonIcon: String? = null
     open fun action(owner: HeroPlayCard,
                     target: PlayCard,
@@ -29,7 +29,7 @@ abstract class Power(val id: Int, val name: String) {
     }
 }
 
-class PrecisionStrikePower: Power(1, "PrecisionStrike") {
+class PrecisionStrikePower: Power(1,) {
     override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean {
@@ -41,7 +41,7 @@ class PrecisionStrikePower: Power(1, "PrecisionStrike") {
     }
 }
 
-class DistanceStrikePower: Power(2, "DistanceStrike") {
+class DistanceStrikePower: Power(2,) {
     override val buttonIcon = "distance strike.svg"
     private val distanceStrike= mutableStateOf(false)
 
@@ -68,7 +68,7 @@ class DistanceStrikePower: Power(2, "DistanceStrike") {
     }
 }
 
-class HealingPower: Power(3, "Healing") {
+class HealingPower: Power(3,) {
     override val buttonIcon = "healing.svg"
     override fun action(owner: HeroPlayCard,
                         target: PlayCard,
@@ -83,7 +83,7 @@ class HealingPower: Power(3, "Healing") {
 
 }
 
-class DoubleStrikePower: Power(4, "DoubleStrike") {
+class DoubleStrikePower: Power(4,) {
     override val buttonIcon = "double strike.svg"
     private val doubleStrike= mutableStateOf(true)
     override fun action(owner: HeroPlayCard,
@@ -104,7 +104,7 @@ class DoubleStrikePower: Power(4, "DoubleStrike") {
     }
 }
 
-class IncinerationPower: Power(5, "Incineration") {
+class IncinerationPower: Power(5,) {
     override val buttonIcon = "incineration.svg"
     override fun action(cards: List<PlayCard>,
                         onAction: (PlayCard) -> Unit): Boolean {
@@ -118,7 +118,7 @@ class IncinerationPower: Power(5, "Incineration") {
     }
 }
 
-class WhipStrikePower: Power(6, "Whipstrike") {
+class WhipStrikePower: Power(6,) {
     override val buttonIcon = "whip strike.svg"
     private val whipStrike= mutableStateOf(false)
 
