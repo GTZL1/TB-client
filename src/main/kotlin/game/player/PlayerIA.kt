@@ -42,7 +42,7 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
                     game.cardToCenterRow(cardToPlay)
                     toCenter.value = game.movableToCenterRow()
                 }
-                //attack with remainings
+                //attack center row cards with remainings
                 while (playerRowCards(game).isNotEmpty() && centerRowCards(game, game.player.pseudo).isNotEmpty()) {
                     val cardToPlay = powerfulCard(playerRowCards(game))
                     game.applyAttack(attackerOwner = this@PlayerIA.pseudo,
@@ -114,8 +114,8 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
     }
 
     private fun centerRowCards(game: Game, owner: String = this.pseudo): List<PlayCard> {
-        return game.centerRowCards.filter { playCard: PlayCard ->
-                     if (playCard.owner==this.pseudo) game.cardCanAct(playCard) else playCard.owner == owner }
+        val cards = game.centerRowCards.filter { playCard: PlayCard -> playCard.owner == owner }
+        return if(owner==this.pseudo) cards.filter { playCard -> game.cardCanAct(playCard) } else cards
     }
 }
 
