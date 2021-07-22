@@ -15,7 +15,7 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
     deckType = DeckType(
         id = -1,
         name = "default",
-        cardTypes = createIADeck(cardTypes.toMutableList()))//cardTypes.associateWith { 1.toShort() })
+        cardTypes = createIADeck(cardTypes.toMutableList()))
 ) {
     private val handCards = mutableStateListOf<PlayCard>()
 

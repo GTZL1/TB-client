@@ -125,7 +125,7 @@ class Game(
         }
     }
 
-    fun cardToOpponentRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
+    private fun cardToOpponentRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         cardToOpponentRow(card)
         notifyMovement(card, position, fromDeck)
     }

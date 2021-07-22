@@ -23,7 +23,7 @@ class WebSocketHandler {
     private val msgToSend = Channel<JSONObject>(Channel.UNLIMITED)
     val msgReceived = Channel<JSONObject>(Channel.UNLIMITED)
 
-    suspend fun initialize(onConnectionEstablished: () -> Unit) = coroutineScope<Unit> {
+    suspend fun initialize(onConnectionClosed: () -> Unit) = coroutineScope<Unit> {
         websocketHttpClient.webSocket(
             method = HttpMethod.Get,
             host = "localhost",
@@ -36,7 +36,7 @@ class WebSocketHandler {
             userInputRoutine.join() // Wait for completion; either "exit" or error
             messageOutputRoutine.cancelAndJoin()
 
-            onConnectionEstablished()
+            onConnectionClosed()
         }
     }
 
