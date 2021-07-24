@@ -7,6 +7,7 @@ import game.cards.types.BaseCardType
 import game.cards.types.CardType
 import game.cards.types.HeroCardType
 import game.player.Player
+import game.player.PlayerIA
 import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
@@ -135,10 +136,11 @@ class Game(
         playerRowCards.remove(card)
         centerRowCards.remove(card)
         opponentRowCards.remove(card)
-        playerBaseCards.remove(card)
         if(opponentBaseCards.remove(card)){
             //draw 2 cards when an opponent base is destroyed
             drawCards(Constants.NEW_CARDS_BASE_DESTROYED)
+        } else if(playerBaseCards.remove(card) && playIA) {
+            (opponent as PlayerIA).drawCards(Constants.NEW_CARDS_BASE_DESTROYED)
         }
 
         if(card.owner==player.pseudo) cardsAlreadyActed.remove(card.id) //necessary to the auto turn change

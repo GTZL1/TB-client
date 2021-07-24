@@ -117,6 +117,13 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
         val cards = game.centerRowCards.filter { playCard: PlayCard -> playCard.owner == owner }
         return if(owner==this.pseudo) cards.filter { playCard -> game.cardCanAct(playCard) } else cards
     }
+
+    internal fun drawCards(nbCards: Int) {
+        playDeck.drawMultipleCards(nbCards).forEach { pc: PlayCard ->
+            handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            handCards.last().changePosition(Position.HAND)
+        }
+    }
 }
 
 private fun createIADeck(cardTypes: MutableList<CardType>): Map<CardType, Short>{
