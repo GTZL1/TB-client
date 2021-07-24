@@ -73,7 +73,9 @@ class Game(
             playerBaseCards.add(newCard)
             playerBaseCards.last().changePosition(Position.PLAYER)
             newCard.changeId(player.nextId())
-            notifyNewId(player.pseudo, startId++, newCard.id)
+            if(!playIA){
+                notifyNewId(player.pseudo, startId++, newCard.id)
+            }
         }
         opponent.playDeck.getBaseCards().forEach { pc: PlayCard ->
             opponentBaseCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
@@ -90,11 +92,14 @@ class Game(
         centerRowCards.remove(card)
         card.changePosition(Position.PLAYER)
         cardsAlreadyActed.add(card.id)
+        checkChangeTurn()
     }
 
     fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false, position: Position, fromDeck: Boolean = false) {
         cardToPlayerRow(card, isSpy)
-        notifyMovement(card, position, fromDeck)
+        if(!playIA) {
+            notifyMovement(card, position, fromDeck)
+        }
     }
 
     fun cardToCenterRow(card: PlayCard) {
@@ -106,11 +111,12 @@ class Game(
         opponentRowCards.remove(card)
         card.changePosition(Position.CENTER)
         cardsAlreadyActed.add(card.id)
+        checkChangeTurn()
     }
 
     fun cardToCenterRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         cardToCenterRow(card)
-        notifyMovement(card, position, fromDeck)
+        if(!playIA) { notifyMovement(card, position, fromDeck) }
     }
 
     fun cardToOpponentRow(card: PlayCard) {
@@ -124,11 +130,12 @@ class Game(
         if(playIA) {
             cardsAlreadyActed.add(card.id)
         }
+        checkChangeTurn()
     }
 
     private fun cardToOpponentRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         cardToOpponentRow(card)
-        notifyMovement(card, position, fromDeck)
+        if(!playIA) notifyMovement(card, position, fromDeck)
     }
 
     private fun cardToDiscard(card: PlayCard) {
@@ -182,7 +189,6 @@ class Game(
                 )
             )
         )
-        checkChangeTurn()
     }
 
     private fun notifyAttack(attackerCard: PlayCard, targetCard: PlayCard, specialPower: Boolean = false) {
@@ -197,7 +203,6 @@ class Game(
                 )
             )
         )
-        checkChangeTurn()
     }
 
     private fun notifyNewId(owner: String, oldId: Int, newId: Int) {
@@ -214,9 +219,11 @@ class Game(
 
     internal fun endPlayerTurn() {
         if (playerTurn) {
-            webSocketHandler.sendMessage(
-                JSONObject(SimpleMessage(Constants.CHANGE_TURN))
-            )
+            if(!playIA) {
+                webSocketHandler.sendMessage(
+                    JSONObject(SimpleMessage(Constants.CHANGE_TURN))
+                )
+            }
             playerTurn = !playerTurn
             cardsAlreadyActed.clear()
             cardsMovedFromHand.value = 0
@@ -406,8 +413,9 @@ class Game(
                             targetId = card.id,
                             specialPower = powerAuthorization.value
                         )
-                        notifyAttack(oldCard!!, card, powerAuthorization.value)
+                        if(!playIA) { notifyAttack(oldCard!!, card, powerAuthorization.value) }
                         powerAuthorization.value = false
+                        checkChangeTurn()
                     } catch (t: Throwable) {
                         println(t.message)
                     }
@@ -487,9 +495,11 @@ class Game(
 
     private fun checkEnding(defeat: Boolean = false) {
         if (playerBaseCards.isEmpty() ||
-            filterCardsOwner(opponent.pseudo).filter { playCard: PlayCard ->
+            /*filterCardsOwner(opponent.pseudo).none { playCard: PlayCard ->
                 playCard.cardType::class == BaseCardType::class
-            }.isEmpty() || defeat) {
+            } */
+            opponentBaseCards.isEmpty()
+            || defeat) {
             val victory= if(defeat) false else (!playerBaseCards.isEmpty())
             try {
                 runBlocking{

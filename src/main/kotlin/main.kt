@@ -64,7 +64,7 @@ fun main() {
             state = state,
             resizable = true,
             onCloseRequest = {
-                if(screenState.value == Screen.BOARD) {
+                if(screenState.value == Screen.BOARD && game.value != null) {
                     game.value!!.sendDefeat()
                 }
                 login.logout()
@@ -143,6 +143,7 @@ fun main() {
                 }
                 Screen.BOARD -> {
                     LaunchedEffect(true) {
+                        println("create game, ia: "+ia.value)
                         val player = Player(
                             pseudo = username.value,
                             deckType = playerDeck.value!!
@@ -169,6 +170,7 @@ fun main() {
                         }
                         //not used if fighting IA
                         val opponentInfos = if(!ia.value) websocket.receiveOne() else JSONObject()
+
                         val g = Game(
                             date = LocalDateTime.now(),
                             webSocketHandler = websocket,
