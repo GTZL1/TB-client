@@ -58,7 +58,7 @@ fun main() {
         )
         val screenState = remember { mutableStateOf(Screen.LOGIN) }
         val game = remember { mutableStateOf<Game?>(null) }
-        val ia = remember { mutableStateOf(true) }
+        val ia = remember { mutableStateOf(false) }
         Window(
             title = "uPCb !!",
             state = state,
