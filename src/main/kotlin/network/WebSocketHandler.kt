@@ -14,16 +14,16 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class WebSocketHandler {
-    val websocketHttpClient = HttpClient {
+    private val websocketHttpClient = HttpClient {
         install(WebSockets)
         install(JsonFeature) {
             serializer = GsonSerializer()
         }
     }
-    val msgToSend = Channel<JSONObject>(Channel.UNLIMITED)
+    private val msgToSend = Channel<JSONObject>(Channel.UNLIMITED)
     val msgReceived = Channel<JSONObject>(Channel.UNLIMITED)
 
-    suspend fun initialize(onConnectionEstablished: () -> Unit) = coroutineScope<Unit> {
+    suspend fun initialize(onConnectionClosed: () -> Unit) = coroutineScope<Unit> {
         websocketHttpClient.webSocket(
             method = HttpMethod.Get,
             host = "localhost",
@@ -36,7 +36,7 @@ class WebSocketHandler {
             userInputRoutine.join() // Wait for completion; either "exit" or error
             messageOutputRoutine.cancelAndJoin()
 
-            onConnectionEstablished()
+            onConnectionClosed()
         }
     }
 
@@ -52,7 +52,7 @@ class WebSocketHandler {
         try {
             for (message in incoming) {
                 message as? Frame.Text ?: continue
-                if(message.readText().equals(Constants.EXIT_MESSAGE)){
+                if(message.readText() == Constants.EXIT_MESSAGE){
                     sendMessage(JSONObject(SimpleMessage(message.readText())))
                 } else {
                     msgReceived.send(JSONObject(message.readText()))

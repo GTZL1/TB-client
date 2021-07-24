@@ -47,7 +47,8 @@ class DeckGUI(
     private val idSession: MutableState<Int>,
     private val httpClient: HttpClient,
     val cardTypes: List<CardType>,
-    decksList: List<DeckType>
+    decksList: List<DeckType>,
+    val playIA: MutableState<Boolean>
 ) {
     val decks = mutableStateListOf<DeckType>().apply { addAll(decksList) }
     val deck = mutableStateOf(decks.first())
@@ -124,8 +125,7 @@ fun DeckScreen(deckGUI: DeckGUI,
     Column(
         modifier = Modifier.fillMaxSize()
     ){
-        Row(
-            modifier = Modifier.fillMaxWidth()
+        Row(modifier = Modifier.fillMaxWidth()
                 .height(100.dp)
                 .background(color = MaterialTheme.colors.primary)
                 .padding(20.dp),
@@ -167,7 +167,7 @@ fun DeckScreen(deckGUI: DeckGUI,
                     +" (min "+ TotalMinimum(deckGUI.cardsDeck) +")",
                     color = Color.White)
             }
-            Button(modifier = Modifier.height(50.dp).width(160.dp).padding(horizontal = 10.dp),
+            Button(modifier = Modifier.height(50.dp).width(160.dp).padding(end = 10.dp),
                 onClick = {
                     deckGUI.newDeck()
                 }){
@@ -175,7 +175,7 @@ fun DeckScreen(deckGUI: DeckGUI,
                     color = Color.White,
                     style = buttonFont)
             }
-            Button(modifier = Modifier.height(50.dp).padding(horizontal = 10.dp),
+            Button(modifier = Modifier.height(50.dp).padding(end = 10.dp),
                 enabled = deckGUI.decks.size > 1,
                 onClick = {
                     deckGUI.removeDeck()
@@ -184,7 +184,7 @@ fun DeckScreen(deckGUI: DeckGUI,
                     color = Color.White,
                     style = buttonFont)
             }
-            Button(modifier = Modifier.height(50.dp).width(160.dp),
+            Button(modifier = Modifier.height(50.dp).width(160.dp).padding(end = 10.dp),
                     enabled = Total(deckGUI.cardsDeck) >= TotalMinimum(deckGUI.cardsDeck),
                     onClick = {
                         deckGUI.saveDeckLocally()
@@ -194,15 +194,30 @@ fun DeckScreen(deckGUI: DeckGUI,
                         color = Color.White,
                         style = buttonFont)
             }
-            Button(modifier = Modifier.height(50.dp),
-                enabled = Total(deckGUI.cardsDeck) >= TotalMinimum(deckGUI.cardsDeck),
-                onClick = {
-                    deckGUI.saveDeckLocally()
-                    onSelect(deckGUI.deck.value)
-                }){
-                Text(text = "Select and play !",
-                    color = Color.White,
-                    style = buttonFont)
+            Column(modifier = Modifier.fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,){
+                Button(modifier = Modifier.height(50.dp).padding(bottom = 5.dp),
+                    enabled = Total(deckGUI.cardsDeck) >= TotalMinimum(deckGUI.cardsDeck),
+                    onClick = {
+                        deckGUI.saveDeckLocally()
+                        onSelect(deckGUI.deck.value)
+                    }) {
+                    Text(
+                        text = "Select and play !",
+                        color = Color.White,
+                        style = buttonFont
+                    )
+                }
+                Row(modifier = Modifier,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center){
+                    Text(text = "Play against IA ?",
+                        style = miniFont)
+                    Switch(checked = deckGUI.playIA.value,
+                            onCheckedChange = {checked: Boolean ->
+                                deckGUI.playIA.value = checked
+                            })
+                }
             }
         }
         Row(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.72f)

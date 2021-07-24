@@ -18,6 +18,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.math.abs
+import kotlin.random.Random
 
 interface TurnCallback {
     fun onChangeTurn()
@@ -31,6 +32,7 @@ class Game(
     private val cardTypes: List<CardType>,
     val player: Player,
     val opponent: Player,
+    private val playIA: Boolean = false,
     private val onEnding: (String, Boolean) -> Unit
 ) {
     private val turnCallback = mutableListOf<TurnCallback>()
@@ -53,7 +55,7 @@ class Game(
 
     internal var cardsMovedFromHand = mutableStateOf(0)
 
-    val playerRowCapacity =
+    private val playerRowCapacity =
         player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
 
     internal var delay = mutableStateOf(Constants.MOVEMENT_DELAY)
@@ -97,7 +99,7 @@ class Game(
     fun cardToCenterRow(card: PlayCard) {
         centerRowCards.add(card)
         playerRowCards.remove(card)
-        if (handCards.remove(card)) {
+        if (handCards.remove(card) || ((card.owner == opponent.pseudo) && card.getPosition()==Position.HAND)) {
             cardsMovedFromHand.value += 1
         }
         opponentRowCards.remove(card)
@@ -113,13 +115,17 @@ class Game(
     fun cardToOpponentRow(card: PlayCard) {
         opponentRowCards.add(card)
         centerRowCards.remove(card)
-        if (handCards.remove(card)) {
+        //second condition used only when fighting IA
+        if (handCards.remove(card) || ((card.owner == opponent.pseudo) && card.getPosition()==Position.HAND)) {
             cardsMovedFromHand.value += 1
         }
         card.changePosition(Position.OPPONENT)
+        if(playIA) {
+            cardsAlreadyActed.add(card.id)
+        }
     }
 
-    fun cardToOpponentRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
+    private fun cardToOpponentRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         cardToOpponentRow(card)
         notifyMovement(card, position, fromDeck)
     }
@@ -204,7 +210,7 @@ class Game(
         )
     }
 
-    internal fun changeTurn() {
+    internal fun endPlayerTurn() {
         if (playerTurn) {
             webSocketHandler.sendMessage(
                 JSONObject(SimpleMessage(Constants.CHANGE_TURN))
@@ -221,21 +227,35 @@ class Game(
                     playCard.cardType::class == HeroCardType::class
                 }.forEach { playCard: PlayCard -> (playCard as HeroPlayCard).heroCardType.power.reset() }
             } catch (t: Throwable){
+                println(t.message)
             }
 
             if (this::delayJob.isInitialized) {
                 delayJob.cancel()
             }
-
             turnCallback.forEach { it.onChangeTurn() }
         }
     }
 
+    internal fun startPlayerTurn() {
+        playerTurn = !playerTurn
+        cardsAlreadyActed.clear()
+        cardsMovedFromHand.value = 0
+        checkChangeTurn()
+        checkTimerTurn()
+
+        turnCallback.forEach { it.onChangeTurn() }
+    }
+
     suspend fun determineFirst() {
-        val num = UUID.randomUUID().toString()
-        webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
-        val msg = webSocketHandler.receiveOne()
-        playerTurn = (num < msg.getString("type"))
+        playerTurn = if(!playIA){
+            val num = UUID.randomUUID().toString()
+            webSocketHandler.sendMessage(JSONObject(SimpleMessage(num)))
+            val msg = webSocketHandler.receiveOne()
+            (num < msg.getString("type"))
+        } else {
+            Random.nextBoolean()
+        }
 
         initialization()
 
@@ -247,7 +267,7 @@ class Game(
         if (playerTurn && ((cardsMovedFromHand.value == (player.playDeck.getBaseCards().size)) || handCards.isEmpty())
             && (cardsAlreadyActed.size == (filterCardsOwner(player.pseudo).size - playerBaseCards.size))
         ) {
-            changeTurn()
+            endPlayerTurn()
         }
     }
 
@@ -261,7 +281,7 @@ class Game(
             }
 
             if (playerTurn) {
-                changeTurn()
+                endPlayerTurn()
             }
         }
     }
@@ -279,12 +299,7 @@ class Game(
                     )
                 }
                 Constants.CHANGE_TURN -> {
-                    playerTurn = !playerTurn
-                    cardsAlreadyActed.clear()
-                    cardsMovedFromHand.value = 0
-                    checkChangeTurn()
-                    checkTimerTurn()
-                    turnCallback.forEach { it.onChangeTurn() }
+                    startPlayerTurn()
                 }
                 Constants.CARD_ATTACK -> {
                     applyAttack(
@@ -332,13 +347,14 @@ class Game(
         }
     }
 
-    private fun applyAttack(
+    internal fun applyAttack(
         attackerOwner: String,
         attackerId: Int,
         targetOwner: String,
         targetId: Int,
         specialPower: Boolean = false
     ) {
+        cardsAlreadyActed.add(attackerId)
         val attacker =
             filterCardsOwner(attackerOwner).first { playCard -> playCard.id == attackerId }
         val target = filterCardsOwner(targetOwner).first { playCard -> playCard.id == targetId }
@@ -381,7 +397,6 @@ class Game(
                 //attacker is oldCard
                 if (canAttack(oldCard!!, card) || (oldCard!!.overrideDistanceAttack() && cardCanAct(oldCard!!))) {
                     try {
-                        cardsAlreadyActed.add(oldCard!!.id)
                         applyAttack(
                             attackerOwner = oldCard!!.owner,
                             attackerId = oldCard!!.id,
@@ -433,12 +448,18 @@ class Game(
         return playerRowCards.size < playerRowCapacity
     }
 
+    private fun movableToOpponentRow(): Boolean {
+        return opponentRowCards.size < opponent.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
+    }
+
     internal fun movableFromHand(destinationRow: Position): Boolean {
         return when(destinationRow){
             Position.PLAYER -> (cardsMovedFromHand.value < player.playDeck.getBaseCards().size)
                     && movableToPlayerRow()
             Position.CENTER -> (cardsMovedFromHand.value < player.playDeck.getBaseCards().size)
                     && movableToCenterRow()
+            Position.OPPONENT -> (cardsMovedFromHand.value < opponent.playDeck.getBaseCards().size)
+                    && movableToOpponentRow()
             else -> false
         }
     }
@@ -466,8 +487,7 @@ class Game(
         if (playerBaseCards.isEmpty() ||
             filterCardsOwner(opponent.pseudo).filter { playCard: PlayCard ->
                 playCard.cardType::class == BaseCardType::class
-            }.isEmpty() ||
-            defeat) {
+            }.isEmpty() || defeat) {
             val victory= if(defeat) false else (!playerBaseCards.isEmpty())
             try {
                 runBlocking{

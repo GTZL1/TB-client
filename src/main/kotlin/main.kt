@@ -1,22 +1,24 @@
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
+import io.mockk.*;
 import game.*
 import game.cards.types.*
 import game.decks.DeckGUI
 import game.decks.DeckScreen
 import game.decks.DeckType
 import game.player.Player
+import game.player.PlayerIA
 import game.screens.GameHistory
 import game.screens.HistoryScreen
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import network.Login
 import network.PlayerInitialization
 import network.SimpleMessage
@@ -45,6 +47,9 @@ fun main() {
 
     lateinit var cardTypes: List<CardType>
     lateinit var login: Login
+    val websocket = WebSocketHandler()
+    //val webSocketMock = mockk<WebSocketHandler>(relaxUnitFun = true)
+    //coEvery { websocket.receiveOne() } returns JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE))
 
     application {
         val state = rememberWindowState(
@@ -53,6 +58,7 @@ fun main() {
         )
         val screenState = remember { mutableStateOf(Screen.LOGIN) }
         val game = remember { mutableStateOf<Game?>(null) }
+        val ia = remember { mutableStateOf(false) }
         Window(
             title = "uPCb !!",
             state = state,
@@ -82,7 +88,6 @@ fun main() {
                 )
             }
 
-            val websocket = WebSocketHandler()
             when (screenState.value) {
                 Screen.LOGIN -> {
                     login.LoginScreen()
@@ -121,7 +126,8 @@ fun main() {
                             idSession = idSession,
                             httpClient = httpClient,
                             cardTypes = cardTypes,
-                            decksList = login.generateDecks(cardTypes)
+                            decksList = login.generateDecks(cardTypes),
+                            playIA = ia
                         )
                         deckGUI.value = dG
                     }
@@ -137,29 +143,32 @@ fun main() {
                 }
                 Screen.BOARD -> {
                     LaunchedEffect(true) {
-                        launch {
-                            websocket.initialize {
-                                run {
-                                    game.value = null
-                                    screenState.value = Screen.DECK
-                                }
-                            }
-                        }
                         val player = Player(
                             pseudo = username.value,
                             deckType = playerDeck.value!!
                         )
-                        websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
-                        websocket.receiveOne()
-                        websocket.sendMessage(
-                            JSONObject(
-                                PlayerInitialization(
-                                    username = username.value,
-                                    deckType = player.deckType.serializeBases()
+                        if(!ia.value){
+                            launch {
+                                websocket.initialize {
+                                    run {
+                                        game.value = null
+                                        screenState.value = Screen.DECK
+                                    }
+                                }
+                            }
+                            websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
+                            websocket.receiveOne()
+                            websocket.sendMessage(
+                                JSONObject(
+                                    PlayerInitialization(
+                                        username = username.value,
+                                        deckType = player.deckType.serializeBases()
+                                    )
                                 )
                             )
-                        )
-                        val opponentDeck = websocket.receiveOne()
+                        }
+                        //not used if fighting IA
+                        val opponentInfos = if(!ia.value) websocket.receiveOne() else JSONObject()
                         val g = Game(
                             date = LocalDateTime.now(),
                             webSocketHandler = websocket,
@@ -167,13 +176,17 @@ fun main() {
                             idSession = idSession,
                             cardTypes = cardTypes,
                             player = player,
-                            opponent = Player(
-                                pseudo = opponentDeck.getString("username"),
-                                deckType = login.generateDeck(
-                                    cardTypes,
-                                    opponentDeck.getJSONObject("deckType")
-                                )
-                            ),
+                            opponent = if(!ia.value) {
+                                            Player(
+                                                pseudo = opponentInfos.getString("username"),
+                                                deckType = login.generateDeck(
+                                                    cardTypes,
+                                                    opponentInfos.getJSONObject("deckType"))
+                                            )
+                                        } else {
+                                            PlayerIA(cardTypes)
+                                        },
+                            playIA = ia.value,
                             onEnding = { oppName: String, vic: Boolean ->
                                 opponentName.value = oppName
                                 victory.value = vic
@@ -186,7 +199,9 @@ fun main() {
                     }
                     val currentGame = game.value
                     if (currentGame != null) {
-                        Board(currentGame)
+                        Board(game = currentGame,
+                                playIA = ia.value)
+                        if(ia.value) (currentGame.opponent as PlayerIA).play(currentGame)
                     }
                 }
                 Screen.ENDING -> {

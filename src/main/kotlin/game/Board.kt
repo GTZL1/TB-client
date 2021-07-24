@@ -36,13 +36,12 @@ import theme.discardCardFont
 import theme.miniFont
 
 @Composable
-fun Board(game: Game) {
-    val playerRowCapacity =
-        game.player.playDeck.getBaseCards().size * Constants.PLAYER_ROW_CAPACITY
-
-    LaunchedEffect(true) {
-        game.receiveMessages()
+fun Board(game: Game,
+        playIA: Boolean) {
+    LaunchedEffect(playIA) {
+        if(!playIA) game.receiveMessages()
     }
+
     //Window content
     Row() {
         //Infos on the side
@@ -65,7 +64,7 @@ fun Board(game: Game) {
             ) {
                 Button(
                     modifier = Modifier.size(Constants.STATS_BOX_WIDTH.dp),
-                    onClick = { game.changeTurn() },
+                    onClick = { game.endPlayerTurn() },
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = if (notifyChangeTurn(game)) Color.Green else Color.Red,
