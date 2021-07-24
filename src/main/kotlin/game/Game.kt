@@ -323,6 +323,8 @@ class Game(
                     if(opponent.pseudo == msg.getString("owner")){
                         filterCardsOwner(opponent.pseudo).first { playCard ->
                             playCard.id == msg.getInt("oldId") }.changeId(msg.getInt("newId"))
+                        opponent.playDeck.currentCardId=msg.getInt("newId")
+                        println(player.pseudo+" set "+opponent.playDeck.currentCardId+" to "+opponent.pseudo)
                     }
                 }
             }
@@ -501,6 +503,7 @@ class Game(
             opponentBaseCards.isEmpty()
             || defeat) {
             val victory= if(defeat) false else (!playerBaseCards.isEmpty())
+            stopGame()
             try {
                 runBlocking{
                     httpClient.request<String> {
@@ -528,6 +531,10 @@ class Game(
 
     fun sendDefeat(){
         checkEnding(true)
+    }
+
+    fun stopGame() {
+        delayJob.cancel()
     }
 
     private fun tryIncinerationPower(card: PlayCard, targetOwner: String) {

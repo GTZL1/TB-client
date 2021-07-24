@@ -5,7 +5,7 @@ import game.cards.types.BaseCardType
 import java.lang.IndexOutOfBoundsException
 import kotlin.random.Random
 
-class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>, private var currentCardId: Int) {
+class PlayDeck(val name: String, private val cards: ArrayList<PlayCard>, var currentCardId: Int) {
     private val baseCards: List<PlayCard> = cards.filter { pc -> pc::class==BasePlayCard::class}
 
     init {

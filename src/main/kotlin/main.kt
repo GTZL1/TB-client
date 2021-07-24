@@ -151,6 +151,7 @@ fun main() {
                             launch {
                                 websocket.initialize {
                                     run {
+                                        if(game.value != null) game.value!!.stopGame()
                                         game.value = null
                                         screenState.value = Screen.DECK
                                     }
