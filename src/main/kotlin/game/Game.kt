@@ -92,7 +92,6 @@ class Game(
         centerRowCards.remove(card)
         card.changePosition(Position.PLAYER)
         cardsAlreadyActed.add(card.id)
-        checkChangeTurn()
     }
 
     fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false, position: Position, fromDeck: Boolean = false) {
@@ -100,6 +99,7 @@ class Game(
         if(!playIA) {
             notifyMovement(card, position, fromDeck)
         }
+        checkChangeTurn()
     }
 
     fun cardToCenterRow(card: PlayCard) {
@@ -111,12 +111,12 @@ class Game(
         opponentRowCards.remove(card)
         card.changePosition(Position.CENTER)
         cardsAlreadyActed.add(card.id)
-        checkChangeTurn()
     }
 
     fun cardToCenterRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         cardToCenterRow(card)
         if(!playIA) { notifyMovement(card, position, fromDeck) }
+        checkChangeTurn()
     }
 
     fun cardToOpponentRow(card: PlayCard) {
@@ -130,12 +130,12 @@ class Game(
         if(playIA) {
             cardsAlreadyActed.add(card.id)
         }
-        checkChangeTurn()
     }
 
     private fun cardToOpponentRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         cardToOpponentRow(card)
         if(!playIA) notifyMovement(card, position, fromDeck)
+        checkChangeTurn()
     }
 
     private fun cardToDiscard(card: PlayCard) {

@@ -143,7 +143,6 @@ fun main() {
                 }
                 Screen.BOARD -> {
                     LaunchedEffect(true) {
-                        println("create game, ia: "+ia.value)
                         val player = Player(
                             pseudo = username.value,
                             deckType = playerDeck.value!!
