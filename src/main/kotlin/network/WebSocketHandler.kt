@@ -1,6 +1,7 @@
 package network
 
 import Constants
+import androidx.compose.runtime.MutableState
 import game.Position
 import io.ktor.client.*
 import io.ktor.client.features.json.*
@@ -14,7 +15,10 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-class WebSocketHandler {
+class WebSocketHandler(
+    private val serverUrl: MutableState<String>,
+   private val serverPort: MutableState<String>
+) {
     private val websocketHttpClient = HttpClient {
         install(WebSockets)
         install(JsonFeature) {
@@ -27,8 +31,8 @@ class WebSocketHandler {
     suspend fun initialize(onConnectionClosed: () -> Unit) = coroutineScope<Unit> {
         websocketHttpClient.webSocket(
             method = HttpMethod.Get,
-            host = "localhost",
-            port = System.getenv("TB_SERVER_PORT").toInt(),
+            host = serverUrl.value,
+            port = serverPort.value.toInt(),
             path = "/plop"
         ) {
             val messageOutputRoutine = launch { outputMessages() }

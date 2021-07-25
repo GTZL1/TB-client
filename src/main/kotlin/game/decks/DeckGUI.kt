@@ -46,6 +46,8 @@ import kotlin.collections.sum
 class DeckGUI(
     private val idSession: MutableState<Int>,
     private val httpClient: HttpClient,
+    private val serverUrl: MutableState<String>,
+    private val serverPort: MutableState<String>,
     val cardTypes: List<CardType>,
     decksList: List<DeckType>,
     val playIA: MutableState<Boolean>
@@ -62,7 +64,7 @@ class DeckGUI(
         try {
             val response = JSONObject(runBlocking {
                 httpClient.request<String> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/decks")
+                    url("http://"+serverUrl.value+":"+serverPort.value+"/decks")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -83,7 +85,7 @@ class DeckGUI(
         try {
             runBlocking {
                 httpClient.request<String> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/decks")
+                    url("http://"+serverUrl.value+":"+serverPort.value+"/decks")
                     headers {
                         append("Content-Type", "application/json")
                     }

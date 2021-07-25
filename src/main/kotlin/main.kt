@@ -47,9 +47,7 @@ fun main() {
 
     lateinit var cardTypes: List<CardType>
     lateinit var login: Login
-    val websocket = WebSocketHandler()
-    //val webSocketMock = mockk<WebSocketHandler>(relaxUnitFun = true)
-    //coEvery { websocket.receiveOne() } returns JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE))
+    var websocket: WebSocketHandler? = null
 
     application {
         val state = rememberWindowState(
@@ -59,6 +57,13 @@ fun main() {
         val screenState = remember { mutableStateOf(Screen.LOGIN) }
         val game = remember { mutableStateOf<Game?>(null) }
         val ia = remember { mutableStateOf(false) }
+
+        val serverUrl = remember { mutableStateOf("localhost") }
+        val serverPort = remember { mutableStateOf("2077") }
+        if(websocket == null) {
+            websocket=WebSocketHandler(serverUrl = serverUrl, serverPort = serverPort)
+        }
+
         Window(
             title = "uPCb !!",
             state = state,
@@ -84,7 +89,9 @@ fun main() {
                     httpClient = httpClient,
                     onRightLogin = { screenState.value = Screen.INTERMEDIATE },
                     idSession = idSession,
-                    playerPseudo = username
+                    playerPseudo = username,
+                    serverUrl = serverUrl,
+                    serverPort = serverPort
                 )
             }
 
@@ -109,7 +116,9 @@ fun main() {
                             idSession = idSession.value,
                             httpClient = httpClient,
                             username = username.value,
-                            onBack = { screenState.value = Screen.INTERMEDIATE }
+                            onBack = { screenState.value = Screen.INTERMEDIATE },
+                            serverUrl = serverUrl,
+                            serverPort = serverPort
                         )
                     }
                     val currentGameHistory = gameHistory.value
@@ -125,6 +134,8 @@ fun main() {
                         val dG = DeckGUI(
                             idSession = idSession,
                             httpClient = httpClient,
+                            serverUrl = serverUrl,
+                            serverPort = serverPort,
                             cardTypes = cardTypes,
                             decksList = login.generateDecks(cardTypes),
                             playIA = ia
@@ -149,7 +160,7 @@ fun main() {
                         )
                         if(!ia.value){
                             launch {
-                                websocket.initialize {
+                                websocket!!.initialize {
                                     run {
                                         if(game.value != null) game.value!!.stopGame()
                                         game.value = null
@@ -157,9 +168,9 @@ fun main() {
                                     }
                                 }
                             }
-                            websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
-                            websocket.receiveOne()
-                            websocket.sendMessage(
+                            websocket!!.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
+                            websocket!!.receiveOne()
+                            websocket!!.sendMessage(
                                 JSONObject(
                                     PlayerInitialization(
                                         username = username.value,
@@ -169,12 +180,14 @@ fun main() {
                             )
                         }
                         //not used if fighting IA
-                        val opponentInfos = if(!ia.value) websocket.receiveOne() else JSONObject()
+                        val opponentInfos = if(!ia.value) websocket!!.receiveOne() else JSONObject()
 
                         val g = Game(
                             date = LocalDateTime.now(),
-                            webSocketHandler = websocket,
+                            webSocketHandler = websocket!!,
                             httpClient = httpClient,
+                            serverUrl = serverUrl,
+                            serverPort = serverPort,
                             idSession = idSession,
                             cardTypes = cardTypes,
                             player = player,

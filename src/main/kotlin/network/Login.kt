@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
+import theme.menuFont
 import theme.quantityFont
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findParameterByName
@@ -30,22 +31,23 @@ class Login(
     private val idSession: MutableState<Int>,
     private val playerPseudo: MutableState<String>,
     private val onRightLogin: (() -> Unit),
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
+    private val serverUrl: MutableState<String>,
+    private val serverPort: MutableState<String>
 ) {
     @Composable
     fun LoginScreen(
         modifier: Modifier = Modifier,
     ) {
         val scope = rememberCoroutineScope()
-        Row(
+        Box(
             modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
         ) {
             val password = remember { mutableStateOf(("")) }
             val errorText = remember { mutableStateOf("")}
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally) {
                 TextField(
                     value = playerPseudo.value,
                     modifier = modifier,
@@ -76,6 +78,26 @@ class Login(
                     Text(text = "Login")
                 }
             }
+
+            Row(modifier = Modifier.align(Alignment.TopEnd)
+                .padding(10.dp),
+                verticalAlignment = Alignment.Bottom){
+                Text(text = "Server URL and port",
+                    modifier = Modifier.padding(end = 5.dp),
+                    style = quantityFont)
+                TextField(
+                    value = serverUrl.value,
+                    modifier = Modifier.width(150.dp),
+                    onValueChange = { serverUrl.value = it },
+                )
+                Text(text = ":",
+                    style = quantityFont)
+                TextField(
+                    value = serverPort.value,
+                    modifier = Modifier.width(100.dp),
+                    onValueChange = { serverPort.value = it },
+                )
+            }
         }
     }
 
@@ -89,7 +111,7 @@ class Login(
     ) {
         try {
             val response = httpClient.request<LoginResponse> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/login")
+                    url("http://"+serverUrl.value+":"+serverPort.value+"/login")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -110,7 +132,7 @@ class Login(
         try {
             JSONObject(runBlocking {
                 httpClient.request<String> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/logout")
+                    url("http://"+serverUrl.value+":"+serverPort.value+"/logout")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -126,7 +148,7 @@ class Login(
         try {
             val response = JSONObject(
                 httpClient.request<String> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/cards")
+                    url("http://"+serverUrl.value+":"+serverPort.value+"/cards")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -144,7 +166,7 @@ class Login(
         try {
             val response = JSONArray(
                     httpClient.request<String> {
-                        url(System.getenv("TB_SERVER_URL") + ":" + System.getenv("TB_SERVER_PORT") + "/decks")
+                        url("http://"+serverUrl.value+":"+serverPort.value+ "/decks")
                         headers {
                             append("Content-Type", "application/json")
                         }

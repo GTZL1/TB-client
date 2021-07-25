@@ -29,6 +29,8 @@ class Game(
     private val date: LocalDateTime,
     private val webSocketHandler: WebSocketHandler,
     private val httpClient: HttpClient,
+    private val serverUrl: MutableState<String>,
+    private val serverPort: MutableState<String>,
     private val idSession: MutableState<Int>,
     private val cardTypes: List<CardType>,
     val player: Player,
@@ -522,7 +524,7 @@ class Game(
             try {
                 runBlocking{
                     httpClient.request<String> {
-                        url(System.getenv("TB_SERVER_URL") + ":" + System.getenv("TB_SERVER_PORT") + "/game")
+                        url("http://"+serverUrl.value + ":" + serverPort.value + "/game")
                         headers {
                             append("Content-Type", "application/json")
                         }
