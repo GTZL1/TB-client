@@ -12,6 +12,7 @@ object Constants {
     const val CARD_MOVEMENT = "movement"
     const val CARD_ATTACK = "attack"
     const val CHANGE_TURN="turn"
+    const val ENDGAME = "endgame"
     const val EXIT_MESSAGE = "exit"
     const val NEW_ID_MESSAGE = "new id"
 

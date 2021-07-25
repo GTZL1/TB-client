@@ -43,6 +43,7 @@ class Game(
     private var powerAuthorization = mutableStateOf(false)
 
     internal var playerTurn = false
+    private var opponentEnded = false
 
     val handCards = mutableStateListOf<PlayCard>()
     val playerRowCards = mutableStateListOf<PlayCard>()
@@ -217,6 +218,12 @@ class Game(
         )
     }
 
+    private fun notifyEndGame() {
+        webSocketHandler.sendMessage(
+            JSONObject(SimpleMessage(Constants.ENDGAME))
+        )
+    }
+
     internal fun endPlayerTurn() {
         if (playerTurn) {
             if(!playIA) {
@@ -326,6 +333,9 @@ class Game(
                         opponent.playDeck.currentCardId=msg.getInt("newId")
                         println(player.pseudo+" set "+opponent.playDeck.currentCardId+" to "+opponent.pseudo)
                     }
+                }
+                Constants.ENDGAME -> {
+                    opponentEnded = true
                 }
             }
         }
@@ -497,12 +507,17 @@ class Game(
 
     private fun checkEnding(defeat: Boolean = false) {
         if (playerBaseCards.isEmpty() ||
-            /*filterCardsOwner(opponent.pseudo).none { playCard: PlayCard ->
-                playCard.cardType::class == BaseCardType::class
-            } */
-            opponentBaseCards.isEmpty()
+            opponentBaseCards.isEmpty() ||
+            (handCards.isEmpty() && opponentEnded)
             || defeat) {
-            val victory= if(defeat) false else (!playerBaseCards.isEmpty())
+            val victory= if(defeat) {
+                            false
+                        } else if ((handCards.isEmpty() && opponentEnded)){
+                            playerBaseCards.sumOf { selector -> selector.getHealth() } > opponentBaseCards.sumOf { selector -> selector.getHealth() }
+                        }
+                        else {
+                            (!playerBaseCards.isEmpty())
+                        }
             stopGame()
             try {
                 runBlocking{
@@ -526,6 +541,8 @@ class Game(
                 println(exception.message)
             }
             onEnding(opponent.pseudo, victory)
+        } else if (playerRowCards.isEmpty() && centerRowCards.isEmpty() && opponentRowCards.isEmpty() && handCards.isEmpty()) {
+            notifyEndGame()
         }
     }
 
