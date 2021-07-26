@@ -21,10 +21,16 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.random.Random
 
+/**
+ * Used to notify turn change to the board
+ */
 interface TurnCallback {
     fun onChangeTurn()
 }
 
+/**
+ * Store game state and execute actions to change it
+ */
 class Game(
     private val date: LocalDateTime,
     private val webSocketHandler: WebSocketHandler,
@@ -86,6 +92,11 @@ class Game(
         }
     }
 
+    /**
+     * Move a card to player row
+     * @card [PlayCard] to move
+     * @isSpy if card is a [SpyPlayCard]
+     */
     fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false) {
         playerRowCards.add(card)
         if (!isSpy && handCards.remove(card)) {
@@ -97,14 +108,25 @@ class Game(
         cardsAlreadyActed.add(card.id)
     }
 
+    /**
+     * Move a card to player row and notifies opponent using websocket
+     * @card [PlayCard] to move
+     * @isSpy if card is a [SpyPlayCard]
+     * @position new [Position] of the card
+     * @fromDeck if the card comes from the deck or not
+     */
     fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false, position: Position, fromDeck: Boolean = false) {
         cardToPlayerRow(card, isSpy)
         if(!playIA) {
-            notifyMovement(card, position, fromDeck)
+            notifyMovement(card, Position.PLAYER, fromDeck)
         }
         checkChangeTurn()
     }
 
+    /**
+     * Move a card to center row
+     * @card [PlayCard] to move
+     */
     fun cardToCenterRow(card: PlayCard) {
         centerRowCards.add(card)
         playerRowCards.remove(card)
@@ -116,9 +138,15 @@ class Game(
         cardsAlreadyActed.add(card.id)
     }
 
+    /**
+     * Move a card to center row and notifies opponent using websocket
+     * @card [PlayCard] to move
+     * @position new [Position] of the card
+     * @fromDeck if the card comes from the deck or not
+     */
     fun cardToCenterRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         cardToCenterRow(card)
-        if(!playIA) { notifyMovement(card, position, fromDeck) }
+        if(!playIA) { notifyMovement(card, Position.CENTER, fromDeck) }
         checkChangeTurn()
     }
 

@@ -4,8 +4,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
-import io.mockk.*;
-import game.*
+import game.Board
+import game.EndingScreen
+import game.Game
+import game.IntermediateScreen
 import game.cards.types.*
 import game.decks.DeckGUI
 import game.decks.DeckScreen
@@ -18,7 +20,6 @@ import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import network.Login
 import network.PlayerInitialization
 import network.SimpleMessage
@@ -27,6 +28,9 @@ import org.json.JSONObject
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
 
+/**
+ * Manage states of the app
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     System.setProperty("skiko.renderApi", "OPENGL")
@@ -37,6 +41,7 @@ fun main() {
         }
     }
 
+    //used to assign a constructor to a PlayCard subclass
     val cardClasses = listOf<Pair<String, KClass<out CardType>>>(
         Pair("hero", HeroCardType::class),
         Pair("unit", UnitCardType::class),
@@ -47,8 +52,8 @@ fun main() {
 
     lateinit var cardTypes: List<CardType>
     lateinit var login: Login
-    //var websocket: WebSocketHandler? = null
 
+    // In application, it is a Composable scope
     application {
         val state = rememberWindowState(
             size = WindowSize(Constants.WINDOW_WIDTH.dp, Constants.WINDOW_HEIGHT.dp),
@@ -59,9 +64,6 @@ fun main() {
         val ia = remember { mutableStateOf(false) }
 
         val serverUrl = remember { mutableStateOf("localhost") }
-        /*if(websocket == null) {
-            websocket=WebSocketHandler(serverUrl = serverUrl,)
-        }*/
 
         Window(
             title = "uPCb !!",
@@ -93,6 +95,7 @@ fun main() {
                 )
             }
 
+            //switches between different screen states
             when (screenState.value) {
                 Screen.LOGIN -> {
                     login.LoginScreen()
