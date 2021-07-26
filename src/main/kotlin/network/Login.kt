@@ -33,7 +33,7 @@ class Login(
     private val onRightLogin: (() -> Unit),
     private val httpClient: HttpClient,
     private val serverUrl: MutableState<String>,
-    private val serverPort: MutableState<String>
+    private val serverPort: String = Constants.SERVER_PORT
 ) {
     @Composable
     fun LoginScreen(
@@ -82,20 +82,13 @@ class Login(
             Row(modifier = Modifier.align(Alignment.TopEnd)
                 .padding(10.dp),
                 verticalAlignment = Alignment.Bottom){
-                Text(text = "Server URL and port",
+                Text(text = "Server URL",
                     modifier = Modifier.padding(end = 5.dp),
                     style = quantityFont)
                 TextField(
                     value = serverUrl.value,
                     modifier = Modifier.width(150.dp),
                     onValueChange = { serverUrl.value = it },
-                )
-                Text(text = ":",
-                    style = quantityFont)
-                TextField(
-                    value = serverPort.value,
-                    modifier = Modifier.width(100.dp),
-                    onValueChange = { serverPort.value = it },
                 )
             }
         }
@@ -111,7 +104,7 @@ class Login(
     ) {
         try {
             val response = httpClient.request<LoginResponse> {
-                    url("http://"+serverUrl.value+":"+serverPort.value+"/login")
+                    url("http://"+serverUrl.value+":"+serverPort+"/login")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -132,7 +125,7 @@ class Login(
         try {
             JSONObject(runBlocking {
                 httpClient.request<String> {
-                    url("http://"+serverUrl.value+":"+serverPort.value+"/logout")
+                    url("http://"+serverUrl.value+":"+serverPort+"/logout")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -148,7 +141,7 @@ class Login(
         try {
             val response = JSONObject(
                 httpClient.request<String> {
-                    url("http://"+serverUrl.value+":"+serverPort.value+"/cards")
+                    url("http://"+serverUrl.value+":"+serverPort+"/cards")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -166,7 +159,7 @@ class Login(
         try {
             val response = JSONArray(
                     httpClient.request<String> {
-                        url("http://"+serverUrl.value+":"+serverPort.value+ "/decks")
+                        url("http://"+serverUrl.value+":"+serverPort+ "/decks")
                         headers {
                             append("Content-Type", "application/json")
                         }

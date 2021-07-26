@@ -17,7 +17,7 @@ import org.json.JSONObject
 
 class WebSocketHandler(
     private val serverUrl: MutableState<String>,
-   private val serverPort: MutableState<String>
+   private val serverPort: String = Constants.SERVER_PORT
 ) {
     private val websocketHttpClient = HttpClient {
         install(WebSockets)
@@ -32,7 +32,7 @@ class WebSocketHandler(
         websocketHttpClient.webSocket(
             method = HttpMethod.Get,
             host = serverUrl.value,
-            port = serverPort.value.toInt(),
+            port = serverPort.toInt(),
             path = "/plop"
         ) {
             val messageOutputRoutine = launch { outputMessages() }

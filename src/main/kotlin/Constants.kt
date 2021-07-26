@@ -8,6 +8,7 @@ object Constants {
     const val NEW_CARDS_SPY = 2
     const val NEW_CARDS_BASE_DESTROYED = 2
 
+    const val SERVER_PORT = "2077"
     const val CONNECTION_INIT_MESSAGE = "Hello there"
     const val CARD_MOVEMENT = "movement"
     const val CARD_ATTACK = "attack"

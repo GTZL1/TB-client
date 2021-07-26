@@ -47,7 +47,7 @@ class DeckGUI(
     private val idSession: MutableState<Int>,
     private val httpClient: HttpClient,
     private val serverUrl: MutableState<String>,
-    private val serverPort: MutableState<String>,
+    private val serverPort: String = Constants.SERVER_PORT,
     val cardTypes: List<CardType>,
     decksList: List<DeckType>,
     val playIA: MutableState<Boolean>
@@ -64,7 +64,7 @@ class DeckGUI(
         try {
             val response = JSONObject(runBlocking {
                 httpClient.request<String> {
-                    url("http://"+serverUrl.value+":"+serverPort.value+"/decks")
+                    url("http://"+serverUrl.value+":"+serverPort+"/decks")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -85,7 +85,7 @@ class DeckGUI(
         try {
             runBlocking {
                 httpClient.request<String> {
-                    url("http://"+serverUrl.value+":"+serverPort.value+"/decks")
+                    url("http://"+serverUrl.value+":"+serverPort+"/decks")
                     headers {
                         append("Content-Type", "application/json")
                     }

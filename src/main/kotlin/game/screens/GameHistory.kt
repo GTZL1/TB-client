@@ -29,14 +29,14 @@ class GameHistory(
     val username: String,
     private val onBack: () -> Unit,
     private val serverUrl: MutableState<String>,
-    private val serverPort: MutableState<String>
+    private val serverPort: String = Constants.SERVER_PORT
 ) {
     internal fun getGamesHistory(): ArrayList<GameRecord> {
         val games= ArrayList<GameRecord>()
         try {
             val response = JSONArray(runBlocking {
                 httpClient.request<String> {
-                    url("http://"+serverUrl.value+":"+serverPort.value+"/game")
+                    url("http://"+serverUrl.value+":"+serverPort+"/game")
                     headers {
                         append("Content-Type", "application/json")
                     }

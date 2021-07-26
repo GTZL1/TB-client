@@ -30,7 +30,7 @@ class Game(
     private val webSocketHandler: WebSocketHandler,
     private val httpClient: HttpClient,
     private val serverUrl: MutableState<String>,
-    private val serverPort: MutableState<String>,
+    private val serverPort: String = Constants.SERVER_PORT,
     private val idSession: MutableState<Int>,
     private val cardTypes: List<CardType>,
     val player: Player,
@@ -333,7 +333,6 @@ class Game(
                         filterCardsOwner(opponent.pseudo).first { playCard ->
                             playCard.id == msg.getInt("oldId") }.changeId(msg.getInt("newId"))
                         opponent.playDeck.currentCardId=msg.getInt("newId")
-                        println(player.pseudo+" set "+opponent.playDeck.currentCardId+" to "+opponent.pseudo)
                     }
                 }
                 Constants.ENDGAME -> {
@@ -524,7 +523,7 @@ class Game(
             try {
                 runBlocking{
                     httpClient.request<String> {
-                        url("http://"+serverUrl.value + ":" + serverPort.value + "/game")
+                        url("http://"+serverUrl.value + ":" + serverPort + "/game")
                         headers {
                             append("Content-Type", "application/json")
                         }

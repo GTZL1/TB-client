@@ -59,9 +59,8 @@ fun main() {
         val ia = remember { mutableStateOf(false) }
 
         val serverUrl = remember { mutableStateOf("localhost") }
-        val serverPort = remember { mutableStateOf("2077") }
         if(websocket == null) {
-            websocket=WebSocketHandler(serverUrl = serverUrl, serverPort = serverPort)
+            websocket=WebSocketHandler(serverUrl = serverUrl,)
         }
 
         Window(
@@ -91,7 +90,6 @@ fun main() {
                     idSession = idSession,
                     playerPseudo = username,
                     serverUrl = serverUrl,
-                    serverPort = serverPort
                 )
             }
 
@@ -118,7 +116,6 @@ fun main() {
                             username = username.value,
                             onBack = { screenState.value = Screen.INTERMEDIATE },
                             serverUrl = serverUrl,
-                            serverPort = serverPort
                         )
                     }
                     val currentGameHistory = gameHistory.value
@@ -135,7 +132,6 @@ fun main() {
                             idSession = idSession,
                             httpClient = httpClient,
                             serverUrl = serverUrl,
-                            serverPort = serverPort,
                             cardTypes = cardTypes,
                             decksList = login.generateDecks(cardTypes),
                             playIA = ia
@@ -187,7 +183,6 @@ fun main() {
                             webSocketHandler = websocket!!,
                             httpClient = httpClient,
                             serverUrl = serverUrl,
-                            serverPort = serverPort,
                             idSession = idSession,
                             cardTypes = cardTypes,
                             player = player,
