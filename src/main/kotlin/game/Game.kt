@@ -150,6 +150,10 @@ class Game(
         checkChangeTurn()
     }
 
+    /**
+     * Move a card to opponent row
+     * @card [PlayCard] to move
+     */
     fun cardToOpponentRow(card: PlayCard) {
         opponentRowCards.add(card)
         centerRowCards.remove(card)
@@ -163,12 +167,22 @@ class Game(
         }
     }
 
+    /**
+     * Move a card to center row and notifies opponent using websocket
+     * @card [PlayCard] to move
+     * @position new [Position] of the card
+     * @fromDeck if the card comes from the deck or not
+     */
     private fun cardToOpponentRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         cardToOpponentRow(card)
         if(!playIA) notifyMovement(card, position, fromDeck)
         checkChangeTurn()
     }
 
+    /**
+     * Move a card to discard pile
+     * @card [PlayCard] to move
+     */
     private fun cardToDiscard(card: PlayCard) {
         discardCards.add(card)
         playerRowCards.remove(card)
@@ -208,6 +222,12 @@ class Game(
         turnCallback.remove(callback)
     }
 
+    /**
+     * Notify opponent of a movement
+     * @card [PlayCard] to move
+     * @position [Position] to move card at
+     * @fromDeck if the card is played from deck or not
+     */
     private fun notifyMovement(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         webSocketHandler.sendMessage(
             JSONObject(
@@ -222,6 +242,12 @@ class Game(
         )
     }
 
+    /**
+     * Notify opponent of an attack
+     * @attackerCard [PlayCard] attacker
+     * @target [PlayCard] targeted
+     * @specialPower if @attackerCard uses her special power or not
+     */
     private fun notifyAttack(attackerCard: PlayCard, targetCard: PlayCard, specialPower: Boolean = false) {
         webSocketHandler.sendMessage(
             JSONObject(
@@ -236,6 +262,12 @@ class Game(
         )
     }
 
+    /**
+     * Notify opponent of a card id change
+     * @owner owner of the card
+     * @oldId old id of the card (used to select it)
+     * @newId new id to set to the card
+     */
     private fun notifyNewId(owner: String, oldId: Int, newId: Int) {
         webSocketHandler.sendMessage(
             JSONObject(
@@ -248,6 +280,9 @@ class Game(
         )
     }
 
+    /**
+     * Notify opponent that player has no card remaining in his hand or on the board
+     */
     private fun notifyEndGame() {
         webSocketHandler.sendMessage(
             JSONObject(SimpleMessage(Constants.ENDGAME))
@@ -332,6 +367,9 @@ class Game(
         }
     }
 
+    /**
+     * Receive messages from opponent and perform right actions
+     */
     internal suspend fun receiveMessages() {
         for (msg in webSocketHandler.msgReceived) {
             when (msg.getString("type")) {
@@ -370,6 +408,14 @@ class Game(
         }
     }
 
+    /**
+     * Apply an opponent's card movement on the board
+     * @owner owner of the [PlayCard] to move
+     * @id id of the [PlayCard] to move
+     * @cardTypeName card type name of card to create (used only if @fromDeck==true)
+     * @position [Position] to move card at
+     * @fromDeck if card is played from deck. If true, a new PlayCard is created, if not the card is selected then moved
+     */
     private fun applyMovement(owner: String, id: Int, cardTypeName: String, position: Position, fromDeck: Boolean) {
         val card = if (fromDeck) {
             cardTypes.first { cardType -> cardType.name == cardTypeName }.generatePlayCard(owner, id)
@@ -397,6 +443,14 @@ class Game(
         }
     }
 
+    /**
+     * Apply an attack between. Used for local and opponent's attacks
+     * @attackerOwner owner of the attacker [PlayCard]
+     * @attackerId id of the attacker [PlayCard]
+     * @targetOwner owner of the targeted [PlayCard]
+     * @targetId id of the targeted [PlayCard]
+     * @specialPower if attacker card uses her special power
+     */
     internal fun applyAttack(
         attackerOwner: String,
         attackerId: Int,
@@ -431,6 +485,12 @@ class Game(
         }
     }
 
+    /**
+     * Examine card clicked by player and apply attack if possible
+     * @clicked mutable boolean useful to the method
+     * @card most recently clicked [PlayCard]
+     * @specialPower if a card can use her special power while attacking
+     */
     internal fun handleClick(clicked: MutableState<Boolean>, card: PlayCard, specialPower: Boolean = false) {
         if(specialPower) powerAuthorization.value=true
         clicked.value = true
@@ -534,6 +594,10 @@ class Game(
         }
     }
 
+    /**
+     * Check if game is ended and if true, send the result
+     * @defeat if player has lost anyway (true only if window is closed during game)
+     */
     private fun checkEnding(defeat: Boolean = false) {
         if (playerBaseCards.isEmpty() ||
             opponentBaseCards.isEmpty() ||
