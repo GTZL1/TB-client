@@ -47,7 +47,7 @@ fun main() {
 
     lateinit var cardTypes: List<CardType>
     lateinit var login: Login
-    var websocket: WebSocketHandler? = null
+    //var websocket: WebSocketHandler? = null
 
     application {
         val state = rememberWindowState(
@@ -59,9 +59,9 @@ fun main() {
         val ia = remember { mutableStateOf(false) }
 
         val serverUrl = remember { mutableStateOf("localhost") }
-        if(websocket == null) {
+        /*if(websocket == null) {
             websocket=WebSocketHandler(serverUrl = serverUrl,)
-        }
+        }*/
 
         Window(
             title = "uPCb !!",
@@ -150,13 +150,14 @@ fun main() {
                 }
                 Screen.BOARD -> {
                     LaunchedEffect(true) {
+                        val websocket = WebSocketHandler(serverUrl)
                         val player = Player(
                             pseudo = username.value,
                             deckType = playerDeck.value!!
                         )
                         if(!ia.value){
                             launch {
-                                websocket!!.initialize {
+                                websocket.initialize {
                                     run {
                                         if(game.value != null) game.value!!.stopGame()
                                         game.value = null
@@ -164,9 +165,9 @@ fun main() {
                                     }
                                 }
                             }
-                            websocket!!.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
-                            websocket!!.receiveOne()
-                            websocket!!.sendMessage(
+                            websocket.sendMessage(JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE)))
+                            websocket.receiveOne()
+                            websocket.sendMessage(
                                 JSONObject(
                                     PlayerInitialization(
                                         username = username.value,
@@ -176,11 +177,11 @@ fun main() {
                             )
                         }
                         //not used if fighting IA
-                        val opponentInfos = if(!ia.value) websocket!!.receiveOne() else JSONObject()
+                        val opponentInfos = if(!ia.value) websocket.receiveOne() else JSONObject()
 
                         val g = Game(
                             date = LocalDateTime.now(),
-                            webSocketHandler = websocket!!,
+                            webSocketHandler = websocket,
                             httpClient = httpClient,
                             serverUrl = serverUrl,
                             idSession = idSession,
