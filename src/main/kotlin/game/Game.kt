@@ -605,7 +605,7 @@ class Game(
             || defeat) {
             val victory= if(defeat) {
                             false
-                        } else if ((handCards.isEmpty() && opponentEnded)){
+                        } else if (handCards.isEmpty() && opponentEnded){
                             playerBaseCards.sumOf { selector -> selector.getHealth() } > opponentBaseCards.sumOf { selector -> selector.getHealth() }
                         }
                         else {
