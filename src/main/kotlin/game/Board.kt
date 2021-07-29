@@ -35,6 +35,11 @@ import theme.cardFont
 import theme.discardCardFont
 import theme.miniFont
 
+/**
+ * Display the board and update it according game state
+ * @game the Game to display
+ * @playIA if the player is playing against IA
+ */
 @Composable
 fun Board(game: Game,
         playIA: Boolean) {
@@ -219,6 +224,10 @@ fun Board(game: Game,
     }
 }
 
+/**
+ * Display a card and do it draggable
+ * Handle "only" draggability, use an other function for display
+ */
 @Composable
 private fun DisplayDraggableCard(
     modifier: Modifier = Modifier,
@@ -285,6 +294,9 @@ private fun DisplayDraggableCard(
     }
 }
 
+/**
+ * Display a row of cards
+ */
 @Composable
 private fun GameRow(
     modifier: Modifier = Modifier,
@@ -304,6 +316,9 @@ private fun GameRow(
     }
 }
 
+/**
+ * Display a row with a label above or under it
+ */
 @Composable
 private fun GameRowPlayerLabel(
     modifier: Modifier = Modifier,
@@ -332,6 +347,9 @@ private fun GameRowPlayerLabel(
     }
 }
 
+/**
+ * Display a little text set to appear above or under a GameRow, centered
+ */
 @Composable
 private fun PlayerLabel(
     paddingModifier: Modifier,
@@ -348,6 +366,9 @@ private fun PlayerLabel(
     }
 }
 
+/**
+ * Handle click on card and display it
+ */
 @Composable
 fun DisplayCard(
     modifier: Modifier = Modifier,
@@ -387,6 +408,9 @@ fun DisplayCard(
     )
 }
 
+/**
+ * Display card itself and handle click on power button (for heroes)
+ */
 @Composable
 fun DisplayNonClickableCard(
     modifier: Modifier = Modifier,
@@ -460,6 +484,9 @@ fun DisplayNonClickableCard(
     }
 }
 
+/**
+ * Display stats box of the card
+ */
 @Composable
 fun StatsBox(
     modifier: Modifier = Modifier,
@@ -490,6 +517,9 @@ fun StatsBox(
     }
 }
 
+/**
+ * Display the etiquette of the card (lower part, with name)
+ */
 @Composable
 fun CardEtiquette(
     modifier: Modifier = Modifier,

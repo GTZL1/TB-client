@@ -118,7 +118,7 @@ class Game(
     fun cardToPlayerRow(card: PlayCard, isSpy: Boolean = false, position: Position, fromDeck: Boolean = false) {
         cardToPlayerRow(card, isSpy)
         if(!playIA) {
-            notifyMovement(card, Position.PLAYER, fromDeck)
+            notifyMovement(card, position, fromDeck)
         }
         checkChangeTurn()
     }
@@ -146,7 +146,7 @@ class Game(
      */
     fun cardToCenterRow(card: PlayCard, position: Position, fromDeck: Boolean = false) {
         cardToCenterRow(card)
-        if(!playIA) { notifyMovement(card, Position.CENTER, fromDeck) }
+        if(!playIA) { notifyMovement(card, position, fromDeck) }
         checkChangeTurn()
     }
 

@@ -81,8 +81,8 @@ fun main() {
             val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
             val gameHistory = remember { mutableStateOf<GameHistory?>(null) }
             val idSession = remember { mutableStateOf(0) }
-            val username = remember { mutableStateOf("aloy") }
-            val opponentName = remember { mutableStateOf("ikrie") }
+            val username = remember { mutableStateOf("") }
+            val opponentName = remember { mutableStateOf("") }
             val victory = remember { mutableStateOf(false) }
 
             login = remember {
