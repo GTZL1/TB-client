@@ -505,7 +505,7 @@ class Game(
             ) {
                 clicked.value = false
                 //attacker is oldCard
-                if (canAttack(oldCard!!, card) || (oldCard!!.overrideDistanceAttack() && cardCanAct(oldCard!!))) {
+                if (canAttack(oldCard!!, card) || (powerAuthorization.value && oldCard!!.overrideDistanceAttack() && cardCanAct(oldCard!!))) {
                     try {
                         applyAttack(
                             attackerOwner = oldCard!!.owner,

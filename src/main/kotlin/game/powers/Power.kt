@@ -127,7 +127,7 @@ class WhipStrikePower: Power(6,) {
     override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean {
-        return if(whipStrike.value && (target.cardType::class != BaseCardType::class) &&target != owner){
+        return if(whipStrike.value && (target.cardType::class != BaseCardType::class) && target != owner){
             when(owner.getPosition()){
                 Position.PLAYER -> {
                     when(target.getPosition()){
