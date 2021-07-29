@@ -43,6 +43,9 @@ import kotlin.collections.map
 import kotlin.collections.set
 import kotlin.collections.sum
 
+/**
+ * Manage operations to configurate decks.
+ */
 class DeckGUI(
     private val idSession: MutableState<Int>,
     private val httpClient: HttpClient,
@@ -59,6 +62,9 @@ class DeckGUI(
 
     val cardsDeck= mutableStateMapOf<CardType, Short>().apply { putAll(deck.value.cardTypes) }
 
+    /**
+     * Send a request to server to update cards of a deck
+     */
     internal fun updateDeck(
     ) {
         try {
@@ -80,6 +86,9 @@ class DeckGUI(
         }
     }
 
+    /**
+     * Delete a deck in local list and send a request to delete it in database
+     */
     internal fun removeDeck(
     ) {
         try {
@@ -100,15 +109,24 @@ class DeckGUI(
         }
     }
 
+    /**
+     * Update local variable with new quantity
+     */
     internal fun saveDeckLocally() {
         deck.value.cardTypes = (cardsDeck.filterValues { qty: Short -> qty > 0.toShort() })
     }
 
+    /**
+     * Create locally a new empty deck
+     */
     internal fun newDeck() {
         decks.add(DeckType((-1), UUID.randomUUID().toString().take(15), mapOf()))
         changeDeck(decks.last())
     }
 
+    /**
+     * Change deck currently displayed
+     */
     internal fun changeDeck(newDeckType: DeckType, afterDeletion: Boolean = false) {
         if(!afterDeletion) saveDeckLocally()
         deck.value=newDeckType
@@ -117,6 +135,10 @@ class DeckGUI(
     }
 }
 
+/**
+ * Display the deck configuration screen
+ * @deckGUI DeckGUI with deck infos to read and modify
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DeckScreen(deckGUI: DeckGUI,
@@ -127,6 +149,7 @@ fun DeckScreen(deckGUI: DeckGUI,
     Column(
         modifier = Modifier.fillMaxSize()
     ){
+        //Upper row, with buttons
         Row(modifier = Modifier.fillMaxWidth()
                 .height(100.dp)
                 .background(color = MaterialTheme.colors.primary)
@@ -222,8 +245,10 @@ fun DeckScreen(deckGUI: DeckGUI,
                 }
             }
         }
+        //Main content
         Row(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.72f)
         ) {
+            //Cards gird
             LazyVerticalGrid(
                 cells = GridCells.Adaptive((Constants.CARD_WIDTH + 40).dp),
             ) {
@@ -239,6 +264,7 @@ fun DeckScreen(deckGUI: DeckGUI,
                 }
             }
         }
+        //Sticky row to choose Base
         BaseCardsRow(modifier = Modifier.defaultMinSize(minHeight = (Constants.CARD_HEIGHT+40).dp),
                     deck = deckGUI.deck.value,
                     baseCards = deckGUI.baseCards,
@@ -246,6 +272,9 @@ fun DeckScreen(deckGUI: DeckGUI,
     }
 }
 
+/**
+ * Display dropdown menu to select current deck
+ */
 @Composable
 private fun DeckChoiceMenu(
     deckGUI: DeckGUI,
@@ -276,6 +305,9 @@ private fun DeckChoiceMenu(
         })
 }
 
+/**
+ * Display a card in the grid
+ */
 @Composable
 private fun CardMenuItem(
     cardsDeck: MutableMap<CardType, Short>,
@@ -302,6 +334,9 @@ private fun CardMenuItem(
     }
 }
 
+/**
+ * Display the little buttons +1 / -1
+ */
 @Composable
 private fun QuantitySetter(cardDecks: MutableMap<CardType, Short>,
                             cardType: CardType,){
@@ -352,6 +387,9 @@ private fun QuantitySetter(cardDecks: MutableMap<CardType, Short>,
     }
 }
 
+/**
+ * Display the base cards row with radio buttons
+ */
 @Composable
 private fun BaseCardsRow(
     modifier: Modifier = Modifier,
@@ -394,6 +432,9 @@ private fun BaseCardsRow(
     }
 }
 
+/**
+ * Calculate total card in deck
+ */
 @Composable
 private fun Total(
     cardsDeck: Map<CardType, Short>
@@ -402,6 +443,9 @@ private fun Total(
         .map { (_, qty) -> qty }.sum()
 }
 
+/**
+ * Calculate total hero card in deck
+ */
 @Composable
 private fun TotalHeroes(
     cardsDeck: Map<CardType, Short>
@@ -409,6 +453,9 @@ private fun TotalHeroes(
     return Total(cardsDeck.filter { (card, _) -> card::class==HeroCardType::class })
 }
 
+/**
+ * Calculate minimum card number in deck
+ */
 @Composable
 private fun TotalMinimum(
     cardsDeck: Map<CardType, Short>
