@@ -27,6 +27,9 @@ import theme.quantityFont
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findParameterByName
 
+/**
+ * Handle login, logout and fetch game objects
+ */
 class Login(
     private val idSession: MutableState<Int>,
     private val playerPseudo: MutableState<String>,
@@ -94,6 +97,10 @@ class Login(
         }
     }
 
+    /**
+     * Send username and password entered.
+     * Display error reason if not granted, and update variables if yes
+     */
     private suspend fun sendLoginForm(
         username: String,
         password: String,
@@ -121,6 +128,9 @@ class Login(
         }
     }
 
+    /**
+     * Send logout request when player quit game or close window
+     */
     fun logout() {
         try {
             JSONObject(runBlocking {
@@ -137,6 +147,9 @@ class Login(
         }
     }
 
+    /**
+     * Fetch card types from the server
+     */
     private suspend fun cardsRequest(): JSONObject {
         try {
             val response = JSONObject(
@@ -155,6 +168,9 @@ class Login(
         return JSONObject()
     }
 
+    /**
+     * Fetch player's decks from the server
+     */
     private suspend fun decksRequest(): JSONArray {
         try {
             val response = JSONArray(
@@ -173,6 +189,10 @@ class Login(
         return JSONArray()
     }
 
+    /**
+     * Generate a list of CardType with serialized infos from the server. Use cardsRequest() to get these infos.
+     * @return List of CardType generated
+     */
     suspend fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
         val cardTypes = mutableListOf<CardType>()
         val cards = cardsRequest()
@@ -203,6 +223,12 @@ class Login(
         return cardTypes
     }
 
+    /**
+     * Generate list of DeckType with a CardType list and serialized deck infos. Use decksRequest() to get these infos
+     * @cardTypes list of CardType of the game
+     * @decksList Json-serialized infos of the decks
+     * @return List of DeckType generated
+     */
     suspend fun generateDecks(cardTypes: List<CardType>, decksList: JSONArray? = null): List<DeckType> {
         val playerDecks = decksList ?: decksRequest()
         val decks= mutableListOf<DeckType>()
@@ -214,6 +240,12 @@ class Login(
         return decks.toList()
     }
 
+    /**
+     * Generate one DeckType with one deck's infos and a CardType list. Used in previous method.
+     * @cardTypes list of CardType of the game
+     * @decksList Json-serialized info of the deck
+     * @return DeckType generated
+     */
     fun generateDeck(cardTypes: List<CardType>, playerDeck: JSONObject): DeckType {
         val deckType= mutableMapOf<CardType,Short>()
 
