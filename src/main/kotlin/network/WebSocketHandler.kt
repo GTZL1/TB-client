@@ -15,6 +15,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
+/**
+ * Handle websockets connections with server
+ */
 class WebSocketHandler(
     private val serverUrl: MutableState<String>,
    private val serverPort: String = Constants.SERVER_PORT
@@ -28,12 +31,15 @@ class WebSocketHandler(
     private val msgToSend = Channel<JSONObject>(Channel.UNLIMITED)
     val msgReceived = Channel<JSONObject>(Channel.UNLIMITED)
 
+    /**
+     * Initialize and close the connection, launch methods to use it
+     */
     suspend fun initialize(onConnectionClosed: () -> Unit) = coroutineScope<Unit> {
         websocketHttpClient.webSocket(
             method = HttpMethod.Get,
             host = serverUrl.value,
             port = serverPort.toInt(),
-            path = "/plop"
+            path = "/play"
         ) {
             val messageOutputRoutine = launch { outputMessages() }
             val userInputRoutine = launch { inputMessages() }
@@ -45,14 +51,24 @@ class WebSocketHandler(
         }
     }
 
+    /**
+     * Add a message in Channel to be send
+     * @msg Json-serialized message
+     */
     fun sendMessage(msg: JSONObject) {
         msgToSend.trySend(msg)
     }
 
+    /**
+     * Return oldest message received and delete it of Channel
+     */
     suspend fun receiveOne(): JSONObject {
         return msgReceived.receive()
     }
 
+    /**
+     * Store in a Channel messages received
+     */
     private suspend fun DefaultClientWebSocketSession.outputMessages() {
         try {
             for (message in incoming) {
@@ -68,8 +84,12 @@ class WebSocketHandler(
         }
     }
 
+    /**
+     * Send messages from Channel on network
+     */
     private suspend fun DefaultClientWebSocketSession.inputMessages() {
         for (msg in msgToSend) {
+            //stop if message tells to exit. Close connection in initialize()
             if (msg.getString("type").equals(Constants.EXIT_MESSAGE)) break
             try {
                 send(msg.toString())
