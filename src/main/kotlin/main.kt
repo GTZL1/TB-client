@@ -4,8 +4,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
-import io.mockk.*;
-import game.*
+import game.Board
+import game.EndingScreen
+import game.Game
+import game.IntermediateScreen
 import game.cards.types.*
 import game.decks.DeckGUI
 import game.decks.DeckScreen
@@ -18,7 +20,6 @@ import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import network.Login
 import network.PlayerInitialization
 import network.SimpleMessage
@@ -27,6 +28,9 @@ import org.json.JSONObject
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
 
+/**
+ * Manage states of the app
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     System.setProperty("skiko.renderApi", "OPENGL")
@@ -37,6 +41,7 @@ fun main() {
         }
     }
 
+    //used to assign a constructor to a PlayCard subclass
     val cardClasses = listOf<Pair<String, KClass<out CardType>>>(
         Pair("hero", HeroCardType::class),
         Pair("unit", UnitCardType::class),
@@ -47,10 +52,8 @@ fun main() {
 
     lateinit var cardTypes: List<CardType>
     lateinit var login: Login
-    val websocket = WebSocketHandler()
-    //val webSocketMock = mockk<WebSocketHandler>(relaxUnitFun = true)
-    //coEvery { websocket.receiveOne() } returns JSONObject(SimpleMessage(Constants.CONNECTION_INIT_MESSAGE))
 
+    // In application, it is a Composable scope
     application {
         val state = rememberWindowState(
             size = WindowSize(Constants.WINDOW_WIDTH.dp, Constants.WINDOW_HEIGHT.dp),
@@ -59,12 +62,15 @@ fun main() {
         val screenState = remember { mutableStateOf(Screen.LOGIN) }
         val game = remember { mutableStateOf<Game?>(null) }
         val ia = remember { mutableStateOf(false) }
+
+        val serverUrl = remember { mutableStateOf("localhost") }
+
         Window(
             title = "uPCb !!",
             state = state,
             resizable = true,
             onCloseRequest = {
-                if(screenState.value == Screen.BOARD) {
+                if(screenState.value == Screen.BOARD && game.value != null) {
                     game.value!!.sendDefeat()
                 }
                 login.logout()
@@ -75,8 +81,8 @@ fun main() {
             val deckGUI = remember { mutableStateOf<DeckGUI?>(null) }
             val gameHistory = remember { mutableStateOf<GameHistory?>(null) }
             val idSession = remember { mutableStateOf(0) }
-            val username = remember { mutableStateOf("aloy") }
-            val opponentName = remember { mutableStateOf("ikrie") }
+            val username = remember { mutableStateOf("") }
+            val opponentName = remember { mutableStateOf("") }
             val victory = remember { mutableStateOf(false) }
 
             login = remember {
@@ -84,10 +90,12 @@ fun main() {
                     httpClient = httpClient,
                     onRightLogin = { screenState.value = Screen.INTERMEDIATE },
                     idSession = idSession,
-                    playerPseudo = username
+                    playerPseudo = username,
+                    serverUrl = serverUrl,
                 )
             }
 
+            //switches between different screen states
             when (screenState.value) {
                 Screen.LOGIN -> {
                     login.LoginScreen()
@@ -109,7 +117,8 @@ fun main() {
                             idSession = idSession.value,
                             httpClient = httpClient,
                             username = username.value,
-                            onBack = { screenState.value = Screen.INTERMEDIATE }
+                            onBack = { screenState.value = Screen.INTERMEDIATE },
+                            serverUrl = serverUrl,
                         )
                     }
                     val currentGameHistory = gameHistory.value
@@ -125,6 +134,7 @@ fun main() {
                         val dG = DeckGUI(
                             idSession = idSession,
                             httpClient = httpClient,
+                            serverUrl = serverUrl,
                             cardTypes = cardTypes,
                             decksList = login.generateDecks(cardTypes),
                             playIA = ia
@@ -143,6 +153,7 @@ fun main() {
                 }
                 Screen.BOARD -> {
                     LaunchedEffect(true) {
+                        val websocket = WebSocketHandler(serverUrl)
                         val player = Player(
                             pseudo = username.value,
                             deckType = playerDeck.value!!
@@ -151,6 +162,7 @@ fun main() {
                             launch {
                                 websocket.initialize {
                                     run {
+                                        if(game.value != null) game.value!!.stopGame()
                                         game.value = null
                                         screenState.value = Screen.DECK
                                     }
@@ -169,10 +181,12 @@ fun main() {
                         }
                         //not used if fighting IA
                         val opponentInfos = if(!ia.value) websocket.receiveOne() else JSONObject()
+
                         val g = Game(
                             date = LocalDateTime.now(),
                             webSocketHandler = websocket,
                             httpClient = httpClient,
+                            serverUrl = serverUrl,
                             idSession = idSession,
                             cardTypes = cardTypes,
                             player = player,

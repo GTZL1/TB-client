@@ -5,6 +5,8 @@ import game.Game
 import game.Position
 import game.cards.plays.HeroPlayCard
 import game.cards.plays.PlayCard
+import game.cards.plays.UnitPlayCard
+import game.cards.types.BaseCardType
 import kotlin.reflect.KClass
 
 abstract class Power(val id: Int,) {
@@ -125,7 +127,7 @@ class WhipStrikePower: Power(6,) {
     override fun action(owner: HeroPlayCard,
                         target: PlayCard,
                         game: Game?): Boolean {
-        return if(whipStrike.value && target != owner){
+        return if(whipStrike.value && (target.cardType::class != BaseCardType::class) && target != owner){
             when(owner.getPosition()){
                 Position.PLAYER -> {
                     when(target.getPosition()){

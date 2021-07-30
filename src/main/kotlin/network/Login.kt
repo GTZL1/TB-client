@@ -22,30 +22,35 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
+import theme.menuFont
 import theme.quantityFont
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findParameterByName
 
+/**
+ * Handle login, logout and fetch game objects
+ */
 class Login(
     private val idSession: MutableState<Int>,
     private val playerPseudo: MutableState<String>,
     private val onRightLogin: (() -> Unit),
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
+    private val serverUrl: MutableState<String>,
+    private val serverPort: String = Constants.SERVER_PORT
 ) {
     @Composable
     fun LoginScreen(
         modifier: Modifier = Modifier,
     ) {
         val scope = rememberCoroutineScope()
-        Row(
+        Box(
             modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
         ) {
             val password = remember { mutableStateOf(("")) }
             val errorText = remember { mutableStateOf("")}
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally) {
                 TextField(
                     value = playerPseudo.value,
                     modifier = modifier,
@@ -76,9 +81,26 @@ class Login(
                     Text(text = "Login")
                 }
             }
+
+            Row(modifier = Modifier.align(Alignment.TopEnd)
+                .padding(10.dp),
+                verticalAlignment = Alignment.Bottom){
+                Text(text = "Server URL",
+                    modifier = Modifier.padding(end = 5.dp),
+                    style = quantityFont)
+                TextField(
+                    value = serverUrl.value,
+                    modifier = Modifier.width(150.dp),
+                    onValueChange = { serverUrl.value = it },
+                )
+            }
         }
     }
 
+    /**
+     * Send username and password entered.
+     * Display error reason if not granted, and update variables if yes
+     */
     private suspend fun sendLoginForm(
         username: String,
         password: String,
@@ -89,7 +111,7 @@ class Login(
     ) {
         try {
             val response = httpClient.request<LoginResponse> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/login")
+                    url("http://"+serverUrl.value+":"+serverPort+"/login")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -106,11 +128,14 @@ class Login(
         }
     }
 
+    /**
+     * Send logout request when player quit game or close window
+     */
     fun logout() {
         try {
             JSONObject(runBlocking {
                 httpClient.request<String> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/logout")
+                    url("http://"+serverUrl.value+":"+serverPort+"/logout")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -122,11 +147,14 @@ class Login(
         }
     }
 
+    /**
+     * Fetch card types from the server
+     */
     private suspend fun cardsRequest(): JSONObject {
         try {
             val response = JSONObject(
                 httpClient.request<String> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/cards")
+                    url("http://"+serverUrl.value+":"+serverPort+"/cards")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -140,11 +168,14 @@ class Login(
         return JSONObject()
     }
 
+    /**
+     * Fetch player's decks from the server
+     */
     private suspend fun decksRequest(): JSONArray {
         try {
             val response = JSONArray(
                     httpClient.request<String> {
-                        url(System.getenv("TB_SERVER_URL") + ":" + System.getenv("TB_SERVER_PORT") + "/decks")
+                        url("http://"+serverUrl.value+":"+serverPort+ "/decks")
                         headers {
                             append("Content-Type", "application/json")
                         }
@@ -158,6 +189,10 @@ class Login(
         return JSONArray()
     }
 
+    /**
+     * Generate a list of CardType with serialized infos from the server. Use cardsRequest() to get these infos.
+     * @return List of CardType generated
+     */
     suspend fun generateCardTypes(typesConstructs: List<Pair<String, KClass<out CardType>>>): List<CardType> {
         val cardTypes = mutableListOf<CardType>()
         val cards = cardsRequest()
@@ -188,6 +223,12 @@ class Login(
         return cardTypes
     }
 
+    /**
+     * Generate list of DeckType with a CardType list and serialized deck infos. Use decksRequest() to get these infos
+     * @cardTypes list of CardType of the game
+     * @decksList Json-serialized infos of the decks
+     * @return List of DeckType generated
+     */
     suspend fun generateDecks(cardTypes: List<CardType>, decksList: JSONArray? = null): List<DeckType> {
         val playerDecks = decksList ?: decksRequest()
         val decks= mutableListOf<DeckType>()
@@ -199,6 +240,12 @@ class Login(
         return decks.toList()
     }
 
+    /**
+     * Generate one DeckType with one deck's infos and a CardType list. Used in previous method.
+     * @cardTypes list of CardType of the game
+     * @decksList Json-serialized info of the deck
+     * @return DeckType generated
+     */
     fun generateDeck(cardTypes: List<CardType>, playerDeck: JSONObject): DeckType {
         val deckType= mutableMapOf<CardType,Short>()
 

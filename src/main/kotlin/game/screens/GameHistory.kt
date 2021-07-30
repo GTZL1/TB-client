@@ -9,6 +9,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,14 +27,16 @@ class GameHistory(
     private val idSession: Int,
     private val httpClient: HttpClient,
     val username: String,
-    private val onBack: () -> Unit
+    private val onBack: () -> Unit,
+    private val serverUrl: MutableState<String>,
+    private val serverPort: String = Constants.SERVER_PORT
 ) {
     internal fun getGamesHistory(): ArrayList<GameRecord> {
         val games= ArrayList<GameRecord>()
         try {
             val response = JSONArray(runBlocking {
                 httpClient.request<String> {
-                    url(System.getenv("TB_SERVER_URL")+":"+System.getenv("TB_SERVER_PORT")+"/game")
+                    url("http://"+serverUrl.value+":"+serverPort+"/game")
                     headers {
                         append("Content-Type", "application/json")
                     }
@@ -77,7 +80,6 @@ fun HistoryScreen(gameHistory: GameHistory, )
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Button(modifier = Modifier.height(50.dp).width(160.dp),
                 onClick = {
                     gameHistory.onBackClick()
@@ -146,7 +148,7 @@ private fun GameRecordRowText(text: String,
     Text(modifier = Modifier.padding(end = 5.dp).width(150.dp),
         text = text,
     style = buttonFont,
-    color = if(text.equals(username)) Color.SpyBackgroundColor else color)
+    color = if(text == username) Color.SpyBackgroundColor else color)
 }
 
 data class GameHistoryRequest(

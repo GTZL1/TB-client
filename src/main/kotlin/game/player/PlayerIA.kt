@@ -10,6 +10,9 @@ import game.cards.types.VehicleCardType
 import game.decks.DeckType
 import game.notifyChangeTurn
 
+/**
+ * Play against a human
+ */
 class PlayerIA(cardTypes: List<CardType>) : Player(
     pseudo = "ANNA",
     deckType = DeckType(
@@ -26,6 +29,9 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
         }
     }
 
+    /**
+     * Main method of the IA, applying the algorithm
+     */
     @Composable
     fun play(game: Game) = key(game){
         val fromHand = remember { mutableStateOf(true) }
@@ -34,7 +40,7 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
             fromHand.value=game.movableFromHand(Position.OPPONENT)
             toCenter.value=game.movableToCenterRow()
             if (!game.playerTurn) {
-                playCardFromHand(game, fromHand)
+                playCardsFromHand(game, fromHand)
 
                 //move to center row movable cards
                 while(toCenter.value && playerRowCards(game).isNotEmpty()) {
@@ -50,7 +56,7 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
                                     targetOwner = game.player.pseudo,
                                     targetId = powerfulCard(centerRowCards(game, game.player.pseudo)).id)
                 }
-
+                //attack bases with center row cards
                 while (centerRowCards(game).isNotEmpty() && game.playerBaseCards.isNotEmpty()) {
                     val cardToPlay = powerfulCard(centerRowCards(game))
                     game.applyAttack(attackerOwner = this@PlayerIA.pseudo,
@@ -58,13 +64,13 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
                                     targetOwner = game.player.pseudo,
                                     targetId = game.playerBaseCards.first().id)
                 }
-
+                //end his turn
                 game.startPlayerTurn()
             }
         }
     }
 
-    private fun playCardFromHand(game: Game, fromHand: MutableState<Boolean>) {
+    private fun playCardsFromHand(game: Game, fromHand: MutableState<Boolean>) {
         while (fromHand.value && handCards.isNotEmpty()) {
             val vehicles = vehicles(handCards)
             while(vehicles.isNotEmpty() && fromHand.value){
@@ -117,8 +123,19 @@ class PlayerIA(cardTypes: List<CardType>) : Player(
         val cards = game.centerRowCards.filter { playCard: PlayCard -> playCard.owner == owner }
         return if(owner==this.pseudo) cards.filter { playCard -> game.cardCanAct(playCard) } else cards
     }
+
+    internal fun drawCards(nbCards: Int) {
+        playDeck.drawMultipleCards(nbCards).forEach { pc: PlayCard ->
+            handCards.add(pc.cardType.generatePlayCard(pc.owner, pc.id))
+            handCards.last().changePosition(Position.HAND)
+        }
+    }
 }
 
+/**
+ * Create a DeckType for the IA
+ * Composed of Base 2 and most powerful cards (in max quantity), 24 cards in total
+ */
 private fun createIADeck(cardTypes: MutableList<CardType>): Map<CardType, Short>{
     val baseCards= cardTypes.filter { cardType: CardType -> cardType.name == "Base 2" }
     val powerfulCards = cardTypes.filter { cardType: CardType -> cardType.attack >= 5 }
