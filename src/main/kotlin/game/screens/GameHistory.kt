@@ -80,7 +80,6 @@ fun HistoryScreen(gameHistory: GameHistory, )
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Button(modifier = Modifier.height(50.dp).width(160.dp),
                 onClick = {
                     gameHistory.onBackClick()
@@ -149,7 +148,7 @@ private fun GameRecordRowText(text: String,
     Text(modifier = Modifier.padding(end = 5.dp).width(150.dp),
         text = text,
     style = buttonFont,
-    color = if(text.equals(username)) Color.SpyBackgroundColor else color)
+    color = if(text == username) Color.SpyBackgroundColor else color)
 }
 
 data class GameHistoryRequest(

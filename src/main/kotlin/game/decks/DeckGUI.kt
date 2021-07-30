@@ -169,6 +169,7 @@ fun DeckScreen(deckGUI: DeckGUI,
             TextField(
                 value = deckName.value,
                 onValueChange = { value ->
+                    //remove special chars because it generates SQL errors
                     var text = value
                     text.forEach { c: Char ->
                         if(!c.isLetterOrDigit() && !c.isWhitespace()) {
